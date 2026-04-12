@@ -1,20 +1,8 @@
-
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import MenuCard from "../../../components/MenuCard";
-
-type MenuItem = {
-  id: string;
-  name: string;
-  price: number;
-  description?: string;
-  imageUrl?: string;
-  isSoldOut?: boolean;
-  badge?: string;
-};
+import MenuCard, { MenuItem } from "@/components/MenuCard";
 
 type CartItem = {
   id: string;
@@ -23,6 +11,7 @@ type CartItem = {
   quantity: number;
   imageUrl?: string;
   description?: string;
+  itemType?: "bento" | "drink";
   selectedOptionLabel?: string;
   selectedOptions?: string[];
   note?: string;
@@ -35,368 +24,357 @@ type ReservationDraft = {
   customerName?: string;
   phone?: string;
   note?: string;
-  totalAmount?: number;
-  totalQuantity?: number;
 };
 
-const CART_KEYS = [
-  "kamurado-web-cart",
-  "reservation-cart",
-  "reserve-cart",
-  "bento-cart",
-  "cart",
+const STORAGE_KEYS = [
+  "kamurado-reserve-draft",
+  "kamurado-reservation-draft",
+  "reservationDraft",
+  "webReservationDraft",
 ];
 
-const DRAFT_KEYS = [
-  "kamurado-web-reservation",
-  "reservation-draft",
-  "reserve-draft",
-  "reservation",
-];
-
-const MENU_ITEMS: MenuItem[] = [
+const BENTO_MENUS: MenuItem[] = [
   {
-    id: "karaage-bento",
+    id: "karaage_bento",
     name: "唐揚げ弁当",
     price: 780,
     description: "定番人気。ジューシーな唐揚げをしっかり楽しめるお弁当です。",
-    badge: "人気",
+    label: "人気",
+    itemType: "bento",
   },
   {
-    id: "ginger-pork-bento",
+    id: "shogayaki_bento",
     name: "生姜焼き弁当",
     price: 820,
     description: "ごはんが進む王道の味。やわらかいお肉と香りの良い生姜だれ。",
+    itemType: "bento",
   },
   {
-    id: "chicken-nanban-bento",
+    id: "nanban_bento",
     name: "チキン南蛮弁当",
     price: 850,
     description: "甘酢とタルタルの相性が抜群。満足感のある一品です。",
-    badge: "おすすめ",
+    label: "おすすめ",
+    itemType: "bento",
   },
+  // 日替わり弁当は非表示にするため、あえて入れていません
+];
+
+const DRINK_MENUS: MenuItem[] = [
   {
-    id: "daily-bento",
-    name: "日替わり弁当",
-    price: 700,
-    description: "その日のお楽しみ。内容は日によって変わります。",
-  },
-  {
-    id: "irohasu",
+    id: "drink_irohasu",
     name: "いろはす",
     price: 150,
-    description: "お弁当と一緒にどうぞ。",
+    description: "食事に合わせやすい、すっきり飲みやすいミネラルウォーター。",
+    itemType: "drink",
   },
   {
-    id: "oolong-tea",
-    name: "烏龍茶",
+    id: "drink_yakan_mugicha",
+    name: "やかんの麦茶",
     price: 200,
-    description: "食事に合わせやすい定番ドリンクです。",
+    description: "香ばしくやさしい味わい。食事にも合わせやすい定番ドリンク。",
+    itemType: "drink",
+  },
+  {
+    id: "drink_cocacola",
+    name: "コカ・コーラ",
+    price: 200,
+    description: "しっかり炭酸の定番コーラ。揚げ物との相性も抜群です。",
+    itemType: "drink",
+  },
+  {
+    id: "drink_cocacola_zero",
+    name: "コカ・コーラゼロ",
+    price: 200,
+    description: "すっきり飲みやすいゼロ系コーラ。後味も軽やかです。",
+    itemType: "drink",
   },
 ];
 
-function readJson<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-
+function safeParseDraft(raw: string | null): ReservationDraft | null {
+  if (!raw) return null;
   try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    return {
+      items: Array.isArray(parsed.items) ? parsed.items : [],
+      pickupDate: parsed.pickupDate || "",
+      pickupTime: parsed.pickupTime || "",
+      customerName: parsed.customerName || "",
+      phone: parsed.phone || "",
+      note: parsed.note || "",
+    };
   } catch {
-    return fallback;
+    return null;
   }
 }
 
-function writeJson(key: string, value: unknown) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(key, JSON.stringify(value));
-}
+function readDraft(): ReservationDraft {
+  if (typeof window === "undefined") return { items: [] };
 
-function readFirstAvailableJson<T>(keys: string[], fallback: T): T {
-  for (const key of keys) {
-    const value = readJson<T | null>(key, null);
-    if (value) return value;
+  for (const key of STORAGE_KEYS) {
+    const found = safeParseDraft(window.localStorage.getItem(key));
+    if (found) return found;
   }
-  return fallback;
-}
 
-function writeCart(items: CartItem[]) {
-  for (const key of CART_KEYS) {
-    writeJson(key, items);
-  }
+  return { items: [] };
 }
 
 function writeDraft(draft: ReservationDraft) {
-  for (const key of DRAFT_KEYS) {
-    writeJson(key, draft);
-  }
-}
-
-function toCartItem(item: MenuItem, quantity: number): CartItem {
-  return {
-    id: item.id,
-    name: item.name,
-    price: item.price,
-    quantity,
-    imageUrl: item.imageUrl,
-    description: item.description,
-  };
-}
-
-function calcTotals(items: CartItem[]) {
-  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalAmount = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
-  return { totalQuantity, totalAmount };
+  if (typeof window === "undefined") return;
+  const value = JSON.stringify(draft);
+  STORAGE_KEYS.forEach((key) => {
+    window.localStorage.setItem(key, value);
+  });
 }
 
 export default function ReserveMenuPage() {
-  const router = useRouter();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [draft, setDraft] = useState<ReservationDraft>({ items: [] });
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const savedCart = readFirstAvailableJson<CartItem[]>(CART_KEYS, []);
-    setCartItems(savedCart);
-
-    const currentDraft = readFirstAvailableJson<ReservationDraft>(DRAFT_KEYS, {
-      items: savedCart,
-    });
-
-    const totals = calcTotals(savedCart);
-
-    writeDraft({
-      ...currentDraft,
-      items: savedCart,
-      totalQuantity: totals.totalQuantity,
-      totalAmount: totals.totalAmount,
-    });
-
-    setLoaded(true);
+    const current = readDraft();
+    setDraft(current);
+    setMounted(true);
   }, []);
 
-  const totalQuantity = useMemo(
-    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
-    [cartItems]
-  );
+  const cartCount = useMemo(() => {
+    return draft.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  }, [draft.items]);
 
-  const totalAmount = useMemo(
-    () =>
-      cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
-    [cartItems]
-  );
-
-  function syncCart(nextItems: CartItem[]) {
-    setCartItems(nextItems);
-    writeCart(nextItems);
-
-    const currentDraft = readFirstAvailableJson<ReservationDraft>(DRAFT_KEYS, {
-      items: [],
+  const itemQtyMap = useMemo(() => {
+    const map = new Map<string, number>();
+    draft.items.forEach((item) => {
+      map.set(item.id, Number(item.quantity || 0));
     });
-
-    const totals = calcTotals(nextItems);
-
-    writeDraft({
-      ...currentDraft,
-      items: nextItems,
-      totalQuantity: totals.totalQuantity,
-      totalAmount: totals.totalAmount,
-    });
-  }
+    return map;
+  }, [draft.items]);
 
   function handleAdd(item: MenuItem) {
-    const existing = cartItems.find((cartItem) => cartItem.id === item.id);
+    const nextItems = [...draft.items];
+    const index = nextItems.findIndex((cartItem) => cartItem.id === item.id);
 
-    let nextItems: CartItem[];
-
-    if (existing) {
-      nextItems = cartItems.map((cartItem) =>
-        cartItem.id === item.id
-          ? { ...cartItem, quantity: cartItem.quantity + 1 }
-          : cartItem
-      );
+    if (index >= 0) {
+      nextItems[index] = {
+        ...nextItems[index],
+        quantity: Number(nextItems[index].quantity || 0) + 1,
+      };
     } else {
-      nextItems = [...cartItems, toCartItem(item, 1)];
+      nextItems.push({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: 1,
+        imageUrl: item.imageUrl || "",
+        description: item.description,
+        itemType: item.itemType || "bento",
+        selectedOptionLabel: "",
+        selectedOptions: [],
+        note: "",
+      });
     }
 
-    syncCart(nextItems);
+    const updated: ReservationDraft = {
+      ...draft,
+      items: nextItems,
+    };
+
+    setDraft(updated);
+    writeDraft(updated);
   }
 
-  function handleDecrease(id: string) {
-    const nextItems = cartItems
-      .map((item) =>
-        item.id === id ? { ...item, quantity: item.quantity - 1 } : item
-      )
-      .filter((item) => item.quantity > 0);
-
-    syncCart(nextItems);
-  }
-
-  function handleIncrease(id: string) {
-    const menuItem = MENU_ITEMS.find((item) => item.id === id);
-    if (!menuItem) return;
-    handleAdd(menuItem);
-  }
-
-  function handleRemove(id: string) {
-    const nextItems = cartItems.filter((item) => item.id !== id);
-    syncCart(nextItems);
-  }
-
-  function getQuantity(id: string) {
-    return cartItems.find((item) => item.id === id)?.quantity ?? 0;
-  }
-
-  function handleNext() {
-    if (cartItems.length === 0) return;
-    router.push("/reserve/cart");
-  }
-
-  if (!loaded) {
-    return (
-      <main className="min-h-screen bg-stone-50 px-4 py-8">
-        <div className="mx-auto max-w-6xl rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-          <p className="text-sm text-stone-500">メニューを読み込み中です…</p>
-        </div>
-      </main>
-    );
+  if (!mounted) {
+    return null;
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 px-4 py-6 text-stone-800">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-4">
-          <p className="text-sm tracking-[0.2em] text-amber-700">RESERVE</p>
-          <h1 className="mt-1 text-2xl font-bold">メニューを選ぶ</h1>
-          <p className="mt-2 text-sm text-stone-600">
+    <main className="min-h-screen px-4 py-6">
+      <div className="mx-auto max-w-4xl">
+        <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
+          <div
+            style={{
+              color: "#8a6240",
+              letterSpacing: "0.2em",
+              fontSize: 15,
+              marginBottom: 14,
+            }}
+          >
+            RESERVE
+          </div>
+
+          <h1 style={{ marginBottom: 14 }}>メニューを選ぶ</h1>
+          <p style={{ fontSize: 18, marginBottom: 20 }}>
             ご希望の商品をカートに追加してください。
           </p>
-        </div>
 
-        <div className="mb-6 flex items-center gap-2 text-xs text-stone-500">
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-900">
-            1. メニュー
-          </span>
-          <span>→</span>
-          <span className="rounded-full bg-stone-200 px-3 py-1">2. カート</span>
-          <span>→</span>
-          <span className="rounded-full bg-stone-200 px-3 py-1">3. 日時</span>
-          <span>→</span>
-          <span className="rounded-full bg-stone-200 px-3 py-1">4. お客様情報</span>
-        </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: 12,
+              marginBottom: 22,
+            }}
+          >
+            {[
+              "1. メニュー",
+              "2. カート",
+              "3. 日時",
+              "4. お客様情報",
+            ].map((step, index) => (
+              <div
+                key={step}
+                style={{
+                  borderRadius: 999,
+                  padding: "14px 12px",
+                  textAlign: "center",
+                  fontWeight: 700,
+                  fontSize: 16,
+                  lineHeight: 1.4,
+                  background: index === 0 ? "#6f4a2b" : "rgba(89,70,48,0.08)",
+                  color: index === 0 ? "#fff" : "#6d6258",
+                  overflowWrap: "anywhere",
+                  wordBreak: "break-word",
+                }}
+              >
+                {step}
+              </div>
+            ))}
+          </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <section>
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-2">
-              {MENU_ITEMS.map((item) => (
-                <MenuCard
-                  key={item.id}
-                  item={item}
-                  quantity={getQuantity(item.id)}
-                  onAdd={handleAdd}
-                />
-              ))}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+              marginBottom: 16,
+            }}
+          >
+            <h2>お弁当</h2>
+            <Link
+              href="/reserve/cart"
+              className="inline-flex items-center justify-center bg-amber-900 text-white"
+              style={{
+                padding: "12px 18px",
+                borderRadius: 18,
+                minWidth: 170,
+              }}
+            >
+              カートを見る {cartCount > 0 ? `(${cartCount})` : ""}
+            </Link>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: 18,
+              marginBottom: 28,
+            }}
+          >
+            {BENTO_MENUS.map((item) => (
+              <MenuCard
+                key={item.id}
+                item={item}
+                cartQty={itemQtyMap.get(item.id) || 0}
+                onAdd={handleAdd}
+              />
+            ))}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+              marginBottom: 16,
+            }}
+          >
+            <h2>ドリンク</h2>
+            <div
+              style={{
+                color: "#6d6258",
+                fontSize: 15,
+              }}
+            >
+              一緒にご注文いただけます
             </div>
-          </section>
+          </div>
 
-          <aside className="space-y-5">
-            <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-semibold">カート</h2>
+          <div
+            style={{
+              display: "grid",
+              gap: 18,
+            }}
+          >
+            {DRINK_MENUS.map((item) => (
+              <MenuCard
+                key={item.id}
+                item={item}
+                cartQty={itemQtyMap.get(item.id) || 0}
+                onAdd={handleAdd}
+              />
+            ))}
+          </div>
 
-              {cartItems.length === 0 ? (
-                <div className="mt-4 rounded-2xl bg-stone-50 p-4 text-sm text-stone-500">
-                  まだ商品が入っていません。
+          <div
+            style={{
+              position: "sticky",
+              bottom: 12,
+              marginTop: 28,
+              paddingTop: 8,
+            }}
+          >
+            <div
+              style={{
+                borderRadius: 24,
+                background: "rgba(255,253,249,0.94)",
+                border: "1px solid rgba(189,167,142,0.4)",
+                boxShadow: "0 12px 28px rgba(79,56,33,0.10)",
+                padding: 14,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    color: "#6d6258",
+                    fontSize: 14,
+                    marginBottom: 4,
+                  }}
+                >
+                  現在のカート
                 </div>
-              ) : (
-                <div className="mt-4 space-y-4">
-                  {cartItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="border-b border-stone-100 pb-4 last:border-b-0 last:pb-0"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-medium">{item.name}</p>
-                          <p className="mt-1 text-xs text-stone-500">
-                            ¥{item.price.toLocaleString("ja-JP")} × {item.quantity}
-                          </p>
-                        </div>
-
-                        <p className="text-sm font-semibold">
-                          ¥{(item.price * item.quantity).toLocaleString("ja-JP")}
-                        </p>
-                      </div>
-
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleDecrease(item.id)}
-                            className="h-8 w-8 rounded-full border border-stone-300 text-sm hover:bg-stone-100"
-                          >
-                            －
-                          </button>
-                          <div className="min-w-[40px] text-center text-sm font-medium">
-                            {item.quantity}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleIncrease(item.id)}
-                            className="h-8 w-8 rounded-full border border-stone-300 text-sm hover:bg-stone-100"
-                          >
-                            ＋
-                          </button>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemove(item.id)}
-                          className="text-sm text-red-600 hover:opacity-80"
-                        >
-                          削除
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
-              <h2 className="text-base font-semibold">ご注文の合計</h2>
-
-              <div className="mt-4 space-y-3 text-sm text-stone-700">
-                <div className="flex items-center justify-between">
-                  <span>商品数</span>
-                  <span>{totalQuantity}点</span>
-                </div>
-                <div className="flex items-center justify-between text-base font-bold text-stone-900">
-                  <span>合計金額</span>
-                  <span>¥{totalAmount.toLocaleString("ja-JP")}</span>
+                <div
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: "#2d241c",
+                  }}
+                >
+                  {cartCount}点
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={cartItems.length === 0}
-                className="mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-amber-900 px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-stone-300"
-              >
-                カート確認へ進む
-              </button>
-
               <Link
-                href="/"
-                className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-stone-300 bg-white px-5 py-3 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
+                href="/reserve/cart"
+                className="inline-flex items-center justify-center bg-amber-900 text-white"
+                style={{
+                  padding: "14px 20px",
+                  borderRadius: 18,
+                  minWidth: 180,
+                }}
               >
-                トップへ戻る
+                カートへ進む
               </Link>
-            </section>
-          </aside>
-        </div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   );
