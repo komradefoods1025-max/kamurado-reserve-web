@@ -14,6 +14,19 @@ type MenuItem = {
   itemType?: "bento" | "drink";
 };
 
+type CartItem = {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  imageUrl?: string;
+  description?: string;
+  itemType?: "bento" | "drink";
+  selectedOptionLabel?: string;
+  selectedOptions?: string[];
+  note?: string;
+};
+
 type ReservationDraft = {
   items: CartItem[];
   pickupDate?: string;
