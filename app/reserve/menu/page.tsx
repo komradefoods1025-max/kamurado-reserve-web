@@ -8,7 +8,7 @@ type ReserveMenuItem = {
   id: string;
   name: string;
   price: number;
-  description: string;
+  description?: string;
   imageUrl?: string;
   label?: string;
   itemType?: "bento" | "drink";
