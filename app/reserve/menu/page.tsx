@@ -320,13 +320,13 @@ export default function ReserveMenuPage() {
             }}
           >
             {DRINK_MENUS.map((item) => (
-              <MenuCard
-  key={item.id}
-  item={item}
-  cartQty={getQuantity(item.id)}
-  onAdd={handleAdd}
-/>
-            ))}
+  <MenuCard
+    key={item.id}
+    item={item}
+    cartQty={itemQtyMap.get(item.id) || 0}
+    onAdd={handleAdd}
+  />
+))}
           </div>
 
           <div
