@@ -4,7 +4,7 @@ export type MenuItem = {
   id: string;
   name: string;
   price: number;
-  description: string;
+  description?: string;
   imageUrl?: string;
   label?: string;
   itemType?: "bento" | "drink";
@@ -133,7 +133,7 @@ export default function MenuCard({ item, cartQty, onAdd }: Props) {
             wordBreak: "break-word",
           }}
         >
-          {item.description}
+          {item.description ?? ""}
         </p>
 
         <div style={{ marginTop: "auto" }}>
