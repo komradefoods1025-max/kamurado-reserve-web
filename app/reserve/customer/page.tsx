@@ -115,18 +115,7 @@ function isValidJapanesePhone(phone: string) {
 }
 
 async function submitReservation(payload: Record<string, unknown>) {
-  const endpoint =
-    process.env.NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT ||
-    process.env.NEXT_PUBLIC_RESERVATION_SAVE_URL ||
-    "";
-
-  if (!endpoint) {
-    throw new Error(
-      "送信先URLが未設定です。NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT を設定してください。"
-    );
-  }
-
-  const res = await fetch(endpoint, {
+  const res = await fetch("/api/reservations", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
