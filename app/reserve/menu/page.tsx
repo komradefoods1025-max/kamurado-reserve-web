@@ -67,7 +67,6 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     label: "おすすめ",
     itemType: "bento",
   },
-  // 日替わり弁当は非表示にするため、あえて入れていません
 ];
 
 const DRINK_MENUS: ReserveMenuItem[] = [
@@ -103,9 +102,11 @@ const DRINK_MENUS: ReserveMenuItem[] = [
 
 function safeParseDraft(raw: string | null): ReservationDraft | null {
   if (!raw) return null;
+
   try {
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return null;
+
     return {
       items: Array.isArray(parsed.items) ? parsed.items : [],
       pickupDate: parsed.pickupDate || "",
@@ -176,7 +177,7 @@ export default function ReserveMenuPage() {
         price: item.price,
         quantity: 1,
         imageUrl: item.imageUrl || "",
-        description: item.description,
+        description: item.description || "",
         itemType: item.itemType || "bento",
         selectedOptionLabel: "",
         selectedOptions: [],
@@ -225,12 +226,7 @@ export default function ReserveMenuPage() {
               marginBottom: 22,
             }}
           >
-            {[
-              "1. メニュー",
-              "2. カート",
-              "3. 日時",
-              "4. お客様情報",
-            ].map((step, index) => (
+            {["1. メニュー", "2. カート", "3. 日時", "4. お客様情報"].map((step, index) => (
               <div
                 key={step}
                 style={{
@@ -320,13 +316,13 @@ export default function ReserveMenuPage() {
             }}
           >
             {DRINK_MENUS.map((item) => (
-  <MenuCard
-    key={item.id}
-    item={item}
-    cartQty={itemQtyMap.get(item.id) || 0}
-    onAdd={handleAdd}
-  />
-))}
+              <MenuCard
+                key={item.id}
+                item={item}
+                cartQty={itemQtyMap.get(item.id) || 0}
+                onAdd={handleAdd}
+              />
+            ))}
           </div>
 
           <div
