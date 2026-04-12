@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
     });
 
     const text = await response.text();
+console.log("GAS response text:", text);
 
     let data: unknown = {};
     try {
