@@ -1,8 +1,10 @@
 "use client";
 
+"use client";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import MenuCard, { MenuItem } from "@/components/MenuCard";
+import MenuCard, { type MenuItem } from "@/components/MenuCard";
 
 type CartItem = {
   id: string;
@@ -311,11 +313,11 @@ export default function ReserveMenuPage() {
           >
             {DRINK_MENUS.map((item) => (
               <MenuCard
-                key={item.id}
-                item={item}
-                cartQty={itemQtyMap.get(item.id) || 0}
-                onAdd={handleAdd}
-              />
+  key={item.id}
+  item={item}
+  cartQty={getQuantity(item.id)}
+  onAdd={handleAdd}
+/>
             ))}
           </div>
 
