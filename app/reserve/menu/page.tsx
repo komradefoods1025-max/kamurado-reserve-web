@@ -11,7 +11,7 @@ type ReserveMenuItem = {
   description?: string;
   imageUrl?: string;
   label?: string;
-  itemType?: "bento" | "drink";
+  itemType?: "bento" | "drink" | "extra";
 };
 
 type CartItem = {
@@ -21,7 +21,7 @@ type CartItem = {
   quantity: number;
   imageUrl?: string;
   description?: string;
-  itemType?: "bento" | "drink";
+  itemType?: "bento" | "drink" | "extra";
   selectedOptionLabel?: string;
   selectedOptions?: string[];
   note?: string;
@@ -46,26 +46,36 @@ const STORAGE_KEYS = [
 const BENTO_MENUS: ReserveMenuItem[] = [
   {
     id: "karaage_bento",
-    name: "唐揚げ弁当",
-    price: 780,
-    description: "定番人気。ジューシーな唐揚げをしっかり楽しめるお弁当です。",
+    name: "からあげ弁当",
+    price: 700,
+    description: "定番人気。外は香ばしく、中はジューシーに仕上げた定番のお弁当です。",
     label: "人気",
     itemType: "bento",
   },
   {
     id: "shogayaki_bento",
     name: "生姜焼き弁当",
-    price: 820,
+    price: 700,
     description: "ごはんが進む王道の味。やわらかいお肉と香りの良い生姜だれ。",
     itemType: "bento",
   },
   {
     id: "nanban_bento",
     name: "チキン南蛮弁当",
-    price: 850,
+    price: 900,
     description: "甘酢とタルタルの相性が抜群。満足感のある一品です。",
     label: "おすすめ",
     itemType: "bento",
+  },
+];
+
+const EXTRA_MENUS: ReserveMenuItem[] = [
+  {
+    id: "extra_karaage",
+    name: "追加唐揚げ",
+    price: 80,
+    description: "もう1個食べたい時に。1個から追加できます。",
+    itemType: "extra",
   },
 ];
 
@@ -279,6 +289,44 @@ export default function ReserveMenuPage() {
             }}
           >
             {BENTO_MENUS.map((item) => (
+              <MenuCard
+                key={item.id}
+                item={item}
+                cartQty={itemQtyMap.get(item.id) || 0}
+                onAdd={handleAdd}
+              />
+            ))}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+              marginBottom: 16,
+            }}
+          >
+            <h2>追加メニュー</h2>
+            <div
+              style={{
+                color: "#6d6258",
+                fontSize: 15,
+              }}
+            >
+              もう少し食べたい時に
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: 18,
+              marginBottom: 28,
+            }}
+          >
+            {EXTRA_MENUS.map((item) => (
               <MenuCard
                 key={item.id}
                 item={item}
