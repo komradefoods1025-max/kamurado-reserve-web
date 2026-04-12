@@ -171,7 +171,7 @@ export default function ReserveMenuPage() {
     return map;
   }, [draft.items]);
 
-  function handleAdd(item: ReserveMenuItem) {
+  function incrementItem(item: ReserveMenuItem) {
     const nextItems = [...draft.items];
     const index = nextItems.findIndex((cartItem) => cartItem.id === item.id);
 
@@ -194,6 +194,27 @@ export default function ReserveMenuPage() {
         note: "",
       });
     }
+
+    const updated: ReservationDraft = {
+      ...draft,
+      items: nextItems,
+    };
+
+    setDraft(updated);
+    writeDraft(updated);
+  }
+
+  function decrementItem(item: ReserveMenuItem) {
+    const nextItems = draft.items
+      .map((cartItem) =>
+        cartItem.id === item.id
+          ? {
+              ...cartItem,
+              quantity: Math.max(0, Number(cartItem.quantity || 0) - 1),
+            }
+          : cartItem
+      )
+      .filter((cartItem) => cartItem.quantity > 0);
 
     const updated: ReservationDraft = {
       ...draft,
@@ -293,7 +314,8 @@ export default function ReserveMenuPage() {
                 key={item.id}
                 item={item}
                 cartQty={itemQtyMap.get(item.id) || 0}
-                onAdd={handleAdd}
+                onIncrement={incrementItem}
+                onDecrement={decrementItem}
               />
             ))}
           </div>
@@ -331,7 +353,8 @@ export default function ReserveMenuPage() {
                 key={item.id}
                 item={item}
                 cartQty={itemQtyMap.get(item.id) || 0}
-                onAdd={handleAdd}
+                onIncrement={incrementItem}
+                onDecrement={decrementItem}
               />
             ))}
           </div>
@@ -368,7 +391,8 @@ export default function ReserveMenuPage() {
                 key={item.id}
                 item={item}
                 cartQty={itemQtyMap.get(item.id) || 0}
-                onAdd={handleAdd}
+                onIncrement={incrementItem}
+                onDecrement={decrementItem}
               />
             ))}
           </div>
