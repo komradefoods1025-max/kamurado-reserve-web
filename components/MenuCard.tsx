@@ -1,82 +1,168 @@
+"use client";
 
-type MenuItem = {
+export type MenuItem = {
   id: string;
   name: string;
   price: number;
-  description?: string;
+  description: string;
   imageUrl?: string;
-  isSoldOut?: boolean;
-  badge?: string;
+  label?: string;
+  itemType?: "bento" | "drink";
 };
 
-type MenuCardProps = {
+type Props = {
   item: MenuItem;
-  quantity?: number;
-  onAdd?: (item: MenuItem) => void;
+  cartQty: number;
+  onAdd: (item: MenuItem) => void;
 };
 
-export default function MenuCard({
-  item,
-  quantity = 0,
-  onAdd,
-}: MenuCardProps) {
+export default function MenuCard({ item, cartQty, onAdd }: Props) {
   return (
-    <div className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition hover:shadow-md">
-      <div className="relative aspect-[4/3] bg-stone-100">
-        {item.imageUrl ? (
+    <article
+      className="rounded-3xl border border-stone-200 bg-white"
+      style={{
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 420,
+      }}
+    >
+      <div
+        style={{
+          height: 160,
+          background:
+            item.imageUrl && item.imageUrl.trim()
+              ? "transparent"
+              : "linear-gradient(135deg, rgba(110,75,42,0.08), rgba(184,139,67,0.14))",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderBottom: "1px solid rgba(189,167,142,0.25)",
+          overflow: "hidden",
+        }}
+      >
+        {item.imageUrl && item.imageUrl.trim() ? (
           <img
             src={item.imageUrl}
             alt={item.name}
-            className="h-full w-full object-cover"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-sm text-stone-400">
-            NO IMAGE
+          <div
+            style={{
+              textAlign: "center",
+              color: "#8a6240",
+              fontWeight: 700,
+              letterSpacing: "0.12em",
+              fontSize: 14,
+            }}
+          >
+            KAMURADO
           </div>
         )}
-
-        {item.badge ? (
-          <div className="absolute left-3 top-3 rounded-full bg-amber-900 px-3 py-1 text-xs font-medium text-white">
-            {item.badge}
-          </div>
-        ) : null}
-
-        {item.isSoldOut ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/45">
-            <span className="rounded-full border border-white/30 bg-white/20 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm">
-              売り切れ
-            </span>
-          </div>
-        ) : null}
       </div>
 
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="text-lg font-bold text-stone-800">{item.name}</h3>
-          <p className="shrink-0 text-base font-bold text-amber-900">
+      <div
+        className="p-6"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          flex: 1,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <div style={{ minWidth: 0, flex: 1 }}>
+            {item.label ? (
+              <div
+                className="rounded-full bg-amber-900 text-white"
+                style={{
+                  display: "inline-flex",
+                  marginBottom: 12,
+                  fontSize: 13,
+                  padding: "7px 14px",
+                }}
+              >
+                {item.label}
+              </div>
+            ) : null}
+
+            <h3
+              style={{
+                fontSize: 22,
+                lineHeight: 1.35,
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
+              }}
+            >
+              {item.name}
+            </h3>
+          </div>
+
+          <div
+            style={{
+              flexShrink: 0,
+              color: "#b88b43",
+              fontWeight: 700,
+              fontSize: 18,
+              whiteSpace: "nowrap",
+            }}
+          >
             ¥{item.price.toLocaleString("ja-JP")}
-          </p>
+          </div>
         </div>
 
-        <p className="mt-2 min-h-[3rem] text-sm leading-6 text-stone-600">
-          {item.description || "こだわりの一品をお楽しみください。"}
+        <p
+          style={{
+            fontSize: 16,
+            lineHeight: 1.9,
+            minHeight: 88,
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
+          {item.description}
         </p>
 
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <div className="text-sm text-stone-500">
-            {quantity > 0 ? `カート内 ${quantity}点` : "カート追加できます"}
+        <div style={{ marginTop: "auto" }}>
+          <div
+            style={{
+              color: "#6d6258",
+              fontSize: 15,
+              marginBottom: 12,
+            }}
+          >
+            {cartQty > 0 ? `カート内 ${cartQty}点` : "カートに追加できます"}
           </div>
 
           <button
             type="button"
-            onClick={() => onAdd?.(item)}
-            disabled={item.isSoldOut}
-            className="rounded-2xl bg-amber-900 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-stone-300"
+            onClick={() => onAdd(item)}
+            className="inline-flex items-center justify-center bg-amber-900 text-white"
+            style={{
+              width: "100%",
+              padding: "14px 18px",
+              borderRadius: 18,
+              fontSize: 18,
+              fontWeight: 700,
+            }}
           >
-            {item.isSoldOut ? "受付停止中" : "カートに追加"}
+            カートに追加
           </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 }
