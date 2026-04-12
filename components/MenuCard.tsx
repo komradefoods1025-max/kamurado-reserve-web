@@ -9,6 +9,7 @@ export type MenuItem = {
   label?: string;
   itemType?: "bento" | "drink";
 };
+export default function MenuCard(...) {
 
 type Props = {
   item: MenuItem;
