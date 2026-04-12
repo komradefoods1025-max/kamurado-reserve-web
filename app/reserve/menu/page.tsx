@@ -2,19 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import MenuCard, { type MenuItem } from "../../../MenuCard";
+import MenuCard from "../../../MenuCard";
 
-type CartItem = {
+type MenuItem = {
   id: string;
   name: string;
   price: number;
-  quantity: number;
+  description: string;
   imageUrl?: string;
-  description?: string;
+  label?: string;
   itemType?: "bento" | "drink";
-  selectedOptionLabel?: string;
-  selectedOptions?: string[];
-  note?: string;
 };
 
 type ReservationDraft = {
