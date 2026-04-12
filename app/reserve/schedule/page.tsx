@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -28,25 +27,12 @@ type ReservationDraft = {
   totalQuantity?: number;
 };
 
-const CART_KEYS = [
-  "kamurado-web-cart",
-  "reservation-cart",
-  "reserve-cart",
-  "bento-cart",
-  "cart",
-];
-
 const DRAFT_KEYS = [
   "kamurado-web-reservation",
   "reservation-draft",
   "reserve-draft",
   "reservation",
 ];
-
-const OPEN_MINUTES = 11 * 60 + 30; // 11:30
-const CLOSE_MINUTES = 14 * 60; // 14:00
-const SLOT_INTERVAL = 15;
-const SAME_DAY_BUFFER_MINUTES = 30;
 
 function readJson<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -98,134 +84,60 @@ function formatDateLabel(ymd: string) {
   }).format(date);
 }
 
-function toMinutes(time: string) {
-  const [h, m] = time.split(":").map(Number);
-  return h * 60 + m;
-}
-
-function fromMinutes(minutes: number) {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${pad2(h)}:${pad2(m)}`;
-}
-
-function roundUpToInterval(minutes: number, interval: number) {
-  return Math.ceil(minutes / interval) * interval;
-}
-
-function generateTimeSlots() {
-  const slots: string[] = [];
-  for (let m = OPEN_MINUTES; m <= CLOSE_MINUTES; m += SLOT_INTERVAL) {
-    slots.push(fromMinutes(m));
-  }
-  return slots;
-}
-
-function generateFallbackDates(count: number) {
+function generateDates(count: number) {
   const dates: string[] = [];
-  const base = new Date();
+  const today = new Date();
 
-  for (let i = 0; i < 31 && dates.length < count; i += 1) {
-    const date = new Date(base);
-    date.setDate(base.getDate() + i);
+  for (let i = 0; i < count; i += 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
     dates.push(formatDateToYmd(date));
   }
 
   return dates;
 }
 
-async function fetchAvailableDates(): Promise<string[]> {
-  const bookingConfigUrl = process.env.NEXT_PUBLIC_BOOKING_CONFIG_URL || "";
-  const fallbackCount = Number(process.env.NEXT_PUBLIC_BOOKABLE_DATE_COUNT || 10);
-
-  if (!bookingConfigUrl) {
-    return generateFallbackDates(fallbackCount);
-  }
-
-  try {
-    const res = await fetch(bookingConfigUrl, { cache: "no-store" });
-    const data = await res.json();
-
-    const dates = data?.availableDates ?? data?.dates ?? data?.bookableDates ?? [];
-
-    if (Array.isArray(dates) && dates.length > 0) {
-      return dates.map(String);
-    }
-
-    const count = Number(data?.bookableDateCount ?? fallbackCount);
-    return generateFallbackDates(count);
-  } catch {
-    return generateFallbackDates(fallbackCount);
-  }
+function generateTimeSlots() {
+  return [
+    "11:30",
+    "11:45",
+    "12:00",
+    "12:15",
+    "12:30",
+    "12:45",
+    "13:00",
+    "13:15",
+    "13:30",
+    "13:45",
+    "14:00",
+  ];
 }
 
 export default function ReserveSchedulePage() {
   const router = useRouter();
   const [draft, setDraft] = useState<ReservationDraft>({ items: [] });
   const [loaded, setLoaded] = useState(false);
-  const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
-  const [now, setNow] = useState<Date | null>(null);
+
+  const availableDates = useMemo(() => generateDates(10), []);
+  const availableTimes = useMemo(() => generateTimeSlots(), []);
 
   useEffect(() => {
-    let mounted = true;
+    const currentDraft = readFirstAvailableJson<ReservationDraft>(DRAFT_KEYS, {
+      items: [],
+    });
 
-    async function init() {
-      const cartItems = readFirstAvailableJson<CartItem[]>(CART_KEYS, []);
-      const currentDraft = readFirstAvailableJson<ReservationDraft>(DRAFT_KEYS, {
-        items: cartItems,
-      });
-
-      const dates = await fetchAvailableDates();
-
-      if (!mounted) return;
-
-      setNow(new Date());
-      setDraft({
-        ...currentDraft,
-        items: currentDraft.items?.length ? currentDraft.items : cartItems,
-      });
-      setAvailableDates(dates);
-      setSelectedDate(currentDraft.pickupDate ?? dates[0] ?? "");
-      setSelectedTime(currentDraft.pickupTime ?? "");
-      setLoaded(true);
-    }
-
-    init();
-
-    return () => {
-      mounted = false;
-    };
+    setDraft(currentDraft);
+    setSelectedDate(currentDraft.pickupDate || generateDates(10)[0] || "");
+    setSelectedTime(currentDraft.pickupTime || "");
+    setLoaded(true);
   }, []);
 
   const cartCount = useMemo(
-    () => draft.items.reduce((sum, item) => sum + item.quantity, 0),
+    () => (draft.items || []).reduce((sum, item) => sum + item.quantity, 0),
     [draft.items]
   );
-
-  const availableTimes = useMemo(() => {
-    const slots = generateTimeSlots();
-
-    if (!selectedDate || !now) return slots;
-
-    const today = formatDateToYmd(now);
-    if (selectedDate !== today) return slots;
-
-    const minAllowed = roundUpToInterval(
-      now.getHours() * 60 + now.getMinutes() + SAME_DAY_BUFFER_MINUTES,
-      SLOT_INTERVAL
-    );
-
-    return slots.filter((slot) => toMinutes(slot) >= minAllowed);
-  }, [selectedDate, now]);
-
-  useEffect(() => {
-    if (!selectedTime) return;
-    if (!availableTimes.includes(selectedTime)) {
-      setSelectedTime("");
-    }
-  }, [availableTimes, selectedTime]);
 
   function handleNext() {
     if (!selectedDate || !selectedTime) return;
@@ -296,7 +208,9 @@ export default function ReserveSchedulePage() {
             3. 日時
           </span>
           <span>→</span>
-          <span className="rounded-full bg-stone-200 px-3 py-1">4. お客様情報</span>
+          <span className="rounded-full bg-stone-200 px-3 py-1">
+            4. お客様情報
+          </span>
         </div>
 
         <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
@@ -339,44 +253,30 @@ export default function ReserveSchedulePage() {
         <section className="mt-5 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold">受取時間</h2>
           <p className="mt-1 text-sm text-stone-600">
-            {selectedDate
-              ? "ご希望の受取時間を選択してください。"
-              : "先に受取日を選択してください。"}
+            ご希望の受取時間を選択してください。
           </p>
 
-          {selectedDate ? (
-            availableTimes.length > 0 ? (
-              <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
-                {availableTimes.map((time) => {
-                  const active = selectedTime === time;
+          <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+            {availableTimes.map((time) => {
+              const active = selectedTime === time;
 
-                  return (
-                    <button
-                      key={time}
-                      type="button"
-                      onClick={() => setSelectedTime(time)}
-                      className={[
-                        "rounded-2xl border px-4 py-3 text-center text-sm font-medium transition",
-                        active
-                          ? "border-amber-800 bg-amber-900 text-white"
-                          : "border-stone-200 bg-stone-50 hover:bg-stone-100",
-                      ].join(" ")}
-                    >
-                      {time}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="mt-4 rounded-2xl bg-red-50 px-4 py-4 text-sm text-red-700">
-                当日の受付可能時間がありません。別の日付をお選びください。
-              </div>
-            )
-          ) : (
-            <div className="mt-4 rounded-2xl bg-stone-100 px-4 py-4 text-sm text-stone-500">
-              日付を選択すると時間が表示されます。
-            </div>
-          )}
+              return (
+                <button
+                  key={time}
+                  type="button"
+                  onClick={() => setSelectedTime(time)}
+                  className={[
+                    "rounded-2xl border px-4 py-3 text-center text-sm font-medium transition",
+                    active
+                      ? "border-amber-800 bg-amber-900 text-white"
+                      : "border-stone-200 bg-stone-50 hover:bg-stone-100",
+                  ].join(" ")}
+                >
+                  {time}
+                </button>
+              );
+            })}
+          </div>
         </section>
 
         <section className="mt-5 rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
