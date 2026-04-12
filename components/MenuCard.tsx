@@ -172,7 +172,6 @@ export default function MenuCard({
                   fontSize: 28,
                   background: "#fffdf9",
                 }}
-                aria-label={`${item.name}を1つ減らす`}
               >
                 −
               </button>
@@ -199,7 +198,6 @@ export default function MenuCard({
                   borderRadius: 18,
                   fontSize: 28,
                 }}
-                aria-label={`${item.name}を1つ増やす`}
               >
                 ＋
               </button>
