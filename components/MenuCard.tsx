@@ -7,16 +7,22 @@ export type MenuItem = {
   description?: string;
   imageUrl?: string;
   label?: string;
-  itemType?: "bento" | "drink";
+  itemType?: "bento" | "drink" | "extra";
 };
 
 type Props = {
   item: MenuItem;
   cartQty: number;
-  onAdd: (item: MenuItem) => void;
+  onIncrement: (item: MenuItem) => void;
+  onDecrement: (item: MenuItem) => void;
 };
 
-export default function MenuCard({ item, cartQty, onAdd }: Props) {
+export default function MenuCard({
+  item,
+  cartQty,
+  onIncrement,
+  onDecrement,
+}: Props) {
   return (
     <article
       className="rounded-3xl border border-stone-200 bg-white"
@@ -147,20 +153,73 @@ export default function MenuCard({ item, cartQty, onAdd }: Props) {
             {cartQty > 0 ? `カート内 ${cartQty}点` : "カートに追加できます"}
           </div>
 
-          <button
-            type="button"
-            onClick={() => onAdd(item)}
-            className="inline-flex items-center justify-center bg-amber-900 text-white"
-            style={{
-              width: "100%",
-              padding: "14px 18px",
-              borderRadius: 18,
-              fontSize: 18,
-              fontWeight: 700,
-            }}
-          >
-            カートに追加
-          </button>
+          {cartQty > 0 ? (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => onDecrement(item)}
+                className="inline-flex items-center justify-center border"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 18,
+                  fontSize: 28,
+                  background: "#fffdf9",
+                }}
+                aria-label={`${item.name}を1つ減らす`}
+              >
+                −
+              </button>
+
+              <div
+                style={{
+                  minWidth: 60,
+                  textAlign: "center",
+                  fontSize: 28,
+                  fontWeight: 700,
+                  color: "#2d241c",
+                }}
+              >
+                {cartQty}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onIncrement(item)}
+                className="inline-flex items-center justify-center bg-amber-900 text-white"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 18,
+                  fontSize: 28,
+                }}
+                aria-label={`${item.name}を1つ増やす`}
+              >
+                ＋
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onIncrement(item)}
+              className="inline-flex items-center justify-center bg-amber-900 text-white"
+              style={{
+                width: "100%",
+                padding: "14px 18px",
+                borderRadius: 18,
+                fontSize: 18,
+                fontWeight: 700,
+              }}
+            >
+              カートに追加
+            </button>
+          )}
         </div>
       </div>
     </article>
