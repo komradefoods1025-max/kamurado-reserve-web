@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import MenuCard from "../../../MenuCard";
 
-type MenuItem = {
+type ReserveMenuItem = {
   id: string;
   name: string;
   price: number;
@@ -43,7 +43,7 @@ const STORAGE_KEYS = [
   "webReservationDraft",
 ];
 
-const BENTO_MENUS: MenuItem[] = [
+const BENTO_MENUS: ReserveMenuItem[] = [
   {
     id: "karaage_bento",
     name: "唐揚げ弁当",
@@ -70,7 +70,7 @@ const BENTO_MENUS: MenuItem[] = [
   // 日替わり弁当は非表示にするため、あえて入れていません
 ];
 
-const DRINK_MENUS: MenuItem[] = [
+const DRINK_MENUS: ReserveMenuItem[] = [
   {
     id: "drink_irohasu",
     name: "いろはす",
@@ -160,7 +160,7 @@ export default function ReserveMenuPage() {
     return map;
   }, [draft.items]);
 
-  function handleAdd(item: MenuItem) {
+  function handleAdd(item: ReserveMenuItem) {
     const nextItems = [...draft.items];
     const index = nextItems.findIndex((cartItem) => cartItem.id === item.id);
 
