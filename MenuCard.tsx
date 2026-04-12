@@ -7,7 +7,7 @@ export type MenuItem = {
   description?: string;
   imageUrl?: string;
   label?: string;
-  itemType?: "bento" | "drink";
+  itemType?: "bento" | "drink" | "extra";
 };
 
 type Props = {
