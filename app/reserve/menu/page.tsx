@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import MenuCard, { type MenuItem } from "../../../components/MenuCard";
+import MenuCard, { type MenuItem } from "../../../MenuCard";
 
 type CartItem = {
   id: string;
