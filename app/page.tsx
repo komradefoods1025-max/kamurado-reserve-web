@@ -5,31 +5,35 @@ const FLOW_STEPS = [
     step: "STEP 1",
     title: "メニューを選ぶ",
     body: "お弁当・追加メニュー・ドリンクをお選びいただけます。",
+    tone: "bg-[#fffaf2] border-[#ead8ba]",
   },
   {
     step: "STEP 2",
     title: "受取日時を選ぶ",
     body: "ご希望の日付と時間を選択してください。",
+    tone: "bg-[#fff8ee] border-[#e7d3b2]",
   },
   {
     step: "STEP 3",
     title: "お客様情報を入力",
     body: "お名前とお電話番号を入力して確認へ進みます。",
+    tone: "bg-[#fffaf4] border-[#e8d9c1]",
   },
   {
     step: "STEP 4",
     title: "予約を確定",
     body: "内容確認後、そのままご予約完了になります。",
+    tone: "bg-[#fff9f1] border-[#e9d6b8]",
   },
 ];
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#f6f0e6] px-4 py-6 text-stone-800">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f7f1e7_0%,#f3eadc_100%)] px-4 py-6 text-stone-800">
       <div className="mx-auto max-w-5xl">
-        <section className="overflow-hidden rounded-[32px] border border-[#e4d5bd] bg-[#fbf7ef] shadow-[0_16px_50px_rgba(88,63,39,0.08)]">
-          <div className="border-b border-[#eadfcf] px-6 pb-5 pt-6 sm:px-8 sm:pb-6 sm:pt-8">
-            <div className="mb-5 text-[15px] tracking-[0.18em] text-[#8a6240]">
+        <section className="overflow-hidden rounded-[32px] border border-[#e3d0b0] bg-[#fbf6ed] shadow-[0_18px_55px_rgba(96,66,34,0.10)]">
+          <div className="border-b border-[#ead8bc] bg-[linear-gradient(135deg,rgba(255,250,241,0.96),rgba(246,236,219,0.92))] px-6 pb-6 pt-6 sm:px-8 sm:pb-8 sm:pt-8">
+            <div className="mb-5 inline-flex rounded-full border border-[#dec39d] bg-[#f7ead5] px-4 py-2 text-[14px] tracking-[0.18em] text-[#8a6240]">
               KAMURADO RESERVE
             </div>
 
@@ -50,8 +54,8 @@ export default function HomePage() {
                 </p>
               </div>
 
-              <div className="rounded-[28px] border border-[#eadfcf] bg-[linear-gradient(135deg,#f7efdf,#efe3cf)] p-5 sm:p-6">
-                <div className="mb-3 text-[14px] font-semibold tracking-[0.16em] text-[#8a6240]">
+              <div className="rounded-[28px] border border-[#e3ceb0] bg-[linear-gradient(135deg,#f5e6cf,#efe0c7)] p-5 shadow-[0_10px_26px_rgba(120,84,44,0.08)] sm:p-6">
+                <div className="mb-3 inline-flex rounded-full bg-[#8b5d34] px-3 py-1 text-[13px] font-semibold tracking-[0.14em] text-white">
                   ご案内
                 </div>
 
@@ -66,14 +70,14 @@ export default function HomePage() {
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               <Link
                 href="/reserve/menu"
-                className="inline-flex min-h-[64px] items-center justify-center rounded-[22px] bg-[#8b5d34] px-6 py-4 text-center text-[24px] font-bold text-white shadow-[0_10px_24px_rgba(139,93,52,0.22)] transition hover:opacity-95"
+                className="inline-flex min-h-[64px] items-center justify-center rounded-[22px] bg-[linear-gradient(135deg,#8b5d34,#9f7248)] px-6 py-4 text-center text-[24px] font-bold text-white shadow-[0_12px_28px_rgba(139,93,52,0.25)] transition hover:opacity-95"
               >
                 ご予約をはじめる
               </Link>
 
               <a
                 href="#guide"
-                className="inline-flex min-h-[64px] items-center justify-center rounded-[22px] border border-[#d9c7aa] bg-white px-6 py-4 text-center text-[24px] font-bold text-[#3f3125] transition hover:bg-[#f8f3eb]"
+                className="inline-flex min-h-[64px] items-center justify-center rounded-[22px] border border-[#d7c09c] bg-[linear-gradient(180deg,#fffdfa,#f8f1e5)] px-6 py-4 text-center text-[24px] font-bold text-[#3f3125] shadow-[0_8px_22px_rgba(88,63,39,0.06)] transition hover:bg-[#f8f3eb]"
               >
                 ご利用案内を見る
               </a>
@@ -83,10 +87,10 @@ export default function HomePage() {
           <div className="px-6 py-6 sm:px-8 sm:py-8">
             <section className="mb-8">
               <div className="mb-5 flex items-center justify-between gap-4">
-                <h2 className="text-[34px] font-bold leading-tight text-[#221a14] sm:text-[40px]">
+                <h2 className="text-[34px] font-bold leading-tight text-[#2c221b] sm:text-[40px]">
                   RESERVATION FLOW
                 </h2>
-                <div className="hidden rounded-full bg-[#efe5d6] px-4 py-2 text-[13px] font-semibold tracking-[0.14em] text-[#8a6240] sm:block">
+                <div className="hidden rounded-full border border-[#e2cba8] bg-[#f3e5cf] px-4 py-2 text-[13px] font-semibold tracking-[0.14em] text-[#8a6240] sm:block">
                   4 STEPS
                 </div>
               </div>
@@ -95,9 +99,9 @@ export default function HomePage() {
                 {FLOW_STEPS.map((item) => (
                   <article
                     key={item.step}
-                    className="rounded-[26px] border border-[#eadfcf] bg-white p-5 shadow-[0_8px_26px_rgba(88,63,39,0.05)]"
+                    className={`rounded-[26px] border p-5 shadow-[0_8px_26px_rgba(88,63,39,0.05)] ${item.tone}`}
                   >
-                    <div className="mb-3 text-[14px] font-semibold tracking-[0.14em] text-[#9a7a57]">
+                    <div className="mb-3 inline-flex rounded-full bg-[#f0dfc7] px-3 py-1 text-[13px] font-semibold tracking-[0.14em] text-[#8a6240]">
                       {item.step}
                     </div>
                     <h3 className="mb-3 text-[28px] font-bold leading-[1.35] text-[#2a211b]">
@@ -112,8 +116,8 @@ export default function HomePage() {
             </section>
 
             <section id="guide" className="grid gap-4 md:grid-cols-2">
-              <article className="rounded-[26px] border border-[#eadfcf] bg-[#fffdfa] p-5">
-                <div className="mb-3 text-[14px] font-semibold tracking-[0.14em] text-[#9a7a57]">
+              <article className="rounded-[26px] border border-[#ead7b7] bg-[linear-gradient(180deg,#fffdfa,#fbf2e4)] p-5 shadow-[0_8px_24px_rgba(88,63,39,0.05)]">
+                <div className="mb-3 inline-flex rounded-full bg-[#f1e0c8] px-3 py-1 text-[13px] font-semibold tracking-[0.14em] text-[#8a6240]">
                   GUIDE
                 </div>
                 <h3 className="mb-3 text-[28px] font-bold text-[#2a211b]">
@@ -126,8 +130,8 @@ export default function HomePage() {
                 </ul>
               </article>
 
-              <article className="rounded-[26px] border border-[#eadfcf] bg-[#fffdfa] p-5">
-                <div className="mb-3 text-[14px] font-semibold tracking-[0.14em] text-[#9a7a57]">
+              <article className="rounded-[26px] border border-[#e8d4b2] bg-[linear-gradient(180deg,#fffdf9,#f8efe0)] p-5 shadow-[0_8px_24px_rgba(88,63,39,0.05)]">
+                <div className="mb-3 inline-flex rounded-full bg-[#f3e3cd] px-3 py-1 text-[13px] font-semibold tracking-[0.14em] text-[#8a6240]">
                   INFO
                 </div>
                 <h3 className="mb-3 text-[28px] font-bold text-[#2a211b]">
