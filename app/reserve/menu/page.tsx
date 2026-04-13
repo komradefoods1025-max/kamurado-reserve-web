@@ -20,13 +20,18 @@ type CartMap = Record<string, number>;
 const STORAGE_KEY = 'kamurado-reservation-cart';
 
 /**
- * ここを実際の「受取日時選択ページ」のURLに合わせて変更してね
- * 例:
- * /reserve/datetime
- * /reserve/pickup
- * /reserve/date-time
+ * 実在する「受取日時ページ」を自動で探す候補
+ * ここにあるどれかのURLが存在すれば、そこへ遷移する
+ * もし全部404なら、この配列に実際のURLを追加してね
  */
-const NEXT_STEP_PATH = '/reserve/datetime';
+const NEXT_STEP_CANDIDATES = [
+  '/reserve/datetime',
+  '/reserve/date-time',
+  '/reserve/pickup',
+  '/reserve/schedule',
+  '/reserve/date',
+  '/reserve/receive-datetime',
+];
 
 const ITEMS: MenuItem[] = [
   {
@@ -92,7 +97,7 @@ const ITEMS: MenuItem[] = [
     name: 'コカ・コーラ',
     price: 200,
     imageUrl:
-      'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e382b3e383bce383a9.jpg',
+      'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e382b3e383bce383a9-1.jpg',
     description: '炭酸の爽快感で食事がもっと楽しく',
     category: 'drink',
   },
@@ -154,6 +159,25 @@ function formatPrice(value: number) {
   return `¥${value.toLocaleString('ja-JP')}`;
 }
 
+async function resolveNextStepPath() {
+  for (const path of NEXT_STEP_CANDIDATES) {
+    try {
+      const response = await fetch(path, {
+        method: 'HEAD',
+        cache: 'no-store',
+      });
+
+      if (response.ok) {
+        return path;
+      }
+    } catch (error) {
+      console.error(`Path check failed: ${path}`, error);
+    }
+  }
+
+  return null;
+}
+
 function QuantityButton({
   label,
   onClick,
@@ -188,6 +212,7 @@ export default function ReserveMenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<MenuCategory | 'all'>('all');
   const [mounted, setMounted] = useState(false);
   const [hoveredButtonId, setHoveredButtonId] = useState<string | null>(null);
+  const [isRouting, setIsRouting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -225,6 +250,7 @@ export default function ReserveMenuPage() {
       .map(([id, quantity]) => {
         const item = ITEMS.find((menu) => menu.id === id);
         if (!item || quantity <= 0) return null;
+
         return {
           ...item,
           quantity,
@@ -279,15 +305,29 @@ export default function ReserveMenuPage() {
     });
   };
 
-  const handleNext = () => {
-    if (totalCount === 0) return;
+  const handleNext = async () => {
+    if (totalCount === 0 || isRouting) return;
+
+    setIsRouting(true);
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
-      router.push(NEXT_STEP_PATH);
+
+      const nextPath = await resolveNextStepPath();
+
+      if (!nextPath) {
+        alert(
+          '受取日時ページが見つかりませんでした。\napp/reserve 配下の日時ページのフォルダ名に合わせて NEXT_STEP_CANDIDATES を修正してください。'
+        );
+        return;
+      }
+
+      router.push(nextPath);
     } catch (error) {
       console.error('Failed to move next step:', error);
       alert('次の画面へ進めませんでした。もう一度お試しください。');
+    } finally {
+      setIsRouting(false);
     }
   };
 
@@ -295,7 +335,7 @@ export default function ReserveMenuPage() {
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8f3eb_0%,#f2eadf_48%,#eee2d2_100%)] text-stone-800">
       <div
         className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8 lg:pb-10"
-        style={{ paddingBottom: 'calc(160px + env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'calc(108px + env(safe-area-inset-bottom))' }}
       >
         <div className="mb-6 overflow-hidden rounded-[28px] border border-amber-900/10 bg-white/70 shadow-[0_20px_60px_rgba(60,35,10,0.08)] backdrop-blur">
           <div className="bg-[linear-gradient(135deg,rgba(73,44,23,0.96),rgba(98,64,40,0.92))] px-5 py-6 text-white sm:px-8">
@@ -525,7 +565,7 @@ export default function ReserveMenuPage() {
                   </div>
                 )}
 
-                <div className="mt-5 rounded-2xl bg-[linear-gradient(180deg,#faf7f2,#f3ece2)] p-4">
+                <div className="mt-4 rounded-2xl bg-[linear-gradient(180deg,#faf7f2,#f3ece2)] p-4">
                   <div className="flex items-center justify-between text-sm text-stone-600">
                     <span>点数</span>
                     <span>{totalCount}点</span>
@@ -541,10 +581,10 @@ export default function ReserveMenuPage() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  disabled={cartLines.length === 0}
-                  className="mt-5 w-full rounded-2xl border px-4 py-4 text-sm font-bold transition disabled:cursor-not-allowed"
+                  disabled={cartLines.length === 0 || isRouting}
+                  className="mt-4 w-full rounded-2xl border px-4 py-4 text-sm font-bold transition disabled:cursor-not-allowed"
                   style={
-                    cartLines.length === 0
+                    cartLines.length === 0 || isRouting
                       ? {
                           backgroundColor: '#d6d3d1',
                           color: '#ffffff',
@@ -558,7 +598,7 @@ export default function ReserveMenuPage() {
                       : solidBrownStyle
                   }
                 >
-                  受取日時の選択へ進む
+                  {isRouting ? '移動中...' : '受取日時の選択へ進む'}
                 </button>
 
                 <p className="mt-3 text-center text-xs leading-5 text-stone-500">
@@ -572,7 +612,7 @@ export default function ReserveMenuPage() {
 
       <div
         className="fixed inset-x-0 bottom-0 z-30 px-3 lg:hidden"
-        style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'calc(8px + env(safe-area-inset-bottom))' }}
       >
         <div className="mx-auto max-w-7xl rounded-[24px] border border-amber-900/10 bg-white/95 p-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur">
           <div className="flex items-center justify-between gap-3">
@@ -589,10 +629,10 @@ export default function ReserveMenuPage() {
             <button
               type="button"
               onClick={handleNext}
-              disabled={cartLines.length === 0}
+              disabled={cartLines.length === 0 || isRouting}
               className="shrink-0 rounded-2xl border px-5 py-3 text-sm font-bold transition disabled:cursor-not-allowed"
               style={
-                cartLines.length === 0
+                cartLines.length === 0 || isRouting
                   ? {
                       backgroundColor: '#d6d3d1',
                       color: '#ffffff',
@@ -606,7 +646,7 @@ export default function ReserveMenuPage() {
                   : solidBrownStyle
               }
             >
-              日時へ
+              {isRouting ? '移動中...' : '日時へ'}
             </button>
           </div>
         </div>
