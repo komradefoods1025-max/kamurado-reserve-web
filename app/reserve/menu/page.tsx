@@ -28,16 +28,13 @@ const STORAGE_KEY = 'kamurado-reservation-cart';
  */
 const NEXT_STEP_PATH = '/reserve/customer';
 
-/**
- * 画像URLは今使っているものに差し替えてOK
- * imageUrl が空でも画面は崩れないようにしてある
- */
 const ITEMS: MenuItem[] = [
   {
     id: 'karaage-bento',
     name: 'からあげ弁当',
     price: 700,
-    imageUrl: 'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e59490e68f9ae38192.jpeg',
+    imageUrl:
+      'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e59490e68f9ae38192.jpeg',
     description: '外はカリッと、中はジューシー。定番人気のお弁当です。',
     category: 'bento',
     badge: '人気',
@@ -46,7 +43,8 @@ const ITEMS: MenuItem[] = [
     id: 'shogayaki-bento',
     name: '生姜焼き弁当',
     price: 700,
-    imageUrl: 'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/5.png',
+    imageUrl:
+      'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/5.png',
     description: '生姜の香りと旨みがしっかり広がる、ご飯が進む一品。',
     category: 'bento',
     badge: 'おすすめ',
@@ -55,7 +53,8 @@ const ITEMS: MenuItem[] = [
     id: 'chicken-nanban-bento',
     name: 'チキン南蛮弁当',
     price: 900,
-    imageUrl: 'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/3.png',
+    imageUrl:
+      'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/3.png',
     description: 'コクのある味わいで満足感しっかり。食べ応えのある一品。',
     category: 'bento',
     badge: '満足感',
@@ -64,45 +63,46 @@ const ITEMS: MenuItem[] = [
     id: 'extra-karaage',
     name: '追加唐揚げ',
     price: 80,
-    imageUrl: 'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/photo_2026-03-22_14-58-55.jpg',
+    imageUrl:
+      'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/photo_2026-03-22_14-58-55.jpg',
     description: 'あと一品ほしい時にぴったり。1個から追加できます。',
     category: 'extra',
     badge: '追加',
   },
-
-  /**
-   * ドリンク4種は今の登録内容に合わせて name / price / imageUrl を調整してね
-   */
   {
     id: 'drink-1',
     name: 'いろはす',
     price: 150,
-    imageUrl: 'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e6b0b4-1.jpg',
-    description: 'すっきり飲みやすいミネラルウォーター’,
+    imageUrl:
+      'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e6b0b4-1.jpg',
+    description: 'すっきり飲みやすいミネラルウォーター',
     category: 'drink',
   },
   {
     id: 'drink-2',
-    name: ‘やかんの’麦茶,
+    name: 'やかんの麦茶',
     price: 200,
-    imageUrl: 'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/518rlhbonql.jpg',
-    description: 'お弁当と相性のよい定番ドリンク’,
+    imageUrl:
+      'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/518rlhbonql.jpg',
+    description: 'お弁当と相性のよい定番ドリンク',
     category: 'drink',
   },
   {
     id: 'drink-3',
-    name: ‘コカ・コーラ',
+    name: 'コカ・コーラ',
     price: 200,
-    imageUrl: 'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e382b3e383bce383a9.jpg',
+    imageUrl:
+      'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e382b3e383bce383a9.jpg',
     description: '炭酸の爽快感で食事がもっと楽しく',
     category: 'drink',
   },
   {
     id: 'drink-4',
-    name: ‘コカ・’コーラゼロ,
+    name: 'コカ・コーラゼロ',
     price: 200,
-    imageUrl: 'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/mono62457659-240314-02.jpg',
-    description: ‘ゼロシュガー・ゼロカロリー’,
+    imageUrl:
+      'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/mono62457659-240314-02.jpg',
+    description: 'ゼロシュガー・ゼロカロリー',
     category: 'drink',
   },
 ];
@@ -199,20 +199,6 @@ export default function ReserveMenuPage() {
   const totalPrice = useMemo(() => {
     return cartLines.reduce((sum, line) => sum + line.lineTotal, 0);
   }, [cartLines]);
-
-  const setItemQuantity = (itemId: string, nextQuantity: number) => {
-    setCart((prev) => {
-      const next = { ...prev };
-
-      if (nextQuantity <= 0) {
-        delete next[itemId];
-        return next;
-      }
-
-      next[itemId] = nextQuantity;
-      return next;
-    });
-  };
 
   const addItem = (itemId: string) => {
     setCart((prev) => ({
