@@ -18,19 +18,7 @@ type MenuItem = {
 type CartMap = Record<string, number>;
 
 const STORAGE_KEY = 'kamurado-reservation-cart';
-
-/**
- * 実在する「受取日時ページ」を自動で探す候補
- * ここにあるどれかのURLが存在すれば、そこへ遷移する
- */
-const NEXT_STEP_CANDIDATES = [
-  '/reserve/datetime',
-  '/reserve/date-time',
-  '/reserve/pickup',
-  '/reserve/schedule',
-  '/reserve/date',
-  '/reserve/receive-datetime',
-];
+const NEXT_STEP_PATH = '/reserve/schedule';
 
 const ITEMS: MenuItem[] = [
   {
@@ -156,25 +144,6 @@ const activeCategoryStyle: CSSProperties = {
 
 function formatPrice(value: number) {
   return `¥${value.toLocaleString('ja-JP')}`;
-}
-
-async function resolveNextStepPath() {
-  for (const path of NEXT_STEP_CANDIDATES) {
-    try {
-      const response = await fetch(path, {
-        method: 'HEAD',
-        cache: 'no-store',
-      });
-
-      if (response.ok) {
-        return path;
-      }
-    } catch (error) {
-      console.error(`Path check failed: ${path}`, error);
-    }
-  }
-
-  return null;
 }
 
 function QuantityButton({
@@ -304,31 +273,21 @@ export default function ReserveMenuPage() {
     });
   };
 
-  const handleNext = async () => {
-    if (totalCount === 0 || isRouting) return;
+  const handleNext = () => {
+  if (totalCount === 0 || isRouting) return;
 
-    setIsRouting(true);
+  setIsRouting(true);
 
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
-
-      const nextPath = await resolveNextStepPath();
-
-      if (!nextPath) {
-        alert(
-          '受取日時ページが見つかりませんでした。\napp/reserve 配下の日時ページのフォルダ名に合わせて NEXT_STEP_CANDIDATES を修正してください。'
-        );
-        return;
-      }
-
-      router.push(nextPath);
-    } catch (error) {
-      console.error('Failed to move next step:', error);
-      alert('次の画面へ進めませんでした。もう一度お試しください。');
-    } finally {
-      setIsRouting(false);
-    }
-  };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
+    router.push(NEXT_STEP_PATH);
+  } catch (error) {
+    console.error('Failed to move next step:', error);
+    alert('次の画面へ進めませんでした。もう一度お試しください。');
+  } finally {
+    setIsRouting(false);
+  }
+};
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8f3eb_0%,#f2eadf_48%,#eee2d2_100%)] text-stone-800">
