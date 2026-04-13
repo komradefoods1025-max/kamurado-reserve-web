@@ -19,13 +19,6 @@ type CartMap = Record<string, number>;
 
 const STORAGE_KEY = 'kamurado-reservation-cart';
 
-/**
- * ここだけ今のアプリの次画面URLに合わせて変更してね
- * 例:
- * /reserve/customer
- * /reserve/form
- * /reserve/confirm
- */
 const NEXT_STEP_PATH = '/reserve/customer';
 
 const ITEMS: MenuItem[] = [
@@ -132,7 +125,7 @@ function QuantityButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white text-lg font-semibold text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+      className="appearance-none flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white text-lg font-semibold text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
       aria-label={label}
     >
       {label}
@@ -274,10 +267,10 @@ export default function ReserveMenuPage() {
                     type="button"
                     onClick={() => setSelectedCategory(category)}
                     className={[
-                      'rounded-full border px-4 py-2 text-sm font-medium transition',
+                      'appearance-none rounded-full border px-4 py-2 text-sm font-medium transition',
                       active
-                        ? 'border-amber-700 bg-amber-700 text-white shadow-sm'
-                        : 'border-stone-300 bg-white text-stone-700 hover:border-amber-400 hover:text-amber-800',
+                        ? 'border-[#7a5536] bg-[#7a5536] text-white shadow-[0_6px_18px_rgba(122,85,54,0.22)]'
+                        : 'border-stone-300 bg-white text-stone-700 hover:border-[#9b724c] hover:text-[#7a5536]',
                     ].join(' ')}
                   >
                     {categoryLabelMap[category]}
@@ -342,7 +335,7 @@ export default function ReserveMenuPage() {
                           <button
                             type="button"
                             onClick={() => addItem(item.id)}
-                            className="w-full rounded-2xl bg-[linear-gradient(135deg,#6f4a2f,#8b633f)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95"
+                            className="appearance-none w-full rounded-2xl border border-[#7a5536] bg-[#7a5536] px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(122,85,54,0.22)] transition hover:bg-[#68482e]"
                           >
                             カートに追加
                           </button>
@@ -365,7 +358,7 @@ export default function ReserveMenuPage() {
                             <button
                               type="button"
                               onClick={() => removeItem(item.id)}
-                              className="rounded-full border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
+                              className="appearance-none rounded-full border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
                             >
                               削除
                             </button>
@@ -431,7 +424,7 @@ export default function ReserveMenuPage() {
                           <button
                             type="button"
                             onClick={() => removeItem(line.id)}
-                            className="rounded-full border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
+                            className="appearance-none rounded-full border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
                           >
                             削除
                           </button>
@@ -458,7 +451,7 @@ export default function ReserveMenuPage() {
                   type="button"
                   onClick={handleNext}
                   disabled={cartLines.length === 0}
-                  className="mt-5 w-full rounded-2xl bg-[linear-gradient(135deg,#7a5536,#9b724c)] px-4 py-4 text-sm font-bold text-white shadow transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="appearance-none mt-5 w-full rounded-2xl border border-[#7a5536] bg-[#7a5536] px-4 py-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(122,85,54,0.22)] transition hover:bg-[#68482e] disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-300 disabled:text-white disabled:shadow-none"
                 >
                   ご予約入力へ進む
                 </button>
@@ -488,7 +481,7 @@ export default function ReserveMenuPage() {
             type="button"
             onClick={handleNext}
             disabled={cartLines.length === 0}
-            className="shrink-0 rounded-2xl bg-[linear-gradient(135deg,#7a5536,#9b724c)] px-5 py-3 text-sm font-bold text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
+            className="appearance-none shrink-0 rounded-2xl border border-[#7a5536] bg-[#7a5536] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(122,85,54,0.22)] transition hover:bg-[#68482e] disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-300 disabled:text-white disabled:shadow-none"
           >
             次へ
           </button>
