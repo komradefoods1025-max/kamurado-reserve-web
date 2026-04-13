@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import MenuCard from "../../../MenuCard";
 
 type ReserveMenuItem = {
   id: string;
@@ -36,6 +35,13 @@ type ReservationDraft = {
   note?: string;
 };
 
+type MenuCardViewProps = {
+  item: ReserveMenuItem;
+  cartQty: number;
+  onIncrement: (item: ReserveMenuItem) => void;
+  onDecrement: (item: ReserveMenuItem) => void;
+};
+
 const STORAGE_KEYS = [
   "kamurado-reserve-draft",
   "kamurado-reservation-draft",
@@ -48,8 +54,10 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "karaage_bento",
     name: "からあげ弁当",
     price: 700,
-    imageUrl: "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e59490e68f9ae38192.jpeg",
-    description: "定番人気。外は香ばしく、中はジューシーに仕上げた定番のお弁当です。",
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e59490e68f9ae38192.jpeg",
+    description:
+      "定番人気。外は香ばしく、中はジューシーに仕上げた定番のお弁当です。",
     label: "人気",
     itemType: "bento",
   },
@@ -57,7 +65,8 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "shogayaki_bento",
     name: "生姜焼き弁当",
     price: 700,
-    imageUrl: "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/photo_2026-03-22_14-13-55.jpg",
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/photo_2026-03-22_14-13-55.jpg",
     description: "ごはんが進む王道の味。やわらかいお肉と香りの良い生姜だれ。",
     itemType: "bento",
   },
@@ -65,7 +74,8 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "nanban_bento",
     name: "チキン南蛮弁当",
     price: 900,
-    imageUrl: "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/3.png",
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/3.png",
     description: "甘酢とタルタルの相性が抜群。満足感のある一品です。",
     label: "おすすめ",
     itemType: "bento",
@@ -77,7 +87,8 @@ const EXTRA_MENUS: ReserveMenuItem[] = [
     id: "extra_karaage",
     name: "追加唐揚げ",
     price: 80,
-    imageUrl: "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/photo_2026-03-22_14-58-55.jpg",
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/photo_2026-03-22_14-58-55.jpg",
     description: "もう1個食べたい時に。1個から追加できます。",
     itemType: "extra",
   },
@@ -88,7 +99,8 @@ const DRINK_MENUS: ReserveMenuItem[] = [
     id: "drink_irohasu",
     name: "いろはす",
     price: 150,
-    imageUrl: "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e6b0b4-1.jpg",
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e6b0b4-1.jpg",
     description: "食事に合わせやすい、すっきり飲みやすいミネラルウォーター。",
     itemType: "drink",
   },
@@ -96,7 +108,8 @@ const DRINK_MENUS: ReserveMenuItem[] = [
     id: "drink_yakan_mugicha",
     name: "やかんの麦茶",
     price: 200,
-    imageUrl: "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/518rlhbonql.jpg",
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/518rlhbonql.jpg",
     description: "香ばしくやさしい味わい。食事にも合わせやすい定番ドリンク。",
     itemType: "drink",
   },
@@ -104,7 +117,8 @@ const DRINK_MENUS: ReserveMenuItem[] = [
     id: "drink_cocacola",
     name: "コカ・コーラ",
     price: 200,
-    imageUrl: "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e382b3e383bce383a9-1.jpg",
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e382b3e383bce383a9-1.jpg",
     description: "しっかり炭酸の定番コーラ。揚げ物との相性も抜群です。",
     itemType: "drink",
   },
@@ -112,11 +126,219 @@ const DRINK_MENUS: ReserveMenuItem[] = [
     id: "drink_cocacola_zero",
     name: "コカ・コーラゼロ",
     price: 200,
-    imageUrl: "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/mono62457659-240314-02.jpg",
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/mono62457659-240314-02.jpg",
     description: "すっきり飲みやすいゼロ系コーラ。後味も軽やかです。",
     itemType: "drink",
   },
 ];
+
+function MenuCardView({
+  item,
+  cartQty,
+  onIncrement,
+  onDecrement,
+}: MenuCardViewProps) {
+  return (
+    <article
+      className="rounded-3xl border border-stone-200 bg-white"
+      style={{
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 420,
+      }}
+    >
+      <div
+        style={{
+          height: 160,
+          background:
+            item.imageUrl && item.imageUrl.trim()
+              ? "transparent"
+              : "linear-gradient(135deg, rgba(110,75,42,0.08), rgba(184,139,67,0.14))",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderBottom: "1px solid rgba(189,167,142,0.25)",
+          overflow: "hidden",
+        }}
+      >
+        {item.imageUrl && item.imageUrl.trim() ? (
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              textAlign: "center",
+              color: "#8a6240",
+              fontWeight: 700,
+              letterSpacing: "0.12em",
+              fontSize: 14,
+            }}
+          >
+            KAMURADO
+          </div>
+        )}
+      </div>
+
+      <div
+        className="p-6"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          flex: 1,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <div style={{ minWidth: 0, flex: 1 }}>
+            {item.label ? (
+              <div
+                className="rounded-full bg-amber-900 text-white"
+                style={{
+                  display: "inline-flex",
+                  marginBottom: 12,
+                  fontSize: 13,
+                  padding: "7px 14px",
+                }}
+              >
+                {item.label}
+              </div>
+            ) : null}
+
+            <h3
+              style={{
+                fontSize: 22,
+                lineHeight: 1.35,
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
+              }}
+            >
+              {item.name}
+            </h3>
+          </div>
+
+          <div
+            style={{
+              flexShrink: 0,
+              color: "#b88b43",
+              fontWeight: 700,
+              fontSize: 18,
+              whiteSpace: "nowrap",
+            }}
+          >
+            ¥{item.price.toLocaleString("ja-JP")}
+          </div>
+        </div>
+
+        <p
+          style={{
+            fontSize: 16,
+            lineHeight: 1.9,
+            minHeight: 88,
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
+          {item.description ?? ""}
+        </p>
+
+        <div style={{ marginTop: "auto" }}>
+          <div
+            style={{
+              color: "#6d6258",
+              fontSize: 15,
+              marginBottom: 12,
+            }}
+          >
+            {cartQty > 0 ? `カート内 ${cartQty}点` : "カートに追加できます"}
+          </div>
+
+          {cartQty > 0 ? (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => onDecrement(item)}
+                className="inline-flex items-center justify-center border"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 18,
+                  fontSize: 28,
+                  background: "#fffdf9",
+                }}
+              >
+                −
+              </button>
+
+              <div
+                style={{
+                  minWidth: 60,
+                  textAlign: "center",
+                  fontSize: 28,
+                  fontWeight: 700,
+                  color: "#2d241c",
+                }}
+              >
+                {cartQty}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onIncrement(item)}
+                className="inline-flex items-center justify-center bg-amber-900 text-white"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 18,
+                  fontSize: 28,
+                }}
+              >
+                ＋
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onIncrement(item)}
+              className="inline-flex items-center justify-center bg-amber-900 text-white"
+              style={{
+                width: "100%",
+                padding: "14px 18px",
+                borderRadius: 18,
+                fontSize: 18,
+                fontWeight: 700,
+              }}
+            >
+              カートに追加
+            </button>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
 
 function safeParseDraft(raw: string | null): ReservationDraft | null {
   if (!raw) return null;
@@ -318,7 +540,7 @@ export default function ReserveMenuPage() {
             }}
           >
             {BENTO_MENUS.map((item) => (
-              <MenuCard
+              <MenuCardView
                 key={item.id}
                 item={item}
                 cartQty={itemQtyMap.get(item.id) || 0}
@@ -357,7 +579,7 @@ export default function ReserveMenuPage() {
             }}
           >
             {EXTRA_MENUS.map((item) => (
-              <MenuCard
+              <MenuCardView
                 key={item.id}
                 item={item}
                 cartQty={itemQtyMap.get(item.id) || 0}
@@ -395,7 +617,7 @@ export default function ReserveMenuPage() {
             }}
           >
             {DRINK_MENUS.map((item) => (
-              <MenuCard
+              <MenuCardView
                 key={item.id}
                 item={item}
                 cartQty={itemQtyMap.get(item.id) || 0}
