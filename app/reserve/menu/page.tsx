@@ -18,7 +18,15 @@ type MenuItem = {
 type CartMap = Record<string, number>;
 
 const STORAGE_KEY = 'kamurado-reservation-cart';
-const NEXT_STEP_PATH = '/reserve/customer';
+
+/**
+ * ここを実際の「受取日時選択ページ」のURLに合わせて変更してね
+ * 例:
+ * /reserve/datetime
+ * /reserve/pickup
+ * /reserve/date-time
+ */
+const NEXT_STEP_PATH = '/reserve/datetime';
 
 const ITEMS: MenuItem[] = [
   {
@@ -84,7 +92,7 @@ const ITEMS: MenuItem[] = [
     name: 'コカ・コーラ',
     price: 200,
     imageUrl:
-      'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e382b3e383bce383a9-1.jpg',
+      'https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e382b3e383bce383a9.jpg',
     description: '炭酸の爽快感で食事がもっと楽しく',
     category: 'drink',
   },
@@ -285,7 +293,10 @@ export default function ReserveMenuPage() {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8f3eb_0%,#f2eadf_48%,#eee2d2_100%)] text-stone-800">
-      <div className="mx-auto max-w-7xl px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-10">
+      <div
+        className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8 lg:pb-10"
+        style={{ paddingBottom: 'calc(160px + env(safe-area-inset-bottom))' }}
+      >
         <div className="mb-6 overflow-hidden rounded-[28px] border border-amber-900/10 bg-white/70 shadow-[0_20px_60px_rgba(60,35,10,0.08)] backdrop-blur">
           <div className="bg-[linear-gradient(135deg,rgba(73,44,23,0.96),rgba(98,64,40,0.92))] px-5 py-6 text-white sm:px-8">
             <div className="mb-3 inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs tracking-[0.2em] text-amber-100">
@@ -294,7 +305,7 @@ export default function ReserveMenuPage() {
             <h1 className="text-2xl font-bold sm:text-3xl">ご予約メニュー</h1>
             <p className="mt-2 text-sm leading-6 text-amber-50/90 sm:text-base">
               和の落ち着きと、少し上質な雰囲気を意識した予約画面です。
-              お好きな商品を選んで、次の画面へお進みください。
+              お好きな商品を選んで、受取日時の選択へお進みください。
             </p>
           </div>
 
@@ -547,7 +558,7 @@ export default function ReserveMenuPage() {
                       : solidBrownStyle
                   }
                 >
-                  ご予約入力へ進む
+                  受取日時の選択へ進む
                 </button>
 
                 <p className="mt-3 text-center text-xs leading-5 text-stone-500">
@@ -559,40 +570,45 @@ export default function ReserveMenuPage() {
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-amber-900/10 bg-white/95 p-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-xs text-stone-500">ご注文合計</div>
-            <div className="truncate text-lg font-bold text-stone-900">
-              {formatPrice(totalPrice)}{' '}
-              <span className="ml-1 text-sm font-medium text-stone-500">
-                ({totalCount}点)
-              </span>
+      <div
+        className="fixed inset-x-0 bottom-0 z-30 px-3 lg:hidden"
+        style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
+      >
+        <div className="mx-auto max-w-7xl rounded-[24px] border border-amber-900/10 bg-white/95 p-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-xs text-stone-500">ご注文合計</div>
+              <div className="truncate text-lg font-bold text-stone-900">
+                {formatPrice(totalPrice)}{' '}
+                <span className="ml-1 text-sm font-medium text-stone-500">
+                  ({totalCount}点)
+                </span>
+              </div>
             </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={cartLines.length === 0}
-            className="shrink-0 rounded-2xl border px-5 py-3 text-sm font-bold transition disabled:cursor-not-allowed"
-            style={
-              cartLines.length === 0
-                ? {
-                    backgroundColor: '#d6d3d1',
-                    color: '#ffffff',
-                    borderColor: '#d6d3d1',
-                    opacity: 1,
-                    appearance: 'none',
-                    WebkitAppearance: 'none',
-                    backgroundImage: 'none',
-                    boxShadow: 'none',
-                  }
-                : solidBrownStyle
-            }
-          >
-            次へ
-          </button>
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={cartLines.length === 0}
+              className="shrink-0 rounded-2xl border px-5 py-3 text-sm font-bold transition disabled:cursor-not-allowed"
+              style={
+                cartLines.length === 0
+                  ? {
+                      backgroundColor: '#d6d3d1',
+                      color: '#ffffff',
+                      borderColor: '#d6d3d1',
+                      opacity: 1,
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                      backgroundImage: 'none',
+                      boxShadow: 'none',
+                    }
+                  : solidBrownStyle
+              }
+            >
+              日時へ
+            </button>
+          </div>
         </div>
       </div>
     </main>
