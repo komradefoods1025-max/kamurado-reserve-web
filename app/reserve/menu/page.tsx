@@ -22,7 +22,6 @@ const STORAGE_KEY = 'kamurado-reservation-cart';
 /**
  * 実在する「受取日時ページ」を自動で探す候補
  * ここにあるどれかのURLが存在すれば、そこへ遷移する
- * もし全部404なら、この配列に実際のURLを追加してね
  */
 const NEXT_STEP_CANDIDATES = [
   '/reserve/datetime',
@@ -333,10 +332,7 @@ export default function ReserveMenuPage() {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8f3eb_0%,#f2eadf_48%,#eee2d2_100%)] text-stone-800">
-      <div
-        className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8 lg:pb-10"
-        style={{ paddingBottom: 'calc(108px + env(safe-area-inset-bottom))' }}
-      >
+      <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pb-10">
         <div className="mb-6 overflow-hidden rounded-[28px] border border-amber-900/10 bg-white/70 shadow-[0_20px_60px_rgba(60,35,10,0.08)] backdrop-blur">
           <div className="bg-[linear-gradient(135deg,rgba(73,44,23,0.96),rgba(98,64,40,0.92))] px-5 py-6 text-white sm:px-8">
             <div className="mb-3 inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs tracking-[0.2em] text-amber-100">
@@ -604,51 +600,46 @@ export default function ReserveMenuPage() {
                 <p className="mt-3 text-center text-xs leading-5 text-stone-500">
                   商品内容は次の画面でも確認できます。
                 </p>
+
+                <div className="mt-3 lg:hidden rounded-[24px] border border-amber-900/10 bg-white/95 p-3 shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-xs text-stone-500">ご注文合計</div>
+                      <div className="truncate text-lg font-bold text-stone-900">
+                        {formatPrice(totalPrice)}{' '}
+                        <span className="ml-1 text-sm font-medium text-stone-500">
+                          ({totalCount}点)
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      disabled={cartLines.length === 0 || isRouting}
+                      className="shrink-0 rounded-2xl border px-5 py-3 text-sm font-bold transition disabled:cursor-not-allowed"
+                      style={
+                        cartLines.length === 0 || isRouting
+                          ? {
+                              backgroundColor: '#d6d3d1',
+                              color: '#ffffff',
+                              borderColor: '#d6d3d1',
+                              opacity: 1,
+                              appearance: 'none',
+                              WebkitAppearance: 'none',
+                              backgroundImage: 'none',
+                              boxShadow: 'none',
+                            }
+                          : solidBrownStyle
+                      }
+                    >
+                      {isRouting ? '移動中...' : '日時へ'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </aside>
-        </div>
-      </div>
-
-      <div
-        className="fixed inset-x-0 bottom-0 z-30 px-3 lg:hidden"
-        style={{ paddingBottom: 'calc(8px + env(safe-area-inset-bottom))' }}
-      >
-        <div className="mx-auto max-w-7xl rounded-[24px] border border-amber-900/10 bg-white/95 p-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-xs text-stone-500">ご注文合計</div>
-              <div className="truncate text-lg font-bold text-stone-900">
-                {formatPrice(totalPrice)}{' '}
-                <span className="ml-1 text-sm font-medium text-stone-500">
-                  ({totalCount}点)
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleNext}
-              disabled={cartLines.length === 0 || isRouting}
-              className="shrink-0 rounded-2xl border px-5 py-3 text-sm font-bold transition disabled:cursor-not-allowed"
-              style={
-                cartLines.length === 0 || isRouting
-                  ? {
-                      backgroundColor: '#d6d3d1',
-                      color: '#ffffff',
-                      borderColor: '#d6d3d1',
-                      opacity: 1,
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      backgroundImage: 'none',
-                      boxShadow: 'none',
-                    }
-                  : solidBrownStyle
-              }
-            >
-              {isRouting ? '移動中...' : '日時へ'}
-            </button>
-          </div>
         </div>
       </div>
     </main>
