@@ -379,17 +379,18 @@ export default function ReserveMenuPage() {
                         </div>
 
                         <div
-                          className="inline-flex h-12 min-w-[96px] shrink-0 items-center justify-center self-start rounded-full border px-4 text-base font-bold leading-none"
+                          className="inline-flex h-10 min-w-[84px] shrink-0 items-center justify-center self-start rounded-full border px-3.5 text-sm font-semibold leading-none"
                           style={{
-                            backgroundColor: '#f7efe3',
-                            color: '#5f3f27',
-                            borderColor: '#dcc8b3',
+                            backgroundColor: '#fbf4e9',
+                            color: '#6b4a2f',
+                            borderColor: '#e5d2bb',
                             opacity: 1,
                             appearance: 'none',
                             WebkitAppearance: 'none',
                             backgroundImage: 'none',
                             filter: 'none',
                             lineHeight: 1,
+                            letterSpacing: '0.01em',
                           }}
                         >
                           {formatPrice(item.price)}
