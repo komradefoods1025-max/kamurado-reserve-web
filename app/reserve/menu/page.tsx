@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 
 type MenuCategory = 'bento' | 'extra' | 'drink';
@@ -18,7 +18,6 @@ type MenuItem = {
 type CartMap = Record<string, number>;
 
 const STORAGE_KEY = 'kamurado-reservation-cart';
-
 const NEXT_STEP_PATH = '/reserve/customer';
 
 const ITEMS: MenuItem[] = [
@@ -107,6 +106,42 @@ const categoryLabelMap: Record<MenuCategory | 'all', string> = {
   drink: 'ドリンク',
 };
 
+const solidBrownStyle: CSSProperties = {
+  backgroundColor: '#7a5536',
+  color: '#ffffff',
+  borderColor: '#7a5536',
+  opacity: 1,
+  appearance: 'none',
+  WebkitAppearance: 'none',
+  backgroundImage: 'none',
+  boxShadow: '0 10px 24px rgba(122, 85, 54, 0.22)',
+  filter: 'none',
+};
+
+const solidBrownPressedStyle: CSSProperties = {
+  backgroundColor: '#68482e',
+  color: '#ffffff',
+  borderColor: '#68482e',
+  opacity: 1,
+  appearance: 'none',
+  WebkitAppearance: 'none',
+  backgroundImage: 'none',
+  boxShadow: '0 10px 24px rgba(122, 85, 54, 0.22)',
+  filter: 'none',
+};
+
+const activeCategoryStyle: CSSProperties = {
+  backgroundColor: '#7a5536',
+  color: '#ffffff',
+  borderColor: '#7a5536',
+  opacity: 1,
+  appearance: 'none',
+  WebkitAppearance: 'none',
+  backgroundImage: 'none',
+  boxShadow: '0 6px 18px rgba(122, 85, 54, 0.22)',
+  filter: 'none',
+};
+
 function formatPrice(value: number) {
   return `¥${value.toLocaleString('ja-JP')}`;
 }
@@ -125,7 +160,12 @@ function QuantityButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="appearance-none flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white text-lg font-semibold text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white text-lg font-semibold text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+      style={{
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        opacity: disabled ? 0.4 : 1,
+      }}
       aria-label={label}
     >
       {label}
@@ -139,6 +179,7 @@ export default function ReserveMenuPage() {
   const [cart, setCart] = useState<CartMap>({});
   const [selectedCategory, setSelectedCategory] = useState<MenuCategory | 'all'>('all');
   const [mounted, setMounted] = useState(false);
+  const [hoveredButtonId, setHoveredButtonId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -261,17 +302,27 @@ export default function ReserveMenuPage() {
             <div className="flex flex-wrap gap-2">
               {(['all', 'bento', 'extra', 'drink'] as const).map((category) => {
                 const active = selectedCategory === category;
+
                 return (
                   <button
                     key={category}
                     type="button"
                     onClick={() => setSelectedCategory(category)}
-                    className={[
-                      'appearance-none rounded-full border px-4 py-2 text-sm font-medium transition',
+                    className="rounded-full border px-4 py-2 text-sm font-medium transition"
+                    style={
                       active
-                        ? 'border-[#7a5536] bg-[#7a5536] text-white shadow-[0_6px_18px_rgba(122,85,54,0.22)]'
-                        : 'border-stone-300 bg-white text-stone-700 hover:border-[#9b724c] hover:text-[#7a5536]',
-                    ].join(' ')}
+                        ? activeCategoryStyle
+                        : {
+                            backgroundColor: '#ffffff',
+                            color: '#44403c',
+                            borderColor: '#d6d3d1',
+                            opacity: 1,
+                            appearance: 'none',
+                            WebkitAppearance: 'none',
+                            backgroundImage: 'none',
+                            filter: 'none',
+                          }
+                    }
                   >
                     {categoryLabelMap[category]}
                   </button>
@@ -286,6 +337,7 @@ export default function ReserveMenuPage() {
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {filteredItems.map((item) => {
                 const quantity = cart[item.id] || 0;
+                const isHovered = hoveredButtonId === item.id;
 
                 return (
                   <article
@@ -335,7 +387,10 @@ export default function ReserveMenuPage() {
                           <button
                             type="button"
                             onClick={() => addItem(item.id)}
-                            className="appearance-none w-full rounded-2xl border border-[#7a5536] bg-[#7a5536] px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(122,85,54,0.22)] transition hover:bg-[#68482e]"
+                            onMouseEnter={() => setHoveredButtonId(item.id)}
+                            onMouseLeave={() => setHoveredButtonId(null)}
+                            className="w-full rounded-2xl border px-4 py-3 text-sm font-semibold transition"
+                            style={isHovered ? solidBrownPressedStyle : solidBrownStyle}
                           >
                             カートに追加
                           </button>
@@ -358,7 +413,12 @@ export default function ReserveMenuPage() {
                             <button
                               type="button"
                               onClick={() => removeItem(item.id)}
-                              className="appearance-none rounded-full border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
+                              className="rounded-full border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
+                              style={{
+                                appearance: 'none',
+                                WebkitAppearance: 'none',
+                                opacity: 1,
+                              }}
                             >
                               削除
                             </button>
@@ -424,7 +484,12 @@ export default function ReserveMenuPage() {
                           <button
                             type="button"
                             onClick={() => removeItem(line.id)}
-                            className="appearance-none rounded-full border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
+                            className="rounded-full border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-50"
+                            style={{
+                              appearance: 'none',
+                              WebkitAppearance: 'none',
+                              opacity: 1,
+                            }}
                           >
                             削除
                           </button>
@@ -451,7 +516,21 @@ export default function ReserveMenuPage() {
                   type="button"
                   onClick={handleNext}
                   disabled={cartLines.length === 0}
-                  className="appearance-none mt-5 w-full rounded-2xl border border-[#7a5536] bg-[#7a5536] px-4 py-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(122,85,54,0.22)] transition hover:bg-[#68482e] disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-300 disabled:text-white disabled:shadow-none"
+                  className="mt-5 w-full rounded-2xl border px-4 py-4 text-sm font-bold transition disabled:cursor-not-allowed"
+                  style={
+                    cartLines.length === 0
+                      ? {
+                          backgroundColor: '#d6d3d1',
+                          color: '#ffffff',
+                          borderColor: '#d6d3d1',
+                          opacity: 1,
+                          appearance: 'none',
+                          WebkitAppearance: 'none',
+                          backgroundImage: 'none',
+                          boxShadow: 'none',
+                        }
+                      : solidBrownStyle
+                  }
                 >
                   ご予約入力へ進む
                 </button>
@@ -481,7 +560,21 @@ export default function ReserveMenuPage() {
             type="button"
             onClick={handleNext}
             disabled={cartLines.length === 0}
-            className="appearance-none shrink-0 rounded-2xl border border-[#7a5536] bg-[#7a5536] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(122,85,54,0.22)] transition hover:bg-[#68482e] disabled:cursor-not-allowed disabled:border-stone-300 disabled:bg-stone-300 disabled:text-white disabled:shadow-none"
+            className="shrink-0 rounded-2xl border px-5 py-3 text-sm font-bold transition disabled:cursor-not-allowed"
+            style={
+              cartLines.length === 0
+                ? {
+                    backgroundColor: '#d6d3d1',
+                    color: '#ffffff',
+                    borderColor: '#d6d3d1',
+                    opacity: 1,
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    backgroundImage: 'none',
+                    boxShadow: 'none',
+                  }
+                : solidBrownStyle
+            }
           >
             次へ
           </button>
