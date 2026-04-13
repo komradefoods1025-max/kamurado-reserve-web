@@ -292,7 +292,7 @@ export default function ReserveMenuPage() {
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8f3eb_0%,#f2eadf_48%,#eee2d2_100%)] text-stone-800">
       <div
-        className="mx-auto max-w-7xl px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pb-10"
+        className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8 lg:pb-10"
         style={{ paddingBottom: 'calc(120px + env(safe-area-inset-bottom))' }}
       >
         <div className="mb-6 overflow-hidden rounded-[28px] border border-amber-900/10 bg-white/70 shadow-[0_20px_60px_rgba(60,35,10,0.08)] backdrop-blur">
@@ -581,7 +581,7 @@ export default function ReserveMenuPage() {
       </div>
 
       <div
-        className="fixed inset-x-0 bottom-0 z-40 px-4 lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 px-4 lg:hidden"
         style={{ paddingBottom: 'calc(10px + env(safe-area-inset-bottom))' }}
       >
         <button
