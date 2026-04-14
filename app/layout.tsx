@@ -1,24 +1,21 @@
-import type { Metadata } from "next";
-import { Noto_Sans_JP, Zen_Old_Mincho } from "next/font/google";
-import "./globals.css";
-
-const notoSans = Noto_Sans_JP({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-sans",
-  display: "swap",
-});
-
-const zenOldMincho = Zen_Old_Mincho({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-serif",
-  display: "swap",
-});
+import type { Metadata, Viewport } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "かむらど お弁当ご予約ページ",
-  description: "かむらどのランチ弁当Web予約ページ",
+  title: 'かむらど 予約',
+  description: 'かむらどのテイクアウト予約ページ',
+  applicationName: 'かむらど予約',
+  icons: {
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#7a5536',
 };
 
 export default function RootLayout({
@@ -28,9 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body className={`${notoSans.variable} ${zenOldMincho.variable}`}>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
