@@ -18,7 +18,12 @@ type MenuItem = {
 type CartMap = Record<string, number>;
 
 const STORAGE_KEY = 'kamurado-reservation-cart';
-const NEXT_STEP_PATH = '/reserve/schedule';
+const NEXT_STEP_CANDIDATES = [
+  '/reserve/schedule',
+  '/reserve/customer',
+  '/reserve/date',
+  '/reserve/form',
+];
 
 const ITEMS: MenuItem[] = [
   {
@@ -146,6 +151,25 @@ function formatPrice(value: number) {
   return `¥${value.toLocaleString('ja-JP')}`;
 }
 
+async function resolveNextStepPath() {
+  for (const path of NEXT_STEP_CANDIDATES) {
+    try {
+      const response = await fetch(path, {
+        method: 'HEAD',
+        cache: 'no-store',
+      });
+
+      if (response.ok) {
+        return path;
+      }
+    } catch (error) {
+      console.error(`Path check failed: ${path}`, error);
+    }
+  }
+
+  return NEXT_STEP_CANDIDATES[0];
+}
+
 function QuantityButton({
   label,
   onClick,
@@ -164,7 +188,7 @@ function QuantityButton({
       style={{
         appearance: 'none',
         WebkitAppearance: 'none',
-        opacity: disabled ? 0.4 : 1,
+        opacity: 1,
       }}
       aria-label={label}
     >
@@ -181,8 +205,6 @@ export default function ReserveMenuPage() {
   const [mounted, setMounted] = useState(false);
   const [hoveredButtonId, setHoveredButtonId] = useState<string | null>(null);
   const [isRouting, setIsRouting] = useState(false);
-  const [viewportReady, setViewportReady] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -209,20 +231,6 @@ export default function ReserveMenuPage() {
       console.error('Failed to save cart:', error);
     }
   }, [cart, mounted]);
-
-  useEffect(() => {
-    const updateViewport = () => {
-      setIsMobileView(window.innerWidth < 1024);
-      setViewportReady(true);
-    };
-
-    updateViewport();
-    window.addEventListener('resize', updateViewport);
-
-    return () => {
-      window.removeEventListener('resize', updateViewport);
-    };
-  }, []);
 
   const filteredItems = useMemo(() => {
     if (selectedCategory === 'all') return ITEMS;
@@ -289,14 +297,15 @@ export default function ReserveMenuPage() {
     });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (totalCount === 0 || isRouting) return;
 
     setIsRouting(true);
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
-      router.push(NEXT_STEP_PATH);
+      const nextPath = await resolveNextStepPath();
+      router.push(nextPath);
     } catch (error) {
       console.error('Failed to move next step:', error);
       alert('次の画面へ進めませんでした。もう一度お試しください。');
@@ -307,50 +316,40 @@ export default function ReserveMenuPage() {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8f3eb_0%,#f2eadf_48%,#eee2d2_100%)] text-stone-800">
-      <div
-        className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8 lg:pb-10"
-        style={{
-          paddingBottom:
-            viewportReady && isMobileView
-              ? 'calc(120px + env(safe-area-inset-bottom))'
-              : '40px',
-        }}
-      >
+      <div className="mx-auto max-w-7xl px-4 pb-36 pt-6 sm:px-6 lg:px-8 lg:pb-10">
         <div className="mb-6 overflow-hidden rounded-[28px] border border-amber-900/10 bg-white/70 shadow-[0_20px_60px_rgba(60,35,10,0.08)] backdrop-blur">
-          <div className="bg-[linear-gradient(135deg,rgba(73,44,23,0.96),rgba(98,64,40,0.92))] px-5 py-6 text-white sm:px-8">
-            <div className="mb-3 inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs tracking-[0.2em] text-amber-100">
-              KAMURADO RESERVATION
-            </div>
-            <h1 className="text-2xl font-bold sm:text-3xl">ご予約メニュー</h1>
-            <p className="mt-2 text-sm leading-6 text-amber-50/90 sm:text-base">
-              和の落ち着きと、少し上質な雰囲気を意識した予約画面です。
-              お好きな商品を選んで、受取日時の選択へお進みください。
+          <div className="bg-[linear-gradient(135deg,#4f3321,#6c4a31)] px-5 py-6 text-white sm:px-8">
+            <div className="text-sm tracking-[0.2em] text-amber-100">KAMURADO TAKEOUT</div>
+            <h1 className="mt-2 text-2xl font-bold tracking-wide sm:text-3xl">
+              お弁当・ドリンクを選ぶ
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-amber-50/90">
+              お受け取り前に、まずはご注文内容を選択してください。
+              数量の調整や削除もこの画面で行えます。
             </p>
           </div>
 
-          <div className="border-t border-amber-900/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(249,244,237,0.88))] px-4 py-4 sm:px-8">
-            <div className="flex flex-wrap gap-2">
+          <div className="border-t border-amber-900/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.55),rgba(247,240,231,0.65))] px-4 py-4 sm:px-6">
+            <div className="flex flex-wrap gap-3">
               {(['all', 'bento', 'extra', 'drink'] as const).map((category) => {
-                const active = selectedCategory === category;
+                const isActive = selectedCategory === category;
 
                 return (
                   <button
                     key={category}
                     type="button"
                     onClick={() => setSelectedCategory(category)}
-                    className="rounded-full border px-4 py-2 text-sm font-medium transition"
+                    className="rounded-full border px-4 py-2 text-sm font-semibold transition"
                     style={
-                      active
+                      isActive
                         ? activeCategoryStyle
                         : {
                             backgroundColor: '#ffffff',
-                            color: '#44403c',
-                            borderColor: '#d6d3d1',
-                            opacity: 1,
+                            color: '#5f4630',
+                            borderColor: '#e7d7c4',
                             appearance: 'none',
                             WebkitAppearance: 'none',
                             backgroundImage: 'none',
-                            filter: 'none',
                           }
                     }
                   >
@@ -362,7 +361,7 @@ export default function ReserveMenuPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
           <section>
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {filteredItems.map((item) => {
@@ -442,17 +441,11 @@ export default function ReserveMenuPage() {
                         ) : (
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2">
-                              <QuantityButton
-                                label="−"
-                                onClick={() => decreaseItem(item.id)}
-                              />
+                              <QuantityButton label="−" onClick={() => decreaseItem(item.id)} />
                               <div className="min-w-[48px] text-center text-lg font-bold text-stone-900">
                                 {quantity}
                               </div>
-                              <QuantityButton
-                                label="＋"
-                                onClick={() => increaseItem(item.id)}
-                              />
+                              <QuantityButton label="＋" onClick={() => increaseItem(item.id)} />
                             </div>
 
                             <button
@@ -487,7 +480,8 @@ export default function ReserveMenuPage() {
               <div className="p-5">
                 {cartLines.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50 px-4 py-8 text-center text-sm leading-7 text-stone-500">
-                    まだ商品が入っていません。<br />
+                    まだ商品が入っていません。
+                    <br />
                     気になる商品をカートに追加してください。
                   </div>
                 ) : (
@@ -513,17 +507,11 @@ export default function ReserveMenuPage() {
 
                         <div className="mt-3 flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <QuantityButton
-                              label="−"
-                              onClick={() => decreaseItem(line.id)}
-                            />
+                            <QuantityButton label="−" onClick={() => decreaseItem(line.id)} />
                             <div className="min-w-[40px] text-center text-sm font-bold">
                               {line.quantity}
                             </div>
-                            <QuantityButton
-                              label="＋"
-                              onClick={() => increaseItem(line.id)}
-                            />
+                            <QuantityButton label="＋" onClick={() => increaseItem(line.id)} />
                           </div>
 
                           <button
@@ -557,83 +545,77 @@ export default function ReserveMenuPage() {
                   </div>
                 </div>
 
-                {!isMobileView && viewportReady && (
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    disabled={cartLines.length === 0 || isRouting}
-                    className="mt-4 w-full rounded-2xl border px-4 py-4 text-sm font-bold transition disabled:cursor-not-allowed"
-                    style={
-                      cartLines.length === 0 || isRouting
-                        ? {
-                            backgroundColor: '#d6d3d1',
-                            color: '#ffffff',
-                            borderColor: '#d6d3d1',
-                            opacity: 1,
-                            appearance: 'none',
-                            WebkitAppearance: 'none',
-                            backgroundImage: 'none',
-                            boxShadow: 'none',
-                          }
-                        : solidBrownStyle
-                    }
-                  >
-                    {isRouting ? '移動中...' : '受取日時の選択へ進む'}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={cartLines.length === 0 || isRouting}
+                  className="mt-4 hidden w-full rounded-2xl border px-4 py-4 text-sm font-bold transition disabled:cursor-not-allowed lg:block"
+                  style={
+                    cartLines.length === 0 || isRouting
+                      ? {
+                          backgroundColor: '#d6d3d1',
+                          color: '#ffffff',
+                          borderColor: '#d6d3d1',
+                          opacity: 1,
+                          appearance: 'none',
+                          WebkitAppearance: 'none',
+                          backgroundImage: 'none',
+                          boxShadow: 'none',
+                        }
+                      : solidBrownStyle
+                  }
+                >
+                  {isRouting ? '移動中...' : '受取日時の選択へ進む'}
+                </button>
 
                 <p className="mt-3 text-center text-xs leading-5 text-stone-500">
                   商品内容は次の画面でも確認できます。
                 </p>
 
-                {isMobileView && viewportReady && (
-                  <div className="mt-3 rounded-[24px] border border-amber-900/10 bg-white/95 p-3 shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
-                    <div className="min-w-0">
-                      <div className="text-xs text-stone-500">ご注文合計</div>
-                      <div className="truncate text-lg font-bold text-stone-900">
-                        {formatPrice(totalPrice)}{' '}
-                        <span className="ml-1 text-sm font-medium text-stone-500">
-                          ({totalCount}点)
-                        </span>
-                      </div>
+                <div className="mt-3 rounded-[24px] border border-amber-900/10 bg-white/95 p-3 shadow-[0_8px_24px_rgba(0,0,0,0.06)] lg:hidden">
+                  <div className="min-w-0">
+                    <div className="text-xs text-stone-500">ご注文合計</div>
+                    <div className="truncate text-lg font-bold text-stone-900">
+                      {formatPrice(totalPrice)}{' '}
+                      <span className="ml-1 text-sm font-medium text-stone-500">
+                        ({totalCount}点)
+                      </span>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </aside>
         </div>
       </div>
 
-      {isMobileView && viewportReady && (
-        <div
-          className="fixed inset-x-0 bottom-0 z-50 px-4"
-          style={{ paddingBottom: 'calc(10px + env(safe-area-inset-bottom))' }}
+      <div
+        className="fixed inset-x-0 bottom-0 z-50 px-4 lg:hidden"
+        style={{ paddingBottom: 'calc(10px + env(safe-area-inset-bottom))' }}
+      >
+        <button
+          type="button"
+          onClick={handleNext}
+          disabled={cartLines.length === 0 || isRouting}
+          className="w-full rounded-[24px] border px-4 py-4 text-sm font-bold transition disabled:cursor-not-allowed"
+          style={
+            cartLines.length === 0 || isRouting
+              ? {
+                  backgroundColor: '#d6d3d1',
+                  color: '#ffffff',
+                  borderColor: '#d6d3d1',
+                  opacity: 1,
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  backgroundImage: 'none',
+                  boxShadow: 'none',
+                }
+              : solidBrownStyle
+          }
         >
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={cartLines.length === 0 || isRouting}
-            className="w-full rounded-[24px] border px-4 py-4 text-sm font-bold transition disabled:cursor-not-allowed"
-            style={
-              cartLines.length === 0 || isRouting
-                ? {
-                    backgroundColor: '#d6d3d1',
-                    color: '#ffffff',
-                    borderColor: '#d6d3d1',
-                    opacity: 1,
-                    appearance: 'none',
-                    WebkitAppearance: 'none',
-                    backgroundImage: 'none',
-                    boxShadow: 'none',
-                  }
-                : solidBrownStyle
-            }
-          >
-            {isRouting ? '移動中...' : '受取日時の選択へ進む'}
-          </button>
-        </div>
-      )}
+          {isRouting ? '移動中...' : '受取日時の選択へ進む'}
+        </button>
+      </div>
     </main>
   );
 }
