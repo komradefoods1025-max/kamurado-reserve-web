@@ -55,7 +55,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     name: "からあげ弁当",
     price: 700,
     imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e59490e68f9ae38192.jpeg",
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/signal-2026-03-23-214213_002.jpg",
     description:
       "定番人気。外は香ばしく、中はジューシーに仕上げた定番のお弁当です。",
     label: "人気",
@@ -66,7 +66,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     name: "生姜焼き弁当",
     price: 700,
     imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/photo_2026-03-22_14-13-55.jpg",
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/%E5%90%8D%E7%A7%B0%E6%9C%AA%E8%A8%AD%E5%AE%9A%E3%81%AE%E3%83%87%E3%82%B6%E3%82%A4%E3%83%B3-5-1.png",
     description: "ごはんが進む王道の味。やわらかいお肉と香りの良い生姜だれ。",
     itemType: "bento",
   },
@@ -75,7 +75,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     name: "チキン南蛮弁当",
     price: 900,
     imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/3.png",
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/%E5%90%8D%E7%A7%B0%E6%9C%AA%E8%A8%AD%E5%AE%9A%E3%81%AE%E3%83%87%E3%82%B6%E3%82%A4%E3%83%B3-3-1.png",
     description: "甘酢とタルタルの相性が抜群。満足感のある一品です。",
     label: "おすすめ",
     itemType: "bento",
