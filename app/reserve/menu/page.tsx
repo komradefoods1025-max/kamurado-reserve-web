@@ -11,10 +11,9 @@ type MenuItem = {
   price: number;
   imageUrl?: string;
   description: string;
-  category: MenuCategory;
+  category: MenuCategory
   badge?: string;
 };
-
 type CartMap = Record<string, number>;
 
 const STORAGE_KEY = 'kamurado-reservation-cart';
