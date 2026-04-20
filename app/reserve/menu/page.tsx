@@ -374,12 +374,12 @@ export default function ReserveMenuPage() {
                   >
                     <div className="relative overflow-hidden border-b border-amber-900/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,1),rgba(243,236,226,1))]">
                       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(120,74,36,0.04),rgba(255,255,255,0))]" />
-                      <div className="relative flex aspect-[4/3] items-center justify-center p-4">
+                      <div className="relative flex aspect-[4/3] items-center justify-center">
                         {item.imageUrl ? (
                           <img
                             src={item.imageUrl}
                             alt={item.name}
-                            className="h-full w-full object-contain"
+                            className="h-full w-full object-cover"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-stone-50 text-sm text-stone-400">
