@@ -144,7 +144,12 @@ const DRINK_MENUS: ReserveMenuItem[] = [
 function buildProxyImageUrl(imageUrl?: string) {
   const value = (imageUrl || "").trim();
   if (!value) return "";
-  if (value.startsWith("/api/image-proxy?url=")) return value;
+
+  // すでに proxy 化済みならそのまま返す
+  if (value.startsWith("/api/image-proxy?url=")) {
+    return value;
+  }
+
   return `/api/image-proxy?url=${encodeURIComponent(value)}`;
 }
 
