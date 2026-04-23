@@ -51,15 +51,19 @@ export default function MenuCard({
       >
         {item.imageUrl ? (
           <img
-            src={item.imageUrl}
-            alt={item.name}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-            }}
-          />
+  src={encodeURI(item.imageUrl)}
+  alt={item.name}
+  referrerPolicy="no-referrer"
+  onError={(e) => {
+    e.currentTarget.style.display = "none";
+  }}
+  style={{
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+  }}
+/>
         ) : (
           <div
             style={{
