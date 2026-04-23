@@ -103,6 +103,9 @@ const EXTRA_MENUS: ReserveMenuItem[] = [
   },
 ];
 
+const proxyImage = (url: string) =>
+  `/api/image-proxy?url=${encodeURIComponent(url)}`;
+
 const DRINK_MENUS: ReserveMenuItem[] = [
   {
     id: "drink_irohasu",
@@ -111,43 +114,33 @@ const DRINK_MENUS: ReserveMenuItem[] = [
     imageUrl: proxyImage(
       "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/スクリーンショット-2026-04-08-9.14.51.png"
     ),
-    description:
-      "食事に合わせやすい、すっきり飲みやすいミネラルウォーター。",
+    description: "食事に合わせやすい、すっきり飲みやすいミネラルウォーター。",
+    label: "ドリンク",
     itemType: "drink",
   },
   {
     id: "drink_yakan_mugicha",
     name: "やかんの麦茶",
-    price: 200,
+    price: 150,
     imageUrl: proxyImage(
       "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/スクリーンショット-2026-04-08-9.15.18.png"
     ),
-    description:
-      "香ばしくやさしい味わい。食事にも合わせやすい定番ドリンク。",
+    description: "香ばしくてやさしい味わい。お弁当にもよく合います。",
+    label: "ドリンク",
     itemType: "drink",
   },
   {
-  id: "drink_cocacola",
-  name: "コカ・コーラ",
-  price: 200,
-  imageUrl: proxyImage(
-    "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/SCN_20260409_2239.pdf-1.jpg"
-  ),
-  description: "しっかり炭酸の定番コーラ。揚げ物との相性も抜群です。",
-  itemType: "drink",
-},
     id: "drink_cocacola_zero",
     name: "コカ・コーラゼロ",
     price: 200,
     imageUrl: proxyImage(
       "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/名称未設定のデザイン.png"
     ),
-    description:
-      "すっきり飲みやすいゼロ系コーラ。後味も軽やかです。",
+    description: "キレのある爽快感。甘さ控えめで食事中にも飲みやすい一本です。",
+    label: "ドリンク",
     itemType: "drink",
   },
 ];
-
 function buildProxyImageUrl(imageUrl?: string) {
   const value = (imageUrl || "").trim();
   if (!value) return "";
