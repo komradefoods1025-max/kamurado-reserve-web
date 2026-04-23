@@ -49,17 +49,17 @@ const STORAGE_KEYS = [
   "webReservationDraft",
 ];
 
-const proxyImage = (url: string) =>
-  `/api/image-proxy?url=${encodeURIComponent(url)}`;
-
+/**
+ * ここでは raw の画像URLを持たせる
+ * 表示時だけ /api/image-proxy を通す
+ */
 const BENTO_MENUS: ReserveMenuItem[] = [
   {
     id: "karaage_bento",
     name: "からあげ弁当",
     price: 700,
-    imageUrl: proxyImage(
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/signal-2026-03-23-214213_002.jpg"
-    ),
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/signal-2026-03-23-214213_002.jpg",
     description:
       "定番人気。外は香ばしく、中はジューシーに仕上げた定番のお弁当です。",
     label: "人気",
@@ -69,9 +69,8 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "shogayaki_bento",
     name: "生姜焼き弁当",
     price: 700,
-    imageUrl: proxyImage(
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/名称未設定のデザイン-5-1.png"
-    ),
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/名称未設定のデザイン-5-1.png",
     description:
       "ごはんが進む王道の味。やわらかいお肉と香りの良い生姜だれ。",
     itemType: "bento",
@@ -80,9 +79,8 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "nanban_bento",
     name: "チキン南蛮弁当",
     price: 900,
-    imageUrl: proxyImage(
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/名称未設定のデザイン-3-1.png"
-    ),
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/名称未設定のデザイン-3-1.png",
     description:
       "甘酢とタルタルの相性が抜群。満足感のある一品です。",
     label: "おすすめ",
@@ -95,9 +93,8 @@ const EXTRA_MENUS: ReserveMenuItem[] = [
     id: "extra_karaage",
     name: "追加からあげ",
     price: 80,
-    imageUrl: proxyImage(
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/SCN_20260409_2239.pdf.jpg"
-    ),
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/SCN_20260409_2239.pdf.jpg",
     description: "もう1個食べたい時に。1個から追加できます。",
     itemType: "extra",
   },
@@ -108,35 +105,30 @@ const DRINK_MENUS: ReserveMenuItem[] = [
     id: "drink_irohasu",
     name: "いろはす",
     price: 150,
-    imageUrl: proxyImage(
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/スクリーンショット-2026-04-08-9.14.51.png"
-    ),
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/スクリーンショット-2026-04-08-9.14.51.png",
     description:
       "食事に合わせやすい、すっきり飲みやすいミネラルウォーター。",
-    label: "ドリンク",
     itemType: "drink",
   },
   {
     id: "drink_yakan_mugicha",
     name: "やかんの麦茶",
-    price: 150,
-    imageUrl: proxyImage(
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/スクリーンショット-2026-04-08-9.15.18.png"
-    ),
-    description: "香ばしくてやさしい味わい。お弁当にもよく合います。",
-    label: "ドリンク",
+    price: 200,
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/スクリーンショット-2026-04-08-9.15.18.png",
+    description:
+      "香ばしくやさしい味わい。食事にも合わせやすい定番ドリンク。",
     itemType: "drink",
   },
   {
     id: "drink_cocacola_zero",
     name: "コカ・コーラゼロ",
     price: 200,
-    imageUrl: proxyImage(
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/名称未設定のデザイン.png"
-    ),
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/名称未設定のデザイン.png",
     description:
-      "キレのある爽快感。甘さ控えめで食事中にも飲みやすい一本です。",
-    label: "ドリンク",
+      "すっきり飲みやすいゼロ系コーラ。後味も軽やかです。",
     itemType: "drink",
   },
 ];
@@ -145,7 +137,7 @@ function buildProxyImageUrl(imageUrl?: string) {
   const value = (imageUrl || "").trim();
   if (!value) return "";
 
-  // すでに proxy 化済みならそのまま返す
+  // すでに proxy 化済みならそのまま使う
   if (value.startsWith("/api/image-proxy?url=")) {
     return value;
   }
@@ -153,20 +145,101 @@ function buildProxyImageUrl(imageUrl?: string) {
   return `/api/image-proxy?url=${encodeURIComponent(value)}`;
 }
 
-function MenuCardImage({ imageUrl, alt }: { imageUrl?: string; alt: string }) {
+function formatPrice(value: number) {
+  return `¥${Number(value || 0).toLocaleString("ja-JP")}`;
+}
+
+function normalizeCartItem(item: unknown): CartItem | null {
+  if (!item || typeof item !== "object") return null;
+
+  const raw = item as Record<string, unknown>;
+
+  return {
+    id: String(raw.id || ""),
+    name: String(raw.name || ""),
+    price: Number(raw.price || 0),
+    quantity: Math.max(0, Number(raw.quantity || 0)),
+    imageUrl: typeof raw.imageUrl === "string" ? raw.imageUrl : "",
+    description: typeof raw.description === "string" ? raw.description : "",
+    itemType:
+      raw.itemType === "drink" || raw.itemType === "extra" || raw.itemType === "bento"
+        ? raw.itemType
+        : "bento",
+    selectedOptionLabel:
+      typeof raw.selectedOptionLabel === "string" ? raw.selectedOptionLabel : "",
+    selectedOptions: Array.isArray(raw.selectedOptions)
+      ? raw.selectedOptions.map((v) => String(v))
+      : [],
+    note: typeof raw.note === "string" ? raw.note : "",
+  };
+}
+
+function safeParseDraft(raw: string | null): ReservationDraft | null {
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw);
+
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+
+    const record = parsed as Record<string, unknown>;
+
+    return {
+      items: Array.isArray(record.items)
+        ? record.items.map(normalizeCartItem).filter(Boolean) as CartItem[]
+        : [],
+      pickupDate: typeof record.pickupDate === "string" ? record.pickupDate : "",
+      pickupTime: typeof record.pickupTime === "string" ? record.pickupTime : "",
+      customerName:
+        typeof record.customerName === "string" ? record.customerName : "",
+      phone: typeof record.phone === "string" ? record.phone : "",
+      note: typeof record.note === "string" ? record.note : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function readDraft(): ReservationDraft {
+  if (typeof window === "undefined") return { items: [] };
+
+  for (const key of STORAGE_KEYS) {
+    const found = safeParseDraft(window.localStorage.getItem(key));
+    if (found) return found;
+  }
+
+  return { items: [] };
+}
+
+function writeDraft(draft: ReservationDraft) {
+  if (typeof window === "undefined") return;
+
+  const value = JSON.stringify(draft);
+  STORAGE_KEYS.forEach((key) => {
+    window.localStorage.setItem(key, value);
+  });
+}
+
+function MenuCardImage({
+  imageUrl,
+  alt,
+}: {
+  imageUrl?: string;
+  alt: string;
+}) {
   const src = useMemo(() => buildProxyImageUrl(imageUrl), [imageUrl]);
   const [hasError, setHasError] = useState(false);
-
-  const canShowImage = !!src && !hasError;
 
   return (
     <div
       style={{
         width: "100%",
-        height: 220,
-        background: canShowImage
-          ? "#f6efe4"
-          : "linear-gradient(135deg, rgba(110,75,42,0.08), rgba(184,139,67,0.14))",
+        height: 240,
+        background: hasError
+          ? "linear-gradient(135deg, rgba(110,75,42,0.08), rgba(184,139,67,0.14))"
+          : "#f6efe4",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -174,7 +247,7 @@ function MenuCardImage({ imageUrl, alt }: { imageUrl?: string; alt: string }) {
         borderBottom: "1px solid rgba(189,167,142,0.25)",
       }}
     >
-      {canShowImage ? (
+      {!hasError && src ? (
         <img
           src={src}
           alt={alt}
@@ -217,6 +290,7 @@ function MenuCardView({
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        boxShadow: "0 12px 32px rgba(74, 44, 19, 0.06)",
       }}
     >
       <MenuCardImage imageUrl={item.imageUrl} alt={item.name} />
@@ -246,7 +320,8 @@ function MenuCardView({
                   display: "inline-flex",
                   marginBottom: 12,
                   fontSize: 13,
-                  padding: "7px 14px",
+                  padding: "8px 14px",
+                  fontWeight: 700,
                 }}
               >
                 {item.label}
@@ -255,12 +330,11 @@ function MenuCardView({
 
             <h3
               style={{
-                fontSize: 22,
-                lineHeight: 1.35,
-                overflowWrap: "anywhere",
-                wordBreak: "break-word",
-                color: "#2d241c",
+                fontSize: 24,
+                lineHeight: 1.4,
                 fontWeight: 700,
+                color: "#2f241d",
+                margin: 0,
               }}
             >
               {item.name}
@@ -269,58 +343,69 @@ function MenuCardView({
 
           <div
             style={{
-              flexShrink: 0,
-              color: "#b88b43",
+              color: "#b3873d",
+              fontSize: 22,
               fontWeight: 700,
-              fontSize: 18,
               whiteSpace: "nowrap",
             }}
           >
-            ¥{item.price.toLocaleString("ja-JP")}
+            {formatPrice(item.price)}
           </div>
         </div>
 
-        <p
-          style={{
-            fontSize: 16,
-            lineHeight: 1.9,
-            color: "#6d6258",
-            overflowWrap: "anywhere",
-            wordBreak: "break-word",
-          }}
-        >
-          {item.description ?? ""}
-        </p>
-
-        <div style={{ marginTop: "auto" }}>
-          <div
+        {item.description ? (
+          <p
             style={{
-              color: "#6d6258",
-              fontSize: 15,
-              marginBottom: 12,
+              color: "#7c6a5b",
+              fontSize: 16,
+              lineHeight: 1.9,
+              margin: 0,
             }}
           >
-            {cartQty > 0 ? `カート内 ${cartQty}点` : "カートに追加できます"}
-          </div>
+            {item.description}
+          </p>
+        ) : null}
 
-          {cartQty > 0 ? (
+        {cartQty > 0 ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              marginTop: "auto",
+            }}
+          >
             <div
               style={{
-                display: "flex",
+                color: "#8a6240",
+                fontSize: 16,
+                fontWeight: 600,
+              }}
+            >
+              カートに {cartQty} 点
+            </div>
+
+            <div
+              style={{
+                display: "inline-flex",
                 alignItems: "center",
-                gap: 12,
+                gap: 10,
               }}
             >
               <button
                 type="button"
                 onClick={() => onDecrement(item)}
-                className="inline-flex items-center justify-center border"
                 style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 18,
-                  fontSize: 28,
-                  background: "#fffdf9",
+                  width: 46,
+                  height: 46,
+                  borderRadius: 9999,
+                  border: "1px solid rgba(138,98,64,0.22)",
+                  background: "#fff",
+                  color: "#8a6240",
+                  fontSize: 24,
+                  lineHeight: 1,
+                  fontWeight: 700,
                 }}
               >
                 −
@@ -328,11 +413,11 @@ function MenuCardView({
 
               <div
                 style={{
-                  minWidth: 60,
+                  minWidth: 28,
                   textAlign: "center",
-                  fontSize: 28,
                   fontWeight: 700,
-                  color: "#2d241c",
+                  fontSize: 18,
+                  color: "#2f241d",
                 }}
               >
                 {cartQty}
@@ -341,76 +426,45 @@ function MenuCardView({
               <button
                 type="button"
                 onClick={() => onIncrement(item)}
-                className="inline-flex items-center justify-center bg-amber-900 text-white"
                 style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 18,
-                  fontSize: 28,
+                  width: 46,
+                  height: 46,
+                  borderRadius: 9999,
+                  border: "none",
+                  background: "#9a6739",
+                  color: "#fff",
+                  fontSize: 24,
+                  lineHeight: 1,
+                  fontWeight: 700,
                 }}
               >
                 ＋
               </button>
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => onIncrement(item)}
-              className="inline-flex items-center justify-center bg-amber-900 text-white"
-              style={{
-                width: "100%",
-                padding: "14px 18px",
-                borderRadius: 18,
-                fontSize: 18,
-                fontWeight: 700,
-              }}
-            >
-              カートに追加
-            </button>
-          )}
-        </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onIncrement(item)}
+            style={{
+              marginTop: "auto",
+              width: "100%",
+              border: "none",
+              borderRadius: 9999,
+              background: "#9a6739",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 18,
+              padding: "18px 20px",
+              boxShadow: "0 10px 24px rgba(154,103,57,0.2)",
+            }}
+          >
+            カートに追加
+          </button>
+        )}
       </div>
     </article>
   );
-}
-
-function safeParseDraft(raw: string | null): ReservationDraft | null {
-  if (!raw) return null;
-
-  try {
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return null;
-
-    return {
-      items: Array.isArray(parsed.items) ? parsed.items : [],
-      pickupDate: parsed.pickupDate || "",
-      pickupTime: parsed.pickupTime || "",
-      customerName: parsed.customerName || "",
-      phone: parsed.phone || "",
-      note: parsed.note || "",
-    };
-  } catch {
-    return null;
-  }
-}
-
-function readDraft(): ReservationDraft {
-  if (typeof window === "undefined") return { items: [] };
-
-  for (const key of STORAGE_KEYS) {
-    const found = safeParseDraft(window.localStorage.getItem(key));
-    if (found) return found;
-  }
-
-  return { items: [] };
-}
-
-function writeDraft(draft: ReservationDraft) {
-  if (typeof window === "undefined") return;
-  const value = JSON.stringify(draft);
-  STORAGE_KEYS.forEach((key) => {
-    window.localStorage.setItem(key, value);
-  });
 }
 
 export default function ReserveMenuPage() {
@@ -427,6 +481,12 @@ export default function ReserveMenuPage() {
     return draft.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   }, [draft.items]);
 
+  const cartTotal = useMemo(() => {
+    return draft.items.reduce((sum, item) => {
+      return sum + Number(item.price || 0) * Number(item.quantity || 0);
+    }, 0);
+  }, [draft.items]);
+
   const itemQtyMap = useMemo(() => {
     const map = new Map<string, number>();
     draft.items.forEach((item) => {
@@ -434,6 +494,15 @@ export default function ReserveMenuPage() {
     });
     return map;
   }, [draft.items]);
+
+  function updateDraftItems(nextItems: CartItem[]) {
+    const updated: ReservationDraft = {
+      ...draft,
+      items: nextItems,
+    };
+    setDraft(updated);
+    writeDraft(updated);
+  }
 
   function incrementItem(item: ReserveMenuItem) {
     const nextItems = [...draft.items];
@@ -459,13 +528,7 @@ export default function ReserveMenuPage() {
       });
     }
 
-    const updated: ReservationDraft = {
-      ...draft,
-      items: nextItems,
-    };
-
-    setDraft(updated);
-    writeDraft(updated);
+    updateDraftItems(nextItems);
   }
 
   function decrementItem(item: ReserveMenuItem) {
@@ -480,13 +543,7 @@ export default function ReserveMenuPage() {
       )
       .filter((cartItem) => cartItem.quantity > 0);
 
-    const updated: ReservationDraft = {
-      ...draft,
-      items: nextItems,
-    };
-
-    setDraft(updated);
-    writeDraft(updated);
+    updateDraftItems(nextItems);
   }
 
   if (!mounted) {
@@ -494,22 +551,55 @@ export default function ReserveMenuPage() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-6">
-      <div className="mx-auto max-w-4xl">
-        <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
+    <main
+      className="min-h-screen px-4 py-6"
+      style={{
+        background:
+          "linear-gradient(180deg, #f7f1e6 0%, #f5efe2 40%, #f3ecde 100%)",
+      }}
+    >
+      <div className="mx-auto max-w-5xl">
+        <section
+          className="rounded-[32px] border p-6 md:p-8"
+          style={{
+            borderColor: "#ead9bd",
+            background: "rgba(255,255,255,0.58)",
+            backdropFilter: "blur(4px)",
+            boxShadow: "0 20px 60px rgba(93, 62, 33, 0.08)",
+          }}
+        >
           <div
             style={{
               color: "#8a6240",
               letterSpacing: "0.2em",
               fontSize: 15,
               marginBottom: 14,
+              fontWeight: 700,
             }}
           >
             RESERVE
           </div>
 
-          <h1 style={{ marginBottom: 14 }}>メニューを選ぶ</h1>
-          <p style={{ fontSize: 18, marginBottom: 20 }}>
+          <h1
+            style={{
+              marginBottom: 14,
+              fontSize: 34,
+              lineHeight: 1.3,
+              color: "#2f241d",
+              fontWeight: 800,
+            }}
+          >
+            メニューを選ぶ
+          </h1>
+
+          <p
+            style={{
+              fontSize: 17,
+              marginBottom: 24,
+              color: "#6f5b4b",
+              lineHeight: 1.8,
+            }}
+          >
             ご希望の商品をカートに追加してください。
           </p>
 
@@ -518,61 +608,77 @@ export default function ReserveMenuPage() {
               display: "grid",
               gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
               gap: 12,
-              marginBottom: 22,
+              marginBottom: 28,
             }}
           >
-            {["1. メニュー", "2. カート", "3. 日時", "4. お客様情報"].map((step, index) => (
-              <div
-                key={step}
-                style={{
-                  borderRadius: 999,
-                  padding: "14px 12px",
-                  textAlign: "center",
-                  fontWeight: 700,
-                  fontSize: 16,
-                  lineHeight: 1.4,
-                  background: index === 0 ? "#6f4a2b" : "rgba(89,70,48,0.08)",
-                  color: index === 0 ? "#fff" : "#6d6258",
-                  overflowWrap: "anywhere",
-                  wordBreak: "break-word",
-                }}
-              >
-                {step}
-              </div>
-            ))}
+            {["1. メニュー", "2. カート", "3. 日時", "4. お客様情報"].map(
+              (step, index) => (
+                <div
+                  key={step}
+                  style={{
+                    borderRadius: 999,
+                    padding: "16px 12px",
+                    textAlign: "center",
+                    fontWeight: 700,
+                    fontSize: 16,
+                    lineHeight: 1.4,
+                    color: index === 0 ? "#fff" : "#7a6858",
+                    background: index === 0 ? "#9a6739" : "#efe5d4",
+                    boxShadow:
+                      index === 0
+                        ? "0 10px 24px rgba(154,103,57,0.2)"
+                        : "none",
+                  }}
+                >
+                  {step}
+                </div>
+              )
+            )}
           </div>
 
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
               alignItems: "center",
-              gap: 12,
+              justifyContent: "space-between",
+              gap: 16,
+              marginBottom: 20,
               flexWrap: "wrap",
-              marginBottom: 16,
             }}
           >
-            <h2>お弁当</h2>
-            <Link
-              href="/reserve/cart"
-              className="inline-flex items-center justify-center bg-amber-900 text-white"
+            <h2
               style={{
-                padding: "12px 18px",
-                borderRadius: 18,
-                minWidth: 170,
+                fontSize: 28,
+                lineHeight: 1.4,
+                color: "#2f241d",
+                fontWeight: 800,
+                margin: 0,
               }}
             >
-              カートを見る {cartCount > 0 ? `(${cartCount})` : ""}
+              お弁当
+            </h2>
+
+            <Link
+              href="/reserve/cart"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 9999,
+                background: "#9a6739",
+                color: "#fff",
+                padding: "16px 26px",
+                fontWeight: 700,
+                fontSize: 18,
+                textDecoration: "none",
+                boxShadow: "0 10px 24px rgba(154,103,57,0.2)",
+              }}
+            >
+              カートを見る（{cartCount}）
             </Link>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gap: 18,
-              marginBottom: 28,
-            }}
-          >
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {BENTO_MENUS.map((item) => (
               <MenuCardView
                 key={item.id}
@@ -584,34 +690,22 @@ export default function ReserveMenuPage() {
             ))}
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 12,
-              flexWrap: "wrap",
-              marginBottom: 16,
-            }}
-          >
-            <h2>追加メニュー</h2>
-            <div
-              style={{
-                color: "#6d6258",
-                fontSize: 15,
-              }}
-            >
-              もう少し食べたい時に
-            </div>
-          </div>
+          <div style={{ height: 28 }} />
 
-          <div
+          <h2
             style={{
-              display: "grid",
-              gap: 18,
-              marginBottom: 28,
+              fontSize: 28,
+              lineHeight: 1.4,
+              color: "#2f241d",
+              fontWeight: 800,
+              margin: 0,
+              marginBottom: 20,
             }}
           >
+            追加メニュー
+          </h2>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {EXTRA_MENUS.map((item) => (
               <MenuCardView
                 key={item.id}
@@ -623,33 +717,22 @@ export default function ReserveMenuPage() {
             ))}
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 12,
-              flexWrap: "wrap",
-              marginBottom: 16,
-            }}
-          >
-            <h2>ドリンク</h2>
-            <div
-              style={{
-                color: "#6d6258",
-                fontSize: 15,
-              }}
-            >
-              一緒にご注文いただけます
-            </div>
-          </div>
+          <div style={{ height: 28 }} />
 
-          <div
+          <h2
             style={{
-              display: "grid",
-              gap: 18,
+              fontSize: 28,
+              lineHeight: 1.4,
+              color: "#2f241d",
+              fontWeight: 800,
+              margin: 0,
+              marginBottom: 20,
             }}
           >
+            ドリンク
+          </h2>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {DRINK_MENUS.map((item) => (
               <MenuCardView
                 key={item.id}
@@ -664,56 +747,70 @@ export default function ReserveMenuPage() {
           <div
             style={{
               position: "sticky",
-              bottom: 12,
+              bottom: 16,
               marginTop: 28,
-              paddingTop: 8,
+              zIndex: 20,
             }}
           >
             <div
+              className="rounded-[28px] border bg-white/95 p-4 md:p-5"
               style={{
-                borderRadius: 24,
-                background: "rgba(255,253,249,0.94)",
-                border: "1px solid rgba(189,167,142,0.4)",
-                boxShadow: "0 12px 28px rgba(79,56,33,0.10)",
-                padding: 14,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 12,
+                borderColor: "#ead9bd",
+                boxShadow: "0 18px 50px rgba(93, 62, 33, 0.12)",
+                backdropFilter: "blur(8px)",
               }}
             >
-              <div style={{ minWidth: 0 }}>
-                <div
-                  style={{
-                    color: "#6d6258",
-                    fontSize: 14,
-                    marginBottom: 4,
-                  }}
-                >
-                  現在のカート
-                </div>
-                <div
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 700,
-                    color: "#2d241c",
-                  }}
-                >
-                  {cartCount}点
-                </div>
-              </div>
-
-              <Link
-                href="/reserve/cart"
-                className="inline-flex items-center justify-center bg-amber-900 text-white"
+              <div
                 style={{
-                  padding: "14px 20px",
-                  borderRadius: 18,
-                  minWidth: 180,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  flexWrap: "wrap",
                 }}
               >
-                カートへ進む
-              </Link>
+                <div>
+                  <div
+                    style={{
+                      fontSize: 16,
+                      color: "#8a6240",
+                      marginBottom: 6,
+                      fontWeight: 600,
+                    }}
+                  >
+                    現在のカート
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 800,
+                      color: "#2f241d",
+                    }}
+                  >
+                    {cartCount}点 ／ {formatPrice(cartTotal)}
+                  </div>
+                </div>
+
+                <Link
+                  href="/reserve/cart"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: 9999,
+                    background: "#9a6739",
+                    color: "#fff",
+                    padding: "18px 34px",
+                    minWidth: 220,
+                    fontWeight: 700,
+                    fontSize: 18,
+                    textDecoration: "none",
+                    boxShadow: "0 10px 24px rgba(154,103,57,0.2)",
+                  }}
+                >
+                  カートへ進む
+                </Link>
+              </div>
             </div>
           </div>
         </section>
