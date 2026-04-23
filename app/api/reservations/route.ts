@@ -1,58 +1,57 @@
-
 import { NextRequest, NextResponse } from "next/server";
 
-const GAS_ENDPOINT =
-  process.env.NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT ||
-  process.env.NEXT_PUBLIC_RESERVATION_SAVE_URL ||
-  "";
+export const runtime = "nodejs";
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
+  const rawUrl = request.nextUrl.searchParams.get("url");
+
+  if (!rawUrl) {
+    return new NextResponse("Missing url", { status: 400 });
+  }
+
+  let targetUrl: URL;
+
   try {
-    if (!GAS_ENDPOINT) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message:
-            "送信先URLが未設定です。NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT を確認してください。",
-        },
-        { status: 500 }
-      );
-    }
+    targetUrl = new URL(rawUrl);
+  } catch {
+    return new NextResponse("Invalid url", { status: 400 });
+  }
 
-    const body = await request.json();
+  if (!["http:", "https:"].includes(targetUrl.protocol)) {
+    return new NextResponse("Unsupported protocol", { status: 400 });
+  }
 
-    const response = await fetch(GAS_ENDPOINT, {
-      method: "POST",
+  try {
+    const response = await fetch(targetUrl.toString(), {
       headers: {
-        "Content-Type": "application/json",
+        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        Referer: `${targetUrl.origin}/`,
+        "Cache-Control": "no-cache",
       },
-      body: JSON.stringify(body),
       cache: "no-store",
     });
 
-    const text = await response.text();
-console.log("GAS response text:", text);
-
-    let data: unknown = {};
-    try {
-      data = text ? JSON.parse(text) : {};
-    } catch {
-      data = { ok: response.ok, message: text };
+    if (!response.ok) {
+      return new NextResponse(`Failed to fetch image: ${response.status}`, {
+        status: response.status,
+      });
     }
 
-    return NextResponse.json(data, {
-      status: response.ok ? 200 : 500,
+    const contentType =
+      response.headers.get("content-type") || "image/jpeg";
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: {
+        "Content-Type": contentType,
+        "Cache-Control": "public, max-age=86400, s-maxage=86400",
+      },
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "予約送信に失敗しました。";
-
-    return NextResponse.json(
-      {
-        ok: false,
-        message,
-      },
-      { status: 500 }
-    );
+    console.error("image-proxy error:", error);
+    return new NextResponse("Image proxy error", { status: 500 });
   }
 }
