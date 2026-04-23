@@ -103,9 +103,6 @@ const EXTRA_MENUS: ReserveMenuItem[] = [
   },
 ];
 
-const proxyImage = (url: string) =>
-  `/api/image-proxy?url=${encodeURIComponent(url)}`;
-
 const DRINK_MENUS: ReserveMenuItem[] = [
   {
     id: "drink_irohasu",
@@ -114,7 +111,8 @@ const DRINK_MENUS: ReserveMenuItem[] = [
     imageUrl: proxyImage(
       "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/スクリーンショット-2026-04-08-9.14.51.png"
     ),
-    description: "食事に合わせやすい、すっきり飲みやすいミネラルウォーター。",
+    description:
+      "食事に合わせやすい、すっきり飲みやすいミネラルウォーター。",
     label: "ドリンク",
     itemType: "drink",
   },
@@ -136,14 +134,17 @@ const DRINK_MENUS: ReserveMenuItem[] = [
     imageUrl: proxyImage(
       "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/名称未設定のデザイン.png"
     ),
-    description: "キレのある爽快感。甘さ控えめで食事中にも飲みやすい一本です。",
+    description:
+      "キレのある爽快感。甘さ控えめで食事中にも飲みやすい一本です。",
     label: "ドリンク",
     itemType: "drink",
   },
 ];
+
 function buildProxyImageUrl(imageUrl?: string) {
   const value = (imageUrl || "").trim();
   if (!value) return "";
+  if (value.startsWith("/api/image-proxy?url=")) return value;
   return `/api/image-proxy?url=${encodeURIComponent(value)}`;
 }
 
