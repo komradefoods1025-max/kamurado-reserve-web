@@ -49,13 +49,17 @@ const STORAGE_KEYS = [
   "webReservationDraft",
 ];
 
+const proxyImage = (url: string) =>
+  `/api/image-proxy?url=${encodeURIComponent(url)}`;
+
 const BENTO_MENUS: ReserveMenuItem[] = [
   {
     id: "karaage_bento",
     name: "からあげ弁当",
     price: 700,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/signal-2026-03-23-214213_002.jpg",
+    imageUrl: proxyImage(
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/signal-2026-03-23-214213_002.jpg"
+    ),
     description:
       "定番人気。外は香ばしく、中はジューシーに仕上げた定番のお弁当です。",
     label: "人気",
@@ -65,18 +69,22 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "shogayaki_bento",
     name: "生姜焼き弁当",
     price: 700,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/%E5%90%8D%E7%A7%B0%E6%9C%AA%E8%A8%AD%E5%AE%9A%E3%81%AE%E3%83%87%E3%82%B6%E3%82%A4%E3%83%B3-5-1.png",
-    description: "ごはんが進む王道の味。やわらかいお肉と香りの良い生姜だれ。",
+    imageUrl: proxyImage(
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/名称未設定のデザイン-5-1.png"
+    ),
+    description:
+      "ごはんが進む王道の味。やわらかいお肉と香りの良い生姜だれ。",
     itemType: "bento",
   },
   {
     id: "nanban_bento",
     name: "チキン南蛮弁当",
     price: 900,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/%E5%90%8D%E7%A7%B0%E6%9C%AA%E8%A8%AD%E5%AE%9A%E3%81%AE%E3%83%87%E3%82%B6%E3%82%A4%E3%83%B3-3-1.png",
-    description: "甘酢とタルタルの相性が抜群。満足感のある一品です。",
+    imageUrl: proxyImage(
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/名称未設定のデザイン-3-1.png"
+    ),
+    description:
+      "甘酢とタルタルの相性が抜群。満足感のある一品です。",
     label: "おすすめ",
     itemType: "bento",
   },
@@ -85,10 +93,11 @@ const BENTO_MENUS: ReserveMenuItem[] = [
 const EXTRA_MENUS: ReserveMenuItem[] = [
   {
     id: "extra_karaage",
-    name: "追加唐揚げ",
+    name: "追加からあげ",
     price: 80,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/photo_2026-03-22_14-58-55.jpg",
+    imageUrl: proxyImage(
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/SCN_20260409_2239.pdf.jpg"
+    ),
     description: "もう1個食べたい時に。1個から追加できます。",
     itemType: "extra",
   },
@@ -99,36 +108,42 @@ const DRINK_MENUS: ReserveMenuItem[] = [
     id: "drink_irohasu",
     name: "いろはす",
     price: 150,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2026-04-08-9.14.51.png",
-    description: "食事に合わせやすい、すっきり飲みやすいミネラルウォーター。",
+    imageUrl: proxyImage(
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/スクリーンショット-2026-04-08-9.14.51.png"
+    ),
+    description:
+      "食事に合わせやすい、すっきり飲みやすいミネラルウォーター。",
     itemType: "drink",
   },
   {
     id: "drink_yakan_mugicha",
     name: "やかんの麦茶",
     price: 200,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88-2026-04-08-9.15.18.png",
-    description: "香ばしくやさしい味わい。食事にも合わせやすい定番ドリンク。",
+    imageUrl: proxyImage(
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/スクリーンショット-2026-04-08-9.15.18.png"
+    ),
+    description:
+      "香ばしくやさしい味わい。食事にも合わせやすい定番ドリンク。",
     itemType: "drink",
   },
   {
-    id: "drink_cocacola",
-    name: "コカ・コーラ",
-    price: 200,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e382b3e383bce383a9-1.jpg",
-    description: "しっかり炭酸の定番コーラ。揚げ物との相性も抜群です。",
-    itemType: "drink",
-  },
-  {
+  id: "drink_cocacola",
+  name: "コカ・コーラ",
+  price: 200,
+  imageUrl: proxyImage(
+    "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/SCN_20260409_2239.pdf-1.jpg"
+  ),
+  description: "しっかり炭酸の定番コーラ。揚げ物との相性も抜群です。",
+  itemType: "drink",
+},
     id: "drink_cocacola_zero",
     name: "コカ・コーラゼロ",
     price: 200,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/%E5%90%8D%E7%A7%B0%E6%9C%AA%E8%A8%AD%E5%AE%9A%E3%81%AE%E3%83%87%E3%82%B6%E3%82%A4%E3%83%B3.png",
-    description: "すっきり飲みやすいゼロ系コーラ。後味も軽やかです。",
+    imageUrl: proxyImage(
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/名称未設定のデザイン.png"
+    ),
+    description:
+      "すっきり飲みやすいゼロ系コーラ。後味も軽やかです。",
     itemType: "drink",
   },
 ];
