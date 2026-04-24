@@ -11,6 +11,7 @@ type CartItem = {
   quantity: number;
   imageUrl?: string;
   description?: string;
+  itemType?: "bento" | "drink" | "extra";
   selectedOptionLabel?: string;
   selectedOptions?: string[];
   note?: string;
@@ -25,45 +26,26 @@ type ReservationDraft = {
   note?: string;
   totalAmount?: number;
   totalQuantity?: number;
+  updatedAt?: number;
 };
 
+/**
+ * menu/page.tsx と schedule/page.tsx で保存キーがズレると、
+ * 「メニューを選んだのに日時ページで空扱い」になるため、
+ * 旧キーも含めて全部読む・全部書く形にする
+ */
 const DRAFT_KEYS = [
+  "kamurado-reserve-draft",
+  "kamurado-reservation-draft",
+  "reservationDraft",
+  "webReservationDraft",
+
+  // 旧・別ページ用キーも一応残す
   "kamurado-web-reservation",
   "reservation-draft",
   "reserve-draft",
   "reservation",
 ];
-
-function readJson<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJson(key: string, value: unknown) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(key, JSON.stringify(value));
-}
-
-function readFirstAvailableJson<T>(keys: string[], fallback: T): T {
-  for (const key of keys) {
-    const value = readJson<T | null>(key, null);
-    if (value) return value;
-  }
-  return fallback;
-}
-
-function writeDraft(draft: ReservationDraft) {
-  for (const key of DRAFT_KEYS) {
-    writeJson(key, draft);
-  }
-}
 
 function pad2(value: number) {
   return String(value).padStart(2, "0");
@@ -77,6 +59,7 @@ function formatDateToYmd(date: Date) {
 
 function formatDateLabel(ymd: string) {
   const date = new Date(`${ymd}T00:00:00`);
+
   return new Intl.DateTimeFormat("ja-JP", {
     month: "numeric",
     day: "numeric",
@@ -113,8 +96,170 @@ function generateTimeSlots() {
   ];
 }
 
+function normalizeCartItem(item: unknown): CartItem | null {
+  if (!item || typeof item !== "object") return null;
+
+  const raw = item as Record<string, unknown>;
+
+  const id = String(raw.id || "");
+  const name = String(raw.name || "");
+  const quantity = Math.max(0, Number(raw.quantity || 0));
+
+  if (!id || !name || quantity <= 0) {
+    return null;
+  }
+
+  return {
+    id,
+    name,
+    price: Number(raw.price || 0),
+    quantity,
+    imageUrl: typeof raw.imageUrl === "string" ? raw.imageUrl : "",
+    description: typeof raw.description === "string" ? raw.description : "",
+    itemType:
+      raw.itemType === "drink" ||
+      raw.itemType === "extra" ||
+      raw.itemType === "bento"
+        ? raw.itemType
+        : "bento",
+    selectedOptionLabel:
+      typeof raw.selectedOptionLabel === "string"
+        ? raw.selectedOptionLabel
+        : "",
+    selectedOptions: Array.isArray(raw.selectedOptions)
+      ? raw.selectedOptions.map((v) => String(v))
+      : [],
+    note: typeof raw.note === "string" ? raw.note : "",
+  };
+}
+
+function safeParseDraft(raw: string | null): ReservationDraft | null {
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw);
+
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+
+    const record = parsed as Record<string, unknown>;
+
+    const items = Array.isArray(record.items)
+      ? record.items
+          .map(normalizeCartItem)
+          .filter((item): item is CartItem => Boolean(item))
+      : [];
+
+    return {
+      items,
+      pickupDate: typeof record.pickupDate === "string" ? record.pickupDate : "",
+      pickupTime: typeof record.pickupTime === "string" ? record.pickupTime : "",
+      customerName:
+        typeof record.customerName === "string" ? record.customerName : "",
+      phone: typeof record.phone === "string" ? record.phone : "",
+      note: typeof record.note === "string" ? record.note : "",
+      totalAmount: Number(record.totalAmount || 0),
+      totalQuantity: Number(record.totalQuantity || 0),
+      updatedAt: Number(record.updatedAt || 0),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getStoredDraftValue(key: string) {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function getCartQuantity(draft: ReservationDraft) {
+  return (draft.items || []).reduce(
+    (sum, item) => sum + Number(item.quantity || 0),
+    0
+  );
+}
+
+function getCartTotal(draft: ReservationDraft) {
+  return (draft.items || []).reduce((sum, item) => {
+    return sum + Number(item.price || 0) * Number(item.quantity || 0);
+  }, 0);
+}
+
+function chooseBestDraft(candidates: ReservationDraft[]) {
+  if (candidates.length === 0) {
+    return { items: [] };
+  }
+
+  const sorted = [...candidates].sort((a, b) => {
+    const aQty = getCartQuantity(a);
+    const bQty = getCartQuantity(b);
+
+    // 空データより商品が入っているデータを優先
+    if (aQty > 0 && bQty <= 0) return -1;
+    if (bQty > 0 && aQty <= 0) return 1;
+
+    // 新しいデータを優先
+    const aTime = Number(a.updatedAt || 0);
+    const bTime = Number(b.updatedAt || 0);
+
+    if (aTime !== bTime) {
+      return bTime - aTime;
+    }
+
+    // 最後に数量が多い方を優先
+    return bQty - aQty;
+  });
+
+  return sorted[0] || { items: [] };
+}
+
+function readDraft(): ReservationDraft {
+  if (typeof window === "undefined") return { items: [] };
+
+  const candidates: ReservationDraft[] = [];
+
+  for (const key of DRAFT_KEYS) {
+    const found = safeParseDraft(getStoredDraftValue(key));
+    if (found) {
+      candidates.push(found);
+    }
+  }
+
+  return chooseBestDraft(candidates);
+}
+
+function writeDraft(draft: ReservationDraft) {
+  if (typeof window === "undefined") return;
+
+  const totalQuantity = getCartQuantity(draft);
+  const totalAmount = getCartTotal(draft);
+
+  const value = JSON.stringify({
+    ...draft,
+    items: Array.isArray(draft.items) ? draft.items : [],
+    totalQuantity,
+    totalAmount,
+    updatedAt: Date.now(),
+  });
+
+  for (const key of DRAFT_KEYS) {
+    try {
+      window.localStorage.setItem(key, value);
+    } catch {
+      // Safariのプライベートブラウズ等でlocalStorageが失敗しても画面は落とさない
+    }
+  }
+}
+
 export default function ReserveSchedulePage() {
   const router = useRouter();
+
   const [draft, setDraft] = useState<ReservationDraft>({ items: [] });
   const [loaded, setLoaded] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
@@ -124,20 +269,59 @@ export default function ReserveSchedulePage() {
   const availableTimes = useMemo(() => generateTimeSlots(), []);
 
   useEffect(() => {
-    const currentDraft = readFirstAvailableJson<ReservationDraft>(DRAFT_KEYS, {
-      items: [],
-    });
+    const loadDraft = () => {
+      const currentDraft = readDraft();
+      const firstDate = generateDates(10)[0] || "";
 
-    setDraft(currentDraft);
-    setSelectedDate(currentDraft.pickupDate || generateDates(10)[0] || "");
-    setSelectedTime(currentDraft.pickupTime || "");
-    setLoaded(true);
+      setDraft(currentDraft);
+      setSelectedDate(currentDraft.pickupDate || firstDate);
+      setSelectedTime(currentDraft.pickupTime || "");
+      setLoaded(true);
+
+      // 読めた時点で全キーへ書き直して、以降のページでもズレないようにする
+      if (getCartQuantity(currentDraft) > 0) {
+        writeDraft(currentDraft);
+      }
+    };
+
+    loadDraft();
+
+    window.addEventListener("pageshow", loadDraft);
+    window.addEventListener("focus", loadDraft);
+
+    return () => {
+      window.removeEventListener("pageshow", loadDraft);
+      window.removeEventListener("focus", loadDraft);
+    };
   }, []);
 
-  const cartCount = useMemo(
-    () => (draft.items || []).reduce((sum, item) => sum + item.quantity, 0),
-    [draft.items]
-  );
+  const cartCount = useMemo(() => getCartQuantity(draft), [draft]);
+
+  function handleSelectDate(date: string) {
+    setSelectedDate(date);
+
+    const nextDraft: ReservationDraft = {
+      ...draft,
+      pickupDate: date,
+      pickupTime: selectedTime,
+    };
+
+    setDraft(nextDraft);
+    writeDraft(nextDraft);
+  }
+
+  function handleSelectTime(time: string) {
+    setSelectedTime(time);
+
+    const nextDraft: ReservationDraft = {
+      ...draft,
+      pickupDate: selectedDate,
+      pickupTime: time,
+    };
+
+    setDraft(nextDraft);
+    writeDraft(nextDraft);
+  }
 
   function handleNext() {
     if (!selectedDate || !selectedTime) return;
@@ -148,6 +332,7 @@ export default function ReserveSchedulePage() {
       pickupTime: selectedTime,
     };
 
+    setDraft(nextDraft);
     writeDraft(nextDraft);
     router.push("/reserve/customer");
   }
@@ -227,7 +412,7 @@ export default function ReserveSchedulePage() {
                 <button
                   key={date}
                   type="button"
-                  onClick={() => setSelectedDate(date)}
+                  onClick={() => handleSelectDate(date)}
                   className={[
                     "rounded-2xl border px-4 py-4 text-left transition",
                     active
@@ -235,7 +420,9 @@ export default function ReserveSchedulePage() {
                       : "border-stone-200 bg-stone-50 hover:bg-stone-100",
                   ].join(" ")}
                 >
-                  <div className="text-sm font-medium">{formatDateLabel(date)}</div>
+                  <div className="text-sm font-medium">
+                    {formatDateLabel(date)}
+                  </div>
                   <div
                     className={[
                       "mt-1 text-xs",
@@ -264,7 +451,7 @@ export default function ReserveSchedulePage() {
                 <button
                   key={time}
                   type="button"
-                  onClick={() => setSelectedTime(time)}
+                  onClick={() => handleSelectTime(time)}
                   className={[
                     "rounded-2xl border px-4 py-3 text-center text-sm font-medium transition",
                     active
@@ -284,7 +471,9 @@ export default function ReserveSchedulePage() {
           <div className="mt-3 space-y-2 text-sm text-stone-700">
             <div className="flex items-center justify-between">
               <span>受取日</span>
-              <span>{selectedDate ? formatDateLabel(selectedDate) : "未選択"}</span>
+              <span>
+                {selectedDate ? formatDateLabel(selectedDate) : "未選択"}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span>受取時間</span>
@@ -296,6 +485,7 @@ export default function ReserveSchedulePage() {
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
           <Link
             href="/reserve/cart"
+            onClick={() => writeDraft(draft)}
             className="inline-flex items-center justify-center rounded-2xl border border-stone-300 bg-white px-5 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100"
           >
             カートへ戻る
