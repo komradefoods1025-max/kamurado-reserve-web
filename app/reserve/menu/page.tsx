@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { MouseEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 type ReserveMenuItem = {
@@ -33,6 +34,7 @@ type ReservationDraft = {
   customerName?: string;
   phone?: string;
   note?: string;
+  updatedAt?: number;
 };
 
 type MenuCardViewProps = {
@@ -154,19 +156,31 @@ function normalizeCartItem(item: unknown): CartItem | null {
 
   const raw = item as Record<string, unknown>;
 
+  const id = String(raw.id || "");
+  const name = String(raw.name || "");
+  const quantity = Math.max(0, Number(raw.quantity || 0));
+
+  if (!id || !name || quantity <= 0) {
+    return null;
+  }
+
   return {
-    id: String(raw.id || ""),
-    name: String(raw.name || ""),
+    id,
+    name,
     price: Number(raw.price || 0),
-    quantity: Math.max(0, Number(raw.quantity || 0)),
+    quantity,
     imageUrl: typeof raw.imageUrl === "string" ? raw.imageUrl : "",
     description: typeof raw.description === "string" ? raw.description : "",
     itemType:
-      raw.itemType === "drink" || raw.itemType === "extra" || raw.itemType === "bento"
+      raw.itemType === "drink" ||
+      raw.itemType === "extra" ||
+      raw.itemType === "bento"
         ? raw.itemType
         : "bento",
     selectedOptionLabel:
-      typeof raw.selectedOptionLabel === "string" ? raw.selectedOptionLabel : "",
+      typeof raw.selectedOptionLabel === "string"
+        ? raw.selectedOptionLabel
+        : "",
     selectedOptions: Array.isArray(raw.selectedOptions)
       ? raw.selectedOptions.map((v) => String(v))
       : [],
@@ -186,40 +200,100 @@ function safeParseDraft(raw: string | null): ReservationDraft | null {
 
     const record = parsed as Record<string, unknown>;
 
+    const items = Array.isArray(record.items)
+      ? record.items
+          .map(normalizeCartItem)
+          .filter((item): item is CartItem => Boolean(item))
+      : [];
+
     return {
-      items: Array.isArray(record.items)
-        ? record.items.map(normalizeCartItem).filter(Boolean) as CartItem[]
-        : [],
+      items,
       pickupDate: typeof record.pickupDate === "string" ? record.pickupDate : "",
       pickupTime: typeof record.pickupTime === "string" ? record.pickupTime : "",
       customerName:
         typeof record.customerName === "string" ? record.customerName : "",
       phone: typeof record.phone === "string" ? record.phone : "",
       note: typeof record.note === "string" ? record.note : "",
+      updatedAt: Number(record.updatedAt || 0),
     };
   } catch {
     return null;
   }
 }
 
+function getStoredDraftValue(key: string) {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function getCartQuantity(draft: ReservationDraft) {
+  return draft.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+}
+
+function chooseBestDraft(candidates: ReservationDraft[]) {
+  if (candidates.length === 0) {
+    return { items: [] };
+  }
+
+  const sorted = [...candidates].sort((a, b) => {
+    const aQty = getCartQuantity(a);
+    const bQty = getCartQuantity(b);
+
+    // 空データより、商品が入っているデータを優先
+    if (aQty > 0 && bQty <= 0) return -1;
+    if (bQty > 0 && aQty <= 0) return 1;
+
+    // 次に新しいデータを優先
+    const aTime = Number(a.updatedAt || 0);
+    const bTime = Number(b.updatedAt || 0);
+
+    if (aTime !== bTime) {
+      return bTime - aTime;
+    }
+
+    // 最後に数量が多い方を優先
+    return bQty - aQty;
+  });
+
+  return sorted[0] || { items: [] };
+}
+
 function readDraft(): ReservationDraft {
   if (typeof window === "undefined") return { items: [] };
 
+  const candidates: ReservationDraft[] = [];
+
   for (const key of STORAGE_KEYS) {
-    const found = safeParseDraft(window.localStorage.getItem(key));
-    if (found) return found;
+    const found = safeParseDraft(getStoredDraftValue(key));
+    if (found) {
+      candidates.push(found);
+    }
   }
 
-  return { items: [] };
+  return chooseBestDraft(candidates);
 }
 
 function writeDraft(draft: ReservationDraft) {
   if (typeof window === "undefined") return;
 
-  const value = JSON.stringify(draft);
-  STORAGE_KEYS.forEach((key) => {
-    window.localStorage.setItem(key, value);
+  const value = JSON.stringify({
+    ...draft,
+    items: Array.isArray(draft.items) ? draft.items : [],
+    updatedAt: Date.now(),
   });
+
+  for (const key of STORAGE_KEYS) {
+    try {
+      window.localStorage.setItem(key, value);
+    } catch {
+      // Safariのプライベートブラウズ等でlocalStorageが失敗しても画面は落とさない
+    }
+  }
 }
 
 function MenuCardImage({
@@ -472,9 +546,22 @@ export default function ReserveMenuPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const current = readDraft();
-    setDraft(current);
-    setMounted(true);
+    const refreshDraft = () => {
+      const current = readDraft();
+      setDraft(current);
+      setMounted(true);
+    };
+
+    refreshDraft();
+
+    // ブラウザバックやタブ復帰時に古い表示のままにならないように再読み込み
+    window.addEventListener("pageshow", refreshDraft);
+    window.addEventListener("focus", refreshDraft);
+
+    return () => {
+      window.removeEventListener("pageshow", refreshDraft);
+      window.removeEventListener("focus", refreshDraft);
+    };
   }, []);
 
   const cartCount = useMemo(() => {
@@ -495,55 +582,83 @@ export default function ReserveMenuPage() {
     return map;
   }, [draft.items]);
 
-  function updateDraftItems(nextItems: CartItem[]) {
-    const updated: ReservationDraft = {
-      ...draft,
-      items: nextItems,
-    };
-    setDraft(updated);
-    writeDraft(updated);
+  function updateDraftItemsFrom(updater: (items: CartItem[]) => CartItem[]) {
+    setDraft((prev) => {
+      const nextItems = updater(Array.isArray(prev.items) ? prev.items : []);
+
+      const updated: ReservationDraft = {
+        ...prev,
+        items: nextItems,
+        updatedAt: Date.now(),
+      };
+
+      writeDraft(updated);
+
+      return updated;
+    });
   }
 
   function incrementItem(item: ReserveMenuItem) {
-    const nextItems = [...draft.items];
-    const index = nextItems.findIndex((cartItem) => cartItem.id === item.id);
+    updateDraftItemsFrom((items) => {
+      const nextItems = [...items];
+      const index = nextItems.findIndex((cartItem) => cartItem.id === item.id);
 
-    if (index >= 0) {
-      nextItems[index] = {
-        ...nextItems[index],
-        quantity: Number(nextItems[index].quantity || 0) + 1,
-      };
-    } else {
-      nextItems.push({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: 1,
-        imageUrl: item.imageUrl || "",
-        description: item.description || "",
-        itemType: item.itemType || "bento",
-        selectedOptionLabel: "",
-        selectedOptions: [],
-        note: "",
-      });
-    }
+      if (index >= 0) {
+        nextItems[index] = {
+          ...nextItems[index],
+          quantity: Number(nextItems[index].quantity || 0) + 1,
+        };
+      } else {
+        nextItems.push({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: 1,
+          imageUrl: item.imageUrl || "",
+          description: item.description || "",
+          itemType: item.itemType || "bento",
+          selectedOptionLabel: "",
+          selectedOptions: [],
+          note: "",
+        });
+      }
 
-    updateDraftItems(nextItems);
+      return nextItems;
+    });
   }
 
   function decrementItem(item: ReserveMenuItem) {
-    const nextItems = draft.items
-      .map((cartItem) =>
-        cartItem.id === item.id
-          ? {
-              ...cartItem,
-              quantity: Math.max(0, Number(cartItem.quantity || 0) - 1),
-            }
-          : cartItem
-      )
-      .filter((cartItem) => cartItem.quantity > 0);
+    updateDraftItemsFrom((items) => {
+      return items
+        .map((cartItem) =>
+          cartItem.id === item.id
+            ? {
+                ...cartItem,
+                quantity: Math.max(0, Number(cartItem.quantity || 0) - 1),
+              }
+            : cartItem
+        )
+        .filter((cartItem) => cartItem.quantity > 0);
+    });
+  }
 
-    updateDraftItems(nextItems);
+  function syncDraftBeforeNavigate() {
+    const updated: ReservationDraft = {
+      ...draft,
+      items: Array.isArray(draft.items) ? draft.items : [],
+      updatedAt: Date.now(),
+    };
+
+    writeDraft(updated);
+  }
+
+  function handleCartLinkClick(event: MouseEvent<HTMLAnchorElement>) {
+    syncDraftBeforeNavigate();
+
+    if (cartCount <= 0) {
+      event.preventDefault();
+      alert("商品を1つ以上カートに追加してください。");
+    }
   }
 
   if (!mounted) {
@@ -660,18 +775,22 @@ export default function ReserveMenuPage() {
 
             <Link
               href="/reserve/cart"
+              onClick={handleCartLinkClick}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
                 borderRadius: 9999,
-                background: "#9a6739",
+                background: cartCount > 0 ? "#9a6739" : "#c9b8a3",
                 color: "#fff",
                 padding: "16px 26px",
                 fontWeight: 700,
                 fontSize: 18,
                 textDecoration: "none",
-                boxShadow: "0 10px 24px rgba(154,103,57,0.2)",
+                boxShadow:
+                  cartCount > 0
+                    ? "0 10px 24px rgba(154,103,57,0.2)"
+                    : "none",
               }}
             >
               カートを見る（{cartCount}）
@@ -793,19 +912,23 @@ export default function ReserveMenuPage() {
 
                 <Link
                   href="/reserve/cart"
+                  onClick={handleCartLinkClick}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
                     borderRadius: 9999,
-                    background: "#9a6739",
+                    background: cartCount > 0 ? "#9a6739" : "#c9b8a3",
                     color: "#fff",
                     padding: "18px 34px",
                     minWidth: 220,
                     fontWeight: 700,
                     fontSize: 18,
                     textDecoration: "none",
-                    boxShadow: "0 10px 24px rgba(154,103,57,0.2)",
+                    boxShadow:
+                      cartCount > 0
+                        ? "0 10px 24px rgba(154,103,57,0.2)"
+                        : "none",
                   }}
                 >
                   カートへ進む
