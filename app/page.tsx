@@ -110,7 +110,6 @@ export default function HomePage() {
                   className="max-w-2xl text-[18px] leading-[1.95] sm:text-[19px]"
                   style={{ color: "#6d6258" }}
                 >
-                  和の落ち着きを感じる、やさしい予約画面を目指しました。
                   お受け取り日時を選び、お名前とお電話番号を入力するだけでご予約いただけます。
                 </p>
               </div>
@@ -151,9 +150,9 @@ export default function HomePage() {
                     lineHeight: 1.9,
                   }}
                 >
-                  <p>当ページからお弁当のご予約ができます。</p>
+                  <p>当ページでお弁当のご予約ができます。</p>
                   <p>数量変更や追加注文もカート内で調整できます。</p>
-                  <p>ご予約完了後は受付番号が表示されます。</p>
+                  <p>ご予約後に受付番号が表示されます。</p>
                   <p>予約確認・キャンセルもこのページから行えます。</p>
                 </div>
               </div>
