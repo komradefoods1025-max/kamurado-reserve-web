@@ -34,6 +34,8 @@ type SubmitResponse = {
   reservation_no?: string;
   id?: string;
   message?: string;
+  error?: string;
+  detail?: unknown;
 };
 
 const CART_KEYS = [
@@ -133,7 +135,9 @@ async function submitReservation(payload: Record<string, unknown>) {
   }
 
   if (!res.ok || data.ok === false) {
-    throw new Error(data.message || "予約送信に失敗しました。");
+    throw new Error(
+      data.message || data.error || "予約送信に失敗しました。"
+    );
   }
 
   return data;
