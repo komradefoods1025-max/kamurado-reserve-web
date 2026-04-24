@@ -1,57 +1,86 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
-  const rawUrl = request.nextUrl.searchParams.get("url");
+const SAVE_URL = process.env.RESERVATION_SAVE_URL || "";
 
-  if (!rawUrl) {
-    return new NextResponse("Missing url", { status: 400 });
-  }
-
-  let targetUrl: URL;
-
+export async function POST(req: NextRequest) {
   try {
-    targetUrl = new URL(rawUrl);
-  } catch {
-    return new NextResponse("Invalid url", { status: 400 });
-  }
+    if (!SAVE_URL) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "RESERVATION_SAVE_URL が未設定です",
+        },
+        { status: 500 }
+      );
+    }
 
-  if (!["http:", "https:"].includes(targetUrl.protocol)) {
-    return new NextResponse("Unsupported protocol", { status: 400 });
-  }
+    const reservation = await req.json();
 
-  try {
-    const response = await fetch(targetUrl.toString(), {
+    const upstream = await fetch(SAVE_URL, {
+      method: "POST",
       headers: {
-        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-        Referer: `${targetUrl.origin}/`,
-        "Cache-Control": "no-cache",
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        action: "saveReservation",
+        reservation,
+      }),
       cache: "no-store",
     });
 
-    if (!response.ok) {
-      return new NextResponse(`Failed to fetch image: ${response.status}`, {
-        status: response.status,
-      });
+    const rawText = await upstream.text();
+
+    let data: any = null;
+    try {
+      data = rawText ? JSON.parse(rawText) : null;
+    } catch {
+      data = null;
     }
 
-    const contentType =
-      response.headers.get("content-type") || "image/jpeg";
-    const buffer = Buffer.from(await response.arrayBuffer());
+    if (!upstream.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `GASへの送信でHTTPエラーが発生しました (${upstream.status})`,
+          detail: rawText,
+        },
+        { status: 500 }
+      );
+    }
 
-    return new NextResponse(buffer, {
-      status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=86400, s-maxage=86400",
-      },
+    if (data && data.ok === false) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: data.error || "GASが ok:false を返しました",
+          detail: data,
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      reservationNo:
+        data?.reservationNo ||
+        data?.reservation_no ||
+        reservation?.reservationNo ||
+        null,
+      data,
     });
   } catch (error) {
-    console.error("image-proxy error:", error);
-    return new NextResponse("Image proxy error", { status: 500 });
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "予約送信中に不明なエラーが発生しました",
+      },
+      { status: 500 }
+    );
   }
 }
