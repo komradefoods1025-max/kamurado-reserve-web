@@ -53,6 +53,45 @@ type ReservationData = {
   note?: string;
 };
 
+function pad2(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+function formatDateToYmd(date: Date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(
+    date.getDate()
+  )}`;
+}
+
+function generateDates(count: number) {
+  const dates: string[] = [];
+  const today = new Date();
+
+  for (let i = 0; i < count; i += 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    dates.push(formatDateToYmd(date));
+  }
+
+  return dates;
+}
+
+function generateTimeSlots() {
+  return [
+    "11:30",
+    "11:45",
+    "12:00",
+    "12:15",
+    "12:30",
+    "12:45",
+    "13:00",
+    "13:15",
+    "13:30",
+    "13:45",
+    "14:00",
+  ];
+}
+
 function normalizePhone(value: string) {
   return value.replace(/[^\d]/g, "");
 }
@@ -78,15 +117,45 @@ function getNumber(...values: unknown[]) {
   return 0;
 }
 
+function toYmdDateValue(value: string) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+
+  const normalized = text.replace(/\//g, "-");
+  const match = normalized.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+  if (!match) return text;
+
+  return `${match[1]}-${String(match[2]).padStart(2, "0")}-${String(
+    match[3]
+  ).padStart(2, "0")}`;
+}
+
 function formatDate(value: string) {
   const text = String(value || "").trim();
   if (!text) return "";
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-    return text.replaceAll("-", "/");
+  const ymd = toYmdDateValue(text);
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+    return ymd.replaceAll("-", "/");
   }
 
   return text;
+}
+
+function formatDateLabel(ymd: string) {
+  const text = toYmdDateValue(ymd);
+  if (!text) return "";
+
+  const date = new Date(`${text}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return formatDate(text);
+
+  return new Intl.DateTimeFormat("ja-JP", {
+    month: "numeric",
+    day: "numeric",
+    weekday: "short",
+  }).format(date);
 }
 
 function parseItems(value: ReservationData | null): ReservationItem[] {
@@ -145,22 +214,22 @@ function getReservationDate(reservation: ReservationData | null) {
   if (!reservation) return "";
 
   return formatDate(
-    getText(
-      reservation.date,
-      reservation.pickupDate,
-      reservation.pickup_date
-    )
+    getText(reservation.date, reservation.pickupDate, reservation.pickup_date)
+  );
+}
+
+function getReservationDateYmd(reservation: ReservationData | null) {
+  if (!reservation) return "";
+
+  return toYmdDateValue(
+    getText(reservation.date, reservation.pickupDate, reservation.pickup_date)
   );
 }
 
 function getReservationTime(reservation: ReservationData | null) {
   if (!reservation) return "";
 
-  return getText(
-    reservation.time,
-    reservation.pickupTime,
-    reservation.pickup_time
-  );
+  return getText(reservation.time, reservation.pickupTime, reservation.pickup_time);
 }
 
 function getReservationStatus(reservation: ReservationData | null) {
@@ -179,7 +248,15 @@ export default function ReserveCheckPage() {
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [canceling, setCanceling] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState("");
+
+  const [editMode, setEditMode] = useState(false);
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
+
+  const availableDates = useMemo(() => generateDates(31), []);
+  const availableTimes = useMemo(() => generateTimeSlots(), []);
 
   const items = useMemo(() => parseItems(reservation), [reservation]);
 
@@ -193,6 +270,10 @@ export default function ReserveCheckPage() {
     () => getReservationDate(reservation),
     [reservation]
   );
+  const pickupDateYmd = useMemo(
+    () => getReservationDateYmd(reservation),
+    [reservation]
+  );
   const pickupTime = useMemo(
     () => getReservationTime(reservation),
     [reservation]
@@ -201,6 +282,22 @@ export default function ReserveCheckPage() {
     () => getReservationStatus(reservation),
     [reservation]
   );
+
+  const totalQty = useMemo(() => {
+    if (!reservation) return 0;
+
+    const directQty = getNumber(
+      reservation.totalQty,
+      reservation.totalQuantity,
+      reservation.total_quantity
+    );
+
+    if (directQty > 0) return directQty;
+
+    return items.reduce((sum, item) => {
+      return sum + getNumber(item.qty, item.quantity);
+    }, 0);
+  }, [reservation, items]);
 
   const totalAmount = useMemo(() => {
     if (!reservation) return 0;
@@ -230,6 +327,9 @@ export default function ReserveCheckPage() {
     setMessage("");
     setReservation(null);
     setSearched(false);
+    setEditMode(false);
+    setEditDate("");
+    setEditTime("");
 
     if (!normalizedPhone) {
       setMessage("電話番号を入力してください。");
@@ -276,6 +376,102 @@ export default function ReserveCheckPage() {
     }
   }
 
+  function handleStartEdit() {
+    if (!reservation) return;
+
+    setEditDate(pickupDateYmd || availableDates[0] || "");
+    setEditTime(pickupTime || "");
+    setEditMode(true);
+    setMessage("");
+  }
+
+  function handleCancelEdit() {
+    setEditMode(false);
+    setEditDate("");
+    setEditTime("");
+    setMessage("");
+  }
+
+  async function handleUpdateReservation() {
+    if (!reservation) return;
+
+    if (!reservationNo) {
+      setMessage("受付番号が見つからないため変更できません。");
+      return;
+    }
+
+    if (!editDate || !editTime) {
+      setMessage("変更後の受取日と受取時間を選択してください。");
+      return;
+    }
+
+    if (!items.length) {
+      setMessage("注文内容が取得できないため変更できません。");
+      return;
+    }
+
+    const ok = window.confirm(
+      "この予約の受取日時を変更しますか？\n変更後はお店に通知されます。"
+    );
+
+    if (!ok) return;
+
+    setUpdating(true);
+    setMessage("");
+
+    try {
+      const res = await fetch("/api/reservations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "updateReservation",
+          reservationNo,
+          date: editDate,
+          time: editTime,
+          name,
+          phone: normalizePhone(phone || reservation.phone || ""),
+          items,
+          totalQty,
+          total,
+          status: "変更済み",
+          notifyMail: true,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data?.ok === false) {
+        throw new Error(data?.message || "予約変更に失敗しました。");
+      }
+
+      setReservation((prev) =>
+        prev
+          ? {
+              ...prev,
+              date: editDate,
+              pickupDate: editDate,
+              time: editTime,
+              pickupTime: editTime,
+              status: "変更済み",
+            }
+          : prev
+      );
+
+      setEditMode(false);
+      setMessage("ご予約の受取日時を変更しました。");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "予約変更中にエラーが発生しました。"
+      );
+    } finally {
+      setUpdating(false);
+    }
+  }
+
   async function handleCancel() {
     if (!reservationNo) {
       setMessage("受付番号が見つからないためキャンセルできません。");
@@ -319,6 +515,7 @@ export default function ReserveCheckPage() {
           : prev
       );
 
+      setEditMode(false);
       setMessage("ご予約をキャンセルしました。");
     } catch (error) {
       setMessage(
@@ -365,7 +562,7 @@ export default function ReserveCheckPage() {
               className="text-[34px] font-bold leading-tight sm:text-[46px]"
               style={{ color: "#221a14" }}
             >
-              予約確認・キャンセル
+              予約確認・変更・キャンセル
             </h1>
 
             <p
@@ -420,15 +617,21 @@ export default function ReserveCheckPage() {
             <div
               className="mt-5 rounded-[24px] border p-4 text-[15px] font-bold"
               style={{
-                borderColor: message.includes("キャンセルしました")
-                  ? "#b7d7b0"
-                  : "#ead7b7",
-                background: message.includes("キャンセルしました")
-                  ? "#eff9ed"
-                  : "#fffaf2",
-                color: message.includes("キャンセルしました")
-                  ? "#356b32"
-                  : "#7a5637",
+                borderColor:
+                  message.includes("キャンセルしました") ||
+                  message.includes("変更しました")
+                    ? "#b7d7b0"
+                    : "#ead7b7",
+                background:
+                  message.includes("キャンセルしました") ||
+                  message.includes("変更しました")
+                    ? "#eff9ed"
+                    : "#fffaf2",
+                color:
+                  message.includes("キャンセルしました") ||
+                  message.includes("変更しました")
+                    ? "#356b32"
+                    : "#7a5637",
               }}
             >
               {message}
@@ -558,6 +761,114 @@ export default function ReserveCheckPage() {
                 </div>
               </div>
 
+              {!isCanceledStatus(status) && editMode ? (
+                <section
+                  className="mt-5 rounded-[26px] border bg-white p-5"
+                  style={{
+                    borderColor: "#dfc5a0",
+                    boxShadow: "0 8px 22px rgba(88, 63, 39, 0.05)",
+                  }}
+                >
+                  <h3 className="text-xl font-bold text-stone-800">
+                    受取日時を変更
+                  </h3>
+
+                  <p className="mt-2 text-sm leading-7 text-stone-600">
+                    変更後の受取日と受取時間を選択してください。
+                    商品内容はそのまま引き継がれます。
+                  </p>
+
+                  <div className="mt-5">
+                    <div className="mb-2 text-sm font-bold text-stone-700">
+                      受取日
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                      {availableDates.map((date) => {
+                        const active = editDate === date;
+
+                        return (
+                          <button
+                            key={date}
+                            type="button"
+                            onClick={() => setEditDate(date)}
+                            className={[
+                              "rounded-2xl border px-4 py-4 text-left transition",
+                              active
+                                ? "border-amber-800 bg-amber-900 text-white"
+                                : "border-stone-200 bg-stone-50 hover:bg-stone-100",
+                            ].join(" ")}
+                          >
+                            <div className="text-sm font-medium">
+                              {formatDateLabel(date)}
+                            </div>
+                            <div
+                              className={[
+                                "mt-1 text-xs",
+                                active ? "text-amber-100" : "text-stone-500",
+                              ].join(" ")}
+                            >
+                              {date}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-5">
+                    <div className="mb-2 text-sm font-bold text-stone-700">
+                      受取時間
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
+                      {availableTimes.map((time) => {
+                        const active = editTime === time;
+
+                        return (
+                          <button
+                            key={time}
+                            type="button"
+                            onClick={() => setEditTime(time)}
+                            className={[
+                              "rounded-2xl border px-4 py-3 text-center text-sm font-medium transition",
+                              active
+                                ? "border-amber-800 bg-amber-900 text-white"
+                                : "border-stone-200 bg-stone-50 hover:bg-stone-100",
+                            ].join(" ")}
+                          >
+                            {time}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      disabled={updating}
+                      className="inline-flex min-h-[54px] items-center justify-center rounded-[18px] border border-stone-300 bg-white px-5 py-3 text-sm font-bold text-stone-700 disabled:opacity-50"
+                    >
+                      変更をやめる
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleUpdateReservation}
+                      disabled={updating || !editDate || !editTime}
+                      className="inline-flex min-h-[54px] items-center justify-center rounded-[18px] px-5 py-3 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+                      style={{
+                        background: "#8b5d34",
+                      }}
+                    >
+                      {updating ? "変更中…" : "この日時に変更する"}
+                    </button>
+                  </div>
+                </section>
+              ) : null}
+
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
                 <Link
                   href="/"
@@ -566,23 +877,43 @@ export default function ReserveCheckPage() {
                   TOPへ戻る
                 </Link>
 
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  disabled={
-                    canceling || isCanceledStatus(status) || !reservationNo
-                  }
-                  className="inline-flex min-h-[54px] items-center justify-center rounded-[18px] px-5 py-3 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
-                  style={{
-                    background: "#9a2f2f",
-                  }}
-                >
-                  {canceling
-                    ? "キャンセル中…"
-                    : isCanceledStatus(status)
-                    ? "キャンセル済み"
-                    : "この予約をキャンセルする"}
-                </button>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={handleStartEdit}
+                    disabled={
+                      updating ||
+                      canceling ||
+                      isCanceledStatus(status) ||
+                      editMode ||
+                      !reservationNo
+                    }
+                    className="inline-flex min-h-[54px] items-center justify-center rounded-[18px] px-5 py-3 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{
+                      background: "#8b5d34",
+                    }}
+                  >
+                    予約を変更する
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={
+                      canceling || updating || isCanceledStatus(status) || !reservationNo
+                    }
+                    className="inline-flex min-h-[54px] items-center justify-center rounded-[18px] px-5 py-3 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{
+                      background: "#9a2f2f",
+                    }}
+                  >
+                    {canceling
+                      ? "キャンセル中…"
+                      : isCanceledStatus(status)
+                      ? "キャンセル済み"
+                      : "この予約をキャンセルする"}
+                  </button>
+                </div>
               </div>
             </section>
           ) : null}
