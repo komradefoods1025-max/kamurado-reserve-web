@@ -154,14 +154,15 @@ export default function HomePage() {
                   <p>当ページからお弁当のご予約ができます。</p>
                   <p>数量変更や追加注文もカート内で調整できます。</p>
                   <p>ご予約完了後は受付番号が表示されます。</p>
+                  <p>予約確認・キャンセルもこのページから行えます。</p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            <div className="mt-8 grid gap-3 md:grid-cols-3">
               <Link
                 href="/reserve/menu"
-                className="inline-flex min-h-[68px] items-center justify-center rounded-[22px] px-6 py-4 text-center text-[24px] font-bold transition hover:opacity-95"
+                className="inline-flex min-h-[68px] items-center justify-center rounded-[22px] px-6 py-4 text-center text-[22px] font-bold transition hover:opacity-95"
                 style={{
                   background: "linear-gradient(135deg, #8b5d34, #a06d3f)",
                   color: "#ffffff",
@@ -171,9 +172,21 @@ export default function HomePage() {
                 ご予約をはじめる
               </Link>
 
+              <Link
+                href="/reserve/check"
+                className="inline-flex min-h-[68px] items-center justify-center rounded-[22px] px-6 py-4 text-center text-[22px] font-bold transition hover:opacity-95"
+                style={{
+                  background: "linear-gradient(135deg, #3f3125, #6d4d35)",
+                  color: "#ffffff",
+                  boxShadow: "0 14px 28px rgba(63, 49, 37, 0.20)",
+                }}
+              >
+                予約確認・キャンセル
+              </Link>
+
               <a
                 href="#guide"
-                className="inline-flex min-h-[68px] items-center justify-center rounded-[22px] px-6 py-4 text-center text-[24px] font-bold transition"
+                className="inline-flex min-h-[68px] items-center justify-center rounded-[22px] px-6 py-4 text-center text-[22px] font-bold transition"
                 style={{
                   background: "#fffdf9",
                   color: "#3f3125",
@@ -302,6 +315,7 @@ export default function HomePage() {
                   <li>・メニュー画面から数量の追加・調整ができます。</li>
                   <li>・受取日時とお客様情報をご入力のうえご予約ください。</li>
                   <li>・内容確認後、受付番号が発行されます。</li>
+                  <li>・予約確認・キャンセルは電話番号から確認できます。</li>
                 </ul>
               </article>
 
@@ -346,6 +360,7 @@ export default function HomePage() {
                   <li>・混雑状況によりご希望時間の受付が難しい場合があります。</li>
                   <li>・内容変更は確定前の画面でご確認ください。</li>
                   <li>・数量が多いご注文はお早めのご予約がおすすめです。</li>
+                  <li>・キャンセルは予約確認ページから行えます。</li>
                 </ul>
               </article>
             </section>
