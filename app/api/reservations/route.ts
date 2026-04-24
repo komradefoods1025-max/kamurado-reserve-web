@@ -155,6 +155,151 @@ async function handleGetLatestReservation(body: any) {
   });
 }
 
+async function handleUpdateReservation(body: any) {
+  const sourceReservation = body?.reservation || {};
+  const sourceCustomer = body?.customer || sourceReservation?.customer || {};
+
+  const reservationNo = String(
+    body?.reservationNo ||
+      body?.reservation_no ||
+      sourceReservation?.reservationNo ||
+      sourceReservation?.reservation_no ||
+      ""
+  ).trim();
+
+  const date =
+    body?.date ||
+    body?.pickupDate ||
+    sourceReservation?.date ||
+    sourceReservation?.pickupDate ||
+    "";
+
+  const time =
+    body?.time ||
+    body?.pickupTime ||
+    sourceReservation?.time ||
+    sourceReservation?.pickupTime ||
+    "";
+
+  const name =
+    body?.name ||
+    sourceCustomer?.name ||
+    sourceReservation?.name ||
+    sourceReservation?.customerName ||
+    "";
+
+  const phone =
+    normalizePhone(body?.phone) ||
+    normalizePhone(sourceCustomer?.phone) ||
+    normalizePhone(sourceReservation?.phone) ||
+    "";
+
+  const items = normalizeItems(body?.items || sourceReservation?.items || []);
+
+  if (!reservationNo) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "受付番号が見つかりません",
+      },
+      { status: 400 }
+    );
+  }
+
+  if (!date || !time) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "変更後の受取日と受取時間を選択してください",
+      },
+      { status: 400 }
+    );
+  }
+
+  if (!name || !phone) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "予約者情報が不足しています",
+      },
+      { status: 400 }
+    );
+  }
+
+  if (!items.length) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "注文内容が取得できないため変更できません",
+      },
+      { status: 400 }
+    );
+  }
+
+  const totalQty =
+    body?.totalQty ??
+    body?.totalQuantity ??
+    sourceReservation?.totalQty ??
+    sourceReservation?.totalQuantity ??
+    items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+
+  const total =
+    body?.total ??
+    body?.totalAmount ??
+    sourceReservation?.total ??
+    sourceReservation?.totalAmount ??
+    items.reduce((sum, item) => sum + Number(item.total || 0), 0);
+
+  const gasResult = await postToGas({
+    action: "updateReservation",
+    channel: "WEB",
+    source: "next-web-app",
+    reservationNo,
+    date,
+    time,
+    name,
+    phone,
+    note: body?.note || sourceReservation?.note || "",
+    items,
+    itemCount: items.length,
+    totalQty,
+    total,
+    status: "変更済み",
+    notifyMail: true,
+    updatedAt: new Date().toISOString(),
+  });
+
+  if (!gasResult.ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: `GASへの送信でHTTPエラーが発生しました (${gasResult.status})`,
+        detail: gasResult.rawText,
+      },
+      { status: 500 }
+    );
+  }
+
+  const data = gasResult.data;
+
+  if (data && data.ok === false) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: data.error || data.message || "予約変更に失敗しました",
+        detail: data,
+      },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    ok: true,
+    reservationNo,
+    data,
+  });
+}
+
 async function handleCancelReservation(body: any) {
   const phone = normalizePhone(body?.phone || body?.customerPhone || "");
   const reservationNo = String(
@@ -183,6 +328,7 @@ async function handleCancelReservation(body: any) {
     reservation_no: reservationNo,
     phone,
     status: "キャンセル",
+    notifyMail: true,
     canceledAt: new Date().toISOString(),
   });
 
@@ -325,6 +471,10 @@ export async function POST(req: NextRequest) {
 
     if (action === "getLatestReservation" || action === "checkReservation") {
       return handleGetLatestReservation(body);
+    }
+
+    if (action === "updateReservation") {
+      return handleUpdateReservation(body);
     }
 
     if (action === "cancelReservation") {
