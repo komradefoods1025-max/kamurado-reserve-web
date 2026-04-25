@@ -308,19 +308,19 @@ function MenuCardImage({
 
   return (
     <div
-      style={{
-        width: "100%",
-        height: 240,
-        background: hasError
-          ? "linear-gradient(135deg, rgba(110,75,42,0.08), rgba(184,139,67,0.14))"
-          : "#f6efe4",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
-        borderBottom: "1px solid rgba(189,167,142,0.25)",
-      }}
-    >
+  className="h-[240px] md:h-[170px] lg:h-[160px]"
+  style={{
+    width: "100%",
+    background: hasError
+      ? "linear-gradient(135deg, rgba(110,75,42,0.08), rgba(184,139,67,0.14))"
+      : "#f6efe4",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderBottom: "1px solid rgba(189,167,142,0.25)",
+  }}
+>
       {!hasError && src ? (
         <img
           src={src}
