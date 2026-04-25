@@ -299,28 +299,35 @@ function writeDraft(draft: ReservationDraft) {
 function MenuCardImage({
   imageUrl,
   alt,
+  itemType,
 }: {
   imageUrl?: string;
   alt: string;
+  itemType?: ReserveMenuItem["itemType"];
 }) {
   const src = useMemo(() => buildProxyImageUrl(imageUrl), [imageUrl]);
   const [hasError, setHasError] = useState(false);
+  const isDrink = itemType === "drink";
 
   return (
     <div
-  className="h-[240px] md:h-[170px] lg:h-[160px]"
-  style={{
-    width: "100%",
-    background: hasError
-      ? "linear-gradient(135deg, rgba(110,75,42,0.08), rgba(184,139,67,0.14))"
-      : "#f6efe4",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    borderBottom: "1px solid rgba(189,167,142,0.25)",
-  }}
->
+      className={
+        isDrink
+          ? "h-[150px] md:h-[160px]"
+          : "h-[240px] md:h-[170px] lg:h-[160px]"
+      }
+      style={{
+        width: "100%",
+        background: hasError
+          ? "linear-gradient(135deg, rgba(110,75,42,0.08), rgba(184,139,67,0.14))"
+          : "#f6efe4",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+        borderBottom: "1px solid rgba(189,167,142,0.25)",
+      }}
+    >
       {!hasError && src ? (
         <img
           src={src}
@@ -328,9 +335,9 @@ function MenuCardImage({
           loading="lazy"
           onError={() => setHasError(true)}
           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
+            width: isDrink ? "72%" : "100%",
+            height: isDrink ? "72%" : "100%",
+            objectFit: isDrink ? "contain" : "cover",
             display: "block",
           }}
         />
@@ -367,7 +374,11 @@ function MenuCardView({
         boxShadow: "0 12px 32px rgba(74, 44, 19, 0.06)",
       }}
     >
-      <MenuCardImage imageUrl={item.imageUrl} alt={item.name} />
+      <MenuCardImage
+  imageUrl={item.imageUrl}
+  alt={item.name}
+  itemType={item.itemType}
+/>
 
       <div
         className="p-6"
