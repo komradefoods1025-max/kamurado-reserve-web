@@ -16,12 +16,14 @@ type ReserveMenuItem = {
 
 type CartItem = {
   id: string;
+  menuKey?: string;
   name: string;
   price: number;
   quantity: number;
   imageUrl?: string;
   description?: string;
   itemType?: "bento" | "drink" | "extra";
+  riceSize?: string;
   selectedOptionLabel?: string;
   selectedOptions?: string[];
   note?: string;
@@ -40,8 +42,10 @@ type ReservationDraft = {
 type MenuCardViewProps = {
   item: ReserveMenuItem;
   cartQty: number;
-  onIncrement: (item: ReserveMenuItem) => void;
-  onDecrement: (item: ReserveMenuItem) => void;
+  selectedRiceSize: string;
+  onRiceSizeChange: (itemId: string, riceSize: string) => void;
+  onIncrement: (item: ReserveMenuItem, riceSize?: string) => void;
+  onDecrement: (item: ReserveMenuItem, riceSize?: string) => void;
 };
 
 const STORAGE_KEYS = [
@@ -135,6 +139,15 @@ const DRINK_MENUS: ReserveMenuItem[] = [
   },
 ];
 
+const RICE_SIZE_OPTIONS = ["小盛り", "普通", "大盛り"];
+
+function getCartItemId(item: ReserveMenuItem, riceSize?: string) {
+if (item.itemType === "bento") {
+return `${item.id}__rice_${riceSize || "普通"}`;
+}
+
+return item.id;
+}
 function buildProxyImageUrl(imageUrl?: string) {
   const value = (imageUrl || "").trim();
   if (!value) return "";
@@ -361,9 +374,12 @@ function MenuCardImage({
 function MenuCardView({
   item,
   cartQty,
+  selectedRiceSize,
+  onRiceSizeChange,
   onIncrement,
   onDecrement,
 }: MenuCardViewProps) {
+  const isBento = item.itemType === "bento";
   return (
     <article
       className="rounded-3xl border border-stone-200 bg-white"
@@ -450,7 +466,60 @@ function MenuCardView({
             {item.description}
           </p>
         ) : null}
+        {isBento ? (
+          <div
+            style={{
+              borderRadius: 18,
+              background: "#fff8ef",
+              border: "1px solid rgba(184,139,67,0.22)",
+              padding: 14,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#6f4b2b",
+                marginBottom: 10,
+              }}
+            >
+              ご飯の量
+            </div>
 
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gap: 8,
+              }}
+            >
+              {RICE_SIZE_OPTIONS.map((size) => {
+                const active = selectedRiceSize === size;
+
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => onRiceSizeChange(item.id, size)}
+                    style={{
+                      border: active
+                        ? "1px solid #8b5d34"
+                        : "1px solid rgba(138,98,64,0.22)",
+                      background: active ? "#8b5d34" : "#fff",
+                      color: active ? "#fff" : "#6f4b2b",
+                      borderRadius: 9999,
+                      padding: "10px 8px",
+                      fontSize: 14,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {size}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
         {cartQty > 0 ? (
           <div
             style={{
@@ -480,7 +549,7 @@ function MenuCardView({
             >
               <button
                 type="button"
-                onClick={() => onDecrement(item)}
+                onClick={() => onDecrement(item, selectedRiceSize)}
                 style={{
                   width: 46,
                   height: 46,
@@ -510,7 +579,7 @@ function MenuCardView({
 
               <button
                 type="button"
-                onClick={() => onIncrement(item)}
+                onClick={() => onIncrement(item, selectedRiceSize)}
                 style={{
                   width: 46,
                   height: 46,
@@ -530,7 +599,7 @@ function MenuCardView({
         ) : (
           <button
             type="button"
-            onClick={() => onIncrement(item)}
+            onClick={() => onIncrement(item, selectedRiceSize)}
             style={{
               marginTop: "auto",
               width: "100%",
@@ -555,6 +624,7 @@ function MenuCardView({
 export default function ReserveMenuPage() {
   const [draft, setDraft] = useState<ReservationDraft>({ items: [] });
   const [mounted, setMounted] = useState(false);
+const [riceSizeByItemId, setRiceSizeByItemId] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const refreshDraft = () => {
@@ -585,11 +655,14 @@ export default function ReserveMenuPage() {
     }, 0);
   }, [draft.items]);
 
-  const itemQtyMap = useMemo(() => {
+    const itemQtyMap = useMemo(() => {
     const map = new Map<string, number>();
+
     draft.items.forEach((item) => {
-      map.set(item.id, Number(item.quantity || 0));
+      const key = item.id;
+      map.set(key, (map.get(key) || 0) + Number(item.quantity || 0));
     });
+
     return map;
   }, [draft.items]);
 
@@ -608,50 +681,67 @@ export default function ReserveMenuPage() {
       return updated;
     });
   }
+function handleRiceSizeChange(itemId: string, riceSize: string) {
+  setRiceSizeByItemId((prev) => ({
+    ...prev,
+    [itemId]: riceSize,
+  }));
+}
+    function incrementItem(item: ReserveMenuItem, riceSize?: string) {
+    const selectedRiceSize =
+      item.itemType === "bento" ? riceSize || "普通" : "";
 
-  function incrementItem(item: ReserveMenuItem) {
-    updateDraftItemsFrom((items) => {
-      const nextItems = [...items];
-      const index = nextItems.findIndex((cartItem) => cartItem.id === item.id);
+    const cartItemId = getCartItemId(item, selectedRiceSize);
+    const nextItems = [...draft.items];
+    const index = nextItems.findIndex((cartItem) => cartItem.id === cartItemId);
 
-      if (index >= 0) {
-        nextItems[index] = {
-          ...nextItems[index],
-          quantity: Number(nextItems[index].quantity || 0) + 1,
-        };
-      } else {
-        nextItems.push({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: 1,
-          imageUrl: item.imageUrl || "",
-          description: item.description || "",
-          itemType: item.itemType || "bento",
-          selectedOptionLabel: "",
-          selectedOptions: [],
-          note: "",
-        });
-      }
+    if (index >= 0) {
+      nextItems[index] = {
+        ...nextItems[index],
+        quantity: Number(nextItems[index].quantity || 0) + 1,
+        riceSize: selectedRiceSize,
+        selectedOptionLabel: selectedRiceSize,
+        selectedOptions: selectedRiceSize ? [selectedRiceSize] : [],
+      };
+    } else {
+      nextItems.push({
+        id: cartItemId,
+        menuKey: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: 1,
+        imageUrl: item.imageUrl || "",
+        description: item.description || "",
+        itemType: item.itemType || "bento",
+        riceSize: selectedRiceSize,
+        selectedOptionLabel: selectedRiceSize,
+        selectedOptions: selectedRiceSize ? [selectedRiceSize] : [],
+        note: "",
+      });
+    }
 
-      return nextItems;
-    });
+    updateDraftItemsFrom(() => nextItems);
   }
 
-  function decrementItem(item: ReserveMenuItem) {
-    updateDraftItemsFrom((items) => {
-      return items
-        .map((cartItem) =>
-          cartItem.id === item.id
-            ? {
-                ...cartItem,
-                quantity: Math.max(0, Number(cartItem.quantity || 0) - 1),
-              }
-            : cartItem
-        )
-        .filter((cartItem) => cartItem.quantity > 0);
-    });
-  }
+  function decrementItem(item: ReserveMenuItem, riceSize?: string) {
+  const selectedRiceSize =
+    item.itemType === "bento" ? riceSize || "普通" : "";
+
+  const cartItemId = getCartItemId(item, selectedRiceSize);
+
+  updateDraftItemsFrom((items) => {
+    return items
+      .map((cartItem) =>
+        cartItem.id === cartItemId
+          ? {
+              ...cartItem,
+              quantity: Math.max(0, Number(cartItem.quantity || 0) - 1),
+            }
+          : cartItem
+      )
+      .filter((cartItem) => cartItem.quantity > 0);
+  });
+}
 
   function syncDraftBeforeNavigate() {
     const updated: ReservationDraft = {
@@ -811,12 +901,23 @@ export default function ReserveMenuPage() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {BENTO_MENUS.map((item) => (
               <MenuCardView
-                key={item.id}
-                item={item}
-                cartQty={itemQtyMap.get(item.id) || 0}
-                onIncrement={incrementItem}
-                onDecrement={decrementItem}
-              />
+  key={item.id}
+  item={item}
+  cartQty={
+    itemQtyMap.get(
+      getCartItemId(
+        item,
+        item.itemType === "bento"
+          ? riceSizeByItemId[item.id] || "普通"
+          : ""
+      )
+    ) || 0
+  }
+  selectedRiceSize={riceSizeByItemId[item.id] || "普通"}
+  onRiceSizeChange={handleRiceSizeChange}
+  onIncrement={incrementItem}
+  onDecrement={decrementItem}
+/>
             ))}
           </div>
 
@@ -838,12 +939,14 @@ export default function ReserveMenuPage() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {EXTRA_MENUS.map((item) => (
               <MenuCardView
-                key={item.id}
-                item={item}
-                cartQty={itemQtyMap.get(item.id) || 0}
-                onIncrement={incrementItem}
-                onDecrement={decrementItem}
-              />
+  key={item.id}
+  item={item}
+  cartQty={itemQtyMap.get(item.id) || 0}
+  selectedRiceSize=""
+  onRiceSizeChange={handleRiceSizeChange}
+  onIncrement={incrementItem}
+  onDecrement={decrementItem}
+/>
             ))}
           </div>
 
@@ -865,12 +968,14 @@ export default function ReserveMenuPage() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {DRINK_MENUS.map((item) => (
               <MenuCardView
-                key={item.id}
-                item={item}
-                cartQty={itemQtyMap.get(item.id) || 0}
-                onIncrement={incrementItem}
-                onDecrement={decrementItem}
-              />
+  key={item.id}
+  item={item}
+  cartQty={itemQtyMap.get(item.id) || 0}
+  selectedRiceSize=""
+  onRiceSizeChange={handleRiceSizeChange}
+  onIncrement={incrementItem}
+  onDecrement={decrementItem}
+/>
             ))}
           </div>
 
