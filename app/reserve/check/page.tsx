@@ -77,19 +77,29 @@ function generateDates(count: number) {
 }
 
 function generateTimeSlots() {
-  return [
-    "11:30",
-    "11:45",
-    "12:00",
-    "12:15",
-    "12:30",
-    "12:45",
-    "13:00",
-    "13:15",
-    "13:30",
-    "13:45",
-    "14:00",
-  ];
+  const slots: string[] = [];
+
+  const startHour = 11;
+  const startMinute = 30;
+  const endHour = 14;
+  const endMinute = 30;
+  const intervalMinutes = 10;
+
+  const startTotalMinutes = startHour * 60 + startMinute;
+  const endTotalMinutes = endHour * 60 + endMinute;
+
+  for (
+    let totalMinutes = startTotalMinutes;
+    totalMinutes <= endTotalMinutes;
+    totalMinutes += intervalMinutes
+  ) {
+    const hour = Math.floor(totalMinutes / 60);
+    const minute = totalMinutes % 60;
+
+    slots.push(`${pad2(hour)}:${pad2(minute)}`);
+  }
+
+  return slots;
 }
 
 function normalizePhone(value: string) {
