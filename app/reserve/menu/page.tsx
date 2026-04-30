@@ -92,3 +92,15 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     itemType: "bento",
   },
 ];
+
+const EXTRA_MENUS: ReserveMenuItem[] = [
+  {
+    id: "extra_karaage",
+    name: "追加からあげ",
+    price: 80,
+    imageUrl:
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/SCN_20260409_2239.pdf.jpg",
+    description: "もう1個食べたい時に。1個から追加できます。",
+    itemType: "extra",
+  },
+];
