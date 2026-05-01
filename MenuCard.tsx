@@ -180,7 +180,7 @@ const DRINK_MENUS: ReserveMenuItem[] = [
     name: "コカ・コーラ",
     price: 200,
     imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/03/e382b3e383bce383a9-1.jpg",
+      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/SCN_20260409_2239.pdf-1.jpg",
     description: "しっかり炭酸の定番コーラ。揚げ物との相性も抜群です。",
     itemType: "drink",
   },
