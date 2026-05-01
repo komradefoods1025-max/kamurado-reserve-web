@@ -85,7 +85,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
   {
         id: "original_hamburg_bento",
         name: "オリジナルハンバーグ弁当",
-        price: 900,
+        price: 800,
         imageUrl:
                 "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/9.png",
         description:
@@ -95,7 +95,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
   {
         id: "cheese_hamburg_bento",
         name: "チーズハンバーグ弁当",
-        price: 1000,
+        price: 850,
         imageUrl:
                 "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/4.png",
         description:
@@ -105,7 +105,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
   {
         id: "oroshi_ponzu_hamburg_bento",
         name: "おろしポン酢ハンバーグ弁当",
-        price: 1000,
+        price: 850,
         imageUrl:
                 "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/2.png",
         description:
@@ -115,7 +115,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
   {
         id: "demiglace_hamburg_bento",
         name: "デミグラスソースハンバーグ弁当",
-        price: 1000,
+        price: 850,
         imageUrl:
                 "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/1.png",
         description:
@@ -125,7 +125,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
   {
         id: "chicken_katsu_bento",
         name: "チキンカツ弁当",
-        price: 800,
+        price: 750,
         imageUrl:
                 "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/8.png",
         description:
@@ -135,7 +135,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
   {
         id: "chicken_katsu_tartar_bento",
         name: "チキンカツ弁当 タルタルソースがけ",
-        price: 900,
+        price: 800,
         imageUrl:
                 "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/7.png",
         description:
