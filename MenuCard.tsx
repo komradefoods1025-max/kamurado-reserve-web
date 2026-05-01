@@ -232,7 +232,8 @@ function MenuCardView({
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "cover",
+              objectFit: "contain",
+　　　　  background: "#f6efe4",
               display: "block",
             }}
           />
@@ -454,7 +455,11 @@ export default function ReserveMenuPage() {
   const cartCount = useMemo(() => {
     return draft.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   }, [draft.items]);
-
+const cartTotal = useMemo(() => {
+  return draft.items.reduce((sum, item) => {
+    return sum + Number(item.price || 0) * Number(item.quantity || 0);
+  }, 0);
+}, [draft.items]);
   const itemQtyMap = useMemo(() => {
     const map = new Map<string, number>();
     draft.items.forEach((item) => {
@@ -523,7 +528,7 @@ export default function ReserveMenuPage() {
 
   return (
     <main className="min-h-screen px-4 py-6">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto w-full max-w-[920px]">
         <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6">
           <div
             style={{
@@ -727,7 +732,7 @@ export default function ReserveMenuPage() {
                     color: "#2d241c",
                   }}
                 >
-                  {cartCount}点
+                  {cartCount}点 ／ ¥{cartTotal.toLocaleString("ja-JP")}
                 </div>
               </div>
 
