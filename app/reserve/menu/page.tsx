@@ -1,1 +1,1 @@
-export { default } from "@/MenuCard";
+export { default } from "../../../MenuCard";
