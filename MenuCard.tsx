@@ -230,12 +230,12 @@ function MenuCardView({
             src={item.imageUrl}
             alt={item.name}
             style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-　　　　  background: "#f6efe4",
-              display: "block",
-            }}
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+  background: "#f6efe4",
+}}
           />
         ) : (
           <div
