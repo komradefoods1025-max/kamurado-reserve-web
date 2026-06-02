@@ -236,7 +236,6 @@ function MenuCardView({
             justifyContent: "space-between",
             gap: 12,
           }}
-        >
           <div style={{ minWidth: 0, flex: 1 }}>
             {item.label ? (
               <div
