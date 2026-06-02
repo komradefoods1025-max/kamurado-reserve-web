@@ -160,7 +160,7 @@ const EXTRA_MENUS: ReserveMenuItem[] = [
     name: "追加唐揚げ",
     price: 80,
     imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/04/SCN_20260409_2239.pdf.jpg",
+      "https://teppanyaki-toda.com/wp-content/uploads/2026/05/40da5886-71ac-424d-b021-d2a8cc2295c3.png",
     description: "もう1個食べたい時に。1個から追加できます。",
     itemType: "extra",
   },
