@@ -165,8 +165,6 @@ const EXTRA_MENUS: ReserveMenuItem[] = [
     itemType: "extra",
   },
 ];
-
-
 function MenuCardView({
   item,
   cartQty,
@@ -233,13 +231,7 @@ function MenuCardView({
           flex: 1,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
+        
         >
           <div style={{ minWidth: 0, flex: 1 }}>
             {item.label ? (
@@ -638,34 +630,6 @@ const cartTotal = useMemo(() => {
               marginBottom: 16,
             }}
           >
-            <h2>ドリンク</h2>
-            <div
-              style={{
-                color: "#6d6258",
-                fontSize: 15,
-              }}
-            >
-              一緒にご注文いただけます
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gap: 18,
-            }}
-          >
-            {DRINK_MENUS.map((item) => (
-              <MenuCardView
-                key={item.id}
-                item={item}
-                cartQty={itemQtyMap.get(item.id) || 0}
-                onIncrement={incrementItem}
-                onDecrement={decrementItem}
-              />
-            ))}
-          </div>
-
           <div
             style={{
               position: "sticky",
