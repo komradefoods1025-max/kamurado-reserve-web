@@ -229,7 +229,7 @@ function MenuCardView({
           flex: 1,
         }}
       >
-        <div
+       <div
   style={{
     display: "flex",
     alignItems: "flex-start",
@@ -239,43 +239,43 @@ function MenuCardView({
 >
   <div style={{ minWidth: 0, flex: 1 }}>
     {item.label ? (
-              <div
-                className="rounded-full bg-amber-900 text-white"
-                style={{
-                  display: "inline-flex",
-                  marginBottom: 12,
-                  fontSize: 13,
-                  padding: "7px 14px",
-                }}
-              >
-                {item.label}
-              </div>
-            ) : null}
+      <div
+        className="rounded-full bg-amber-900 text-white"
+        style={{
+          display: "inline-flex",
+          marginBottom: 12,
+          fontSize: 13,
+          padding: "7px 14px",
+        }}
+      >
+        {item.label}
+      </div>
+    ) : null}
 
-            <h3
-              style={{
-                fontSize: 22,
-                lineHeight: 1.35,
-                overflowWrap: "anywhere",
-                wordBreak: "break-word",
-              }}
-            >
-              {item.name}
-            </h3>
-          </div>
+    <h3
+      style={{
+        fontSize: 22,
+        lineHeight: 1.35,
+        overflowWrap: "anywhere",
+        wordBreak: "break-word",
+      }}
+    >
+      {item.name}
+    </h3>
+  </div>
 
-          <div
-            style={{
-              flexShrink: 0,
-              color: "#b88b43",
-              fontWeight: 700,
-              fontSize: 18,
-              whiteSpace: "nowrap",
-            }}
-          >
-            ¥{item.price.toLocaleString("ja-JP")}
-          </div>
-        </div>
+  <div
+    style={{
+      flexShrink: 0,
+      color: "#b88b43",
+      fontWeight: 700,
+      fontSize: 18,
+      whiteSpace: "nowrap",
+    }}
+  >
+    ¥{item.price.toLocaleString("ja-JP")}
+  </div>
+</div>
 
         <p
           style={{
