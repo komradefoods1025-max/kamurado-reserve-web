@@ -142,8 +142,16 @@ const BENTO_MENUS: ReserveMenuItem[] = [
                 "サクサクのチキンカツにタルタルソースを合わせた満足系のお弁当です。",
         itemType: "bento",
   },
-  ];
-
+  {
+    id: "chicken_katsu_oroshi_ponzu_bento",
+    name: "チキンカツおろしポン酢弁当",
+    price: 750,
+    imageUrl:
+      "https://teppanyaki-toda.com/wp-content/uploads/2026/05/チキンカツおろしポン酢＿バラン.png",
+    description:
+      "サクッと揚げたチキンカツを、おろしポン酢でさっぱり楽しめるお弁当です。",
+    itemType: "bento",
+  },
 const EXTRA_MENUS: ReserveMenuItem[] = [
   {
     id: "extra_karaage",
