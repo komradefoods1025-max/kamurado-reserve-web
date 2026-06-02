@@ -127,7 +127,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     name: "チキンカツ弁当",
     price: 750,
     imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/8.png",
+      "https://teppanyaki-toda.com/wp-content/uploads/2026/05/チキンカツ弁当-1.png",
     description:
       "サクッと揚げたチキンカツを楽しめる、食べ応えのあるお弁当です。",
     itemType: "bento",
