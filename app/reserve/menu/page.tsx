@@ -107,7 +107,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     name: "おろしポン酢ハンバーグ弁当",
     price: 850,
     imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/2.png",
+      "https://teppanyaki-toda.com/wp-content/uploads/2026/05/おろしポン酢ハンバーグ＿バラン.png",
     description:
       "大根おろしとポン酢でさっぱり食べられるハンバーグ弁当です。",
     itemType: "bento",
