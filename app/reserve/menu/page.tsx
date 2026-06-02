@@ -230,14 +230,15 @@ function MenuCardView({
         }}
       >
         <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-          <div style={{ minWidth: 0, flex: 1 }}>
-            {item.label ? (
+  style={{
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  }}
+>
+  <div style={{ minWidth: 0, flex: 1 }}>
+    {item.label ? (
               <div
                 className="rounded-full bg-amber-900 text-white"
                 style={{
