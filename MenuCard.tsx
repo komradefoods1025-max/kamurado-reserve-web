@@ -152,6 +152,8 @@ const BENTO_MENUS: ReserveMenuItem[] = [
       "サクッと揚げたチキンカツを、おろしポン酢でさっぱり楽しめるお弁当です。",
     itemType: "bento",
   },
+];
+
 const EXTRA_MENUS: ReserveMenuItem[] = [
   {
     id: "extra_karaage",
