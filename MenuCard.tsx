@@ -166,44 +166,6 @@ const EXTRA_MENUS: ReserveMenuItem[] = [
   },
 ];
 
-const DRINK_MENUS: ReserveMenuItem[] = [
-  {
-    id: "drink_irohasu",
-    name: "いろはす",
-    price: 150,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/いろはす.png",
-    description: "食事に合わせやすい、すっきり飲みやすいミネラルウォーター。",
-    itemType: "drink",
-  },
-  {
-    id: "drink_yakan_mugicha",
-    name: "やかんの麦茶",
-    price: 200,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/やかんの麦茶.png",
-    description: "香ばしくやさしい味わい。食事にも合わせやすい定番ドリンク。",
-    itemType: "drink",
-  },
-  {
-    id: "drink_cocacola",
-    name: "コカ・コーラ",
-    price: 200,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/コカ・コーラ.png",
-    description: "しっかり炭酸の定番コーラ。揚げ物との相性も抜群です。",
-    itemType: "drink",
-  },
-  {
-    id: "drink_cocacola_zero",
-    name: "コカ・コーラゼロ",
-    price: 200,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/コカ・コーラゼロ.png",
-    description: "すっきり飲みやすいゼロ系コーラ。後味も軽やかです。",
-    itemType: "drink",
-  },
-];
 
 function MenuCardView({
   item,
