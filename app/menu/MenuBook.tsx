@@ -144,6 +144,8 @@ export default function MenuBook() {
               key={`${dims.isMobile}-${dims.width}-${dims.height}`}
               ref={bookRef}
               className={styles.flipBook}
+              style={{}}
+              startPage={0}
               width={dims.width}
               height={dims.height}
               size="fixed"
