@@ -184,7 +184,10 @@ export default function MenuBook() {
       </header>
 
       <div className={styles.stage} ref={stageRef}>
-        <div className={styles.bookArea}>
+        <div
+          className={styles.bookArea}
+          style={{ ["--book-height" as string]: `${dims.height}px` }}
+        >
           <button
             type="button"
             className={styles.navBtn}
