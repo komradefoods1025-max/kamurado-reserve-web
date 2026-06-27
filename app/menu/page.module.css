@@ -6,8 +6,10 @@
   max-height: 100dvh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 20% 0%, rgba(184, 139, 67, 0.12), transparent 34%),
-    linear-gradient(180deg, #1f1a17 0%, #2f241c 42%, #15110f 100%);
+    radial-gradient(ellipse 82% 52% at 50% -8%, rgba(156, 108, 56, 0.22), transparent 58%),
+    radial-gradient(circle at 88% 12%, rgba(212, 164, 74, 0.1), transparent 26%),
+    radial-gradient(circle at 12% 78%, rgba(62, 42, 28, 0.28), transparent 34%),
+    linear-gradient(165deg, #2c2119 0%, #1c1511 36%, #120e0b 68%, #070605 100%);
   color: #f7f2ea;
   padding:
     max(16px, env(safe-area-inset-top))
@@ -35,7 +37,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   max-width: 960px;
   padding-inline: 4px;
@@ -54,13 +56,51 @@
   position: relative;
   flex-shrink: 0;
   max-width: 100%;
-  border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+  border-radius: 10px;
+  border: 1px solid rgba(196, 162, 92, 0.24);
+  box-shadow:
+    0 28px 64px rgba(0, 0, 0, 0.58),
+    0 10px 28px rgba(38, 24, 12, 0.34),
+    0 0 42px rgba(184, 139, 67, 0.14);
   touch-action: pan-y;
+  overflow: hidden;
+}
+
+.bookView::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 236, 198, 0.08),
+    inset 0 0 28px rgba(255, 236, 198, 0.04);
+  z-index: 2;
+}
+
+.bookView::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 14px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(18, 12, 8, 0.28) 0%,
+    rgba(18, 12, 8, 0.08) 42%,
+    rgba(255, 236, 198, 0.05) 50%,
+    rgba(18, 12, 8, 0.08) 58%,
+    rgba(18, 12, 8, 0.28) 100%
+  );
+  z-index: 3;
 }
 
 .spread {
   display: flex;
+  gap: 0;
   width: 100%;
   transform-origin: center center;
 }
@@ -106,15 +146,18 @@
   justify-content: center;
   padding: 4px;
   aspect-ratio: 1 / 1;
-  background: #f8f1df;
+  background: linear-gradient(180deg, #f7efd9 0%, #f2e6cc 100%);
+  border: 1px solid rgba(196, 162, 92, 0.42);
+  box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.42);
 }
 
 .pageRight {
-  border-left: 1px solid rgba(31, 26, 23, 0.08);
+  border-left: none;
+  box-shadow: inset 1px 0 0 rgba(196, 162, 92, 0.18);
 }
 
 .pageEmpty {
-  background: #f3ebd6;
+  background: linear-gradient(180deg, #f1e5cf 0%, #e9dcc3 100%);
 }
 
 .pageImage {
@@ -126,22 +169,24 @@
   border-radius: 6px;
   object-fit: contain;
   object-position: center center;
+  filter: drop-shadow(0 5px 14px rgba(46, 32, 18, 0.16));
 }
 
 .navBtn {
   flex: 0 0 auto;
   align-self: center;
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   margin-top: 0;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
-  background: rgba(42, 36, 30, 0.88);
-  color: #fff;
-  font-size: 1.5rem;
+  background: rgba(16, 12, 9, 0.58);
+  color: rgba(255, 250, 242, 0.92);
+  font-size: 1.15rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.34);
 }
 
 .navBtn:disabled {
@@ -154,10 +199,11 @@
   flex-shrink: 0;
   margin: 0;
   line-height: 1;
-  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
-  font-size: 0.95rem;
-  color: rgba(247, 242, 234, 0.92);
-  letter-spacing: 0.1em;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: rgba(232, 214, 186, 0.9);
+  letter-spacing: 0.24em;
 }
 
 .actions {
@@ -191,13 +237,19 @@
 }
 
 .reserveBtn {
-  background: #d4a44a;
-  color: #1f1a17;
+  background: linear-gradient(135deg, #e2c06d 0%, #c8963d 52%, #b7832f 100%);
+  color: #24180f;
+  border: 1px solid rgba(255, 228, 168, 0.38);
+  box-shadow:
+    0 8px 22px rgba(184, 132, 47, 0.34),
+    inset 0 1px 0 rgba(255, 248, 220, 0.36);
 }
 
 .telBtn {
   background: #fff;
   color: #1f1a17;
+  border: 1px solid rgba(196, 162, 92, 0.58);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
 @media (max-width: 767px) {
@@ -210,13 +262,18 @@
     gap: 10px;
   }
 
+  .bookView::after {
+    display: none;
+  }
+
   .navBtn {
-    width: 36px;
-    height: 36px;
-    font-size: 1.35rem;
+    width: 32px;
+    height: 32px;
+    font-size: 1.05rem;
   }
 
   .counter {
-    font-size: 0.88rem;
+    font-size: 0.86rem;
+    letter-spacing: 0.2em;
   }
 }
