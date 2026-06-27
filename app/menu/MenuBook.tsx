@@ -24,7 +24,7 @@ const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
 
 const MOBILE_BREAKPOINT = 768;
 const MOBILE_PAGE_ASPECT = 4 / 3;
-const PC_SPREAD_ASPECT = 16 / 7;
+const PC_SPREAD_ASPECT = 16 / 9;
 
 function getViewportHeight(): number {
   return window.visualViewport?.height ?? window.innerHeight;
@@ -227,7 +227,7 @@ export default function MenuBook() {
                   minWidth={200}
                   maxWidth={420}
                   minHeight={160}
-                  maxHeight={300}
+                  maxHeight={800}
                   drawShadow
                   flippingTime={650}
                   usePortrait={dims.isMobile}
