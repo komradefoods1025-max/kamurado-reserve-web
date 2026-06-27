@@ -117,36 +117,42 @@
 
 .spreadNext .pageLeft,
 .spreadNext .pageSingle {
-  animation: pageSettleNext 0.48s ease;
+  animation: pageSettleNext 620ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .spreadPrev .pageLeft,
 .spreadPrev .pageSingle {
-  animation: pageSettlePrev 0.48s ease;
+  animation: pageSettlePrev 620ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes pageSettleNext {
   from {
     opacity: 0.72;
-    transform: perspective(1000px) rotateY(-12deg);
+    transform: perspective(1000px) rotateY(-12deg) translateZ(0);
   }
 
   to {
     opacity: 1;
-    transform: none;
+    transform: translateZ(0);
   }
 }
 
 @keyframes pageSettlePrev {
   from {
     opacity: 0.72;
-    transform: perspective(1000px) rotateY(12deg);
+    transform: perspective(1000px) rotateY(12deg) translateZ(0);
   }
 
   to {
     opacity: 1;
-    transform: none;
+    transform: translateZ(0);
   }
+}
+
+@property --turn-progress {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
 }
 
 .page {
@@ -164,6 +170,16 @@
   border: 1px solid rgba(196, 162, 92, 0.42);
   box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.42);
   --turn-progress: 0;
+  --turn-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --turn-snapback-duration: 380ms;
+}
+
+.page[data-settling="true"] {
+  transition: --turn-progress var(--turn-snapback-duration) var(--turn-ease);
+}
+
+.page[data-dragging="true"] {
+  transition: none;
 }
 
 .pageScene {
@@ -174,7 +190,7 @@
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  transform: perspective(1200px);
+  transform: perspective(1200px) translateZ(0);
 }
 
 .pageRight {
@@ -200,6 +216,20 @@
       calc(58% + var(--turn-progress) * 12%),
     transparent calc(74% + var(--turn-progress) * 8%)
   );
+  transform: translateZ(0);
+}
+
+.page[data-settling="true"] .pageDropShadow {
+  transition: opacity var(--turn-snapback-duration) var(--turn-ease);
+}
+
+.page[data-dragging="true"] .pageDropShadow {
+  transition: none;
+}
+
+.page[data-dragging="true"] .pageDropShadow,
+.page[data-settling="true"] .pageDropShadow {
+  will-change: opacity;
 }
 
 .page[data-direction="prev"] .pageDropShadow {
@@ -230,7 +260,23 @@
     transparent 72%
   );
   transform: skewX(calc(var(--turn-progress) * -12deg))
-    translateY(calc(var(--turn-progress) * 5px));
+    translateY(calc(var(--turn-progress) * 5px))
+    translateZ(0);
+}
+
+.page[data-settling="true"] .pageFallShadow {
+  transition:
+    opacity var(--turn-snapback-duration) var(--turn-ease),
+    transform var(--turn-snapback-duration) var(--turn-ease);
+}
+
+.page[data-dragging="true"] .pageFallShadow {
+  transition: none;
+}
+
+.page[data-dragging="true"] .pageFallShadow,
+.page[data-settling="true"] .pageFallShadow {
+  will-change: opacity, transform;
 }
 
 .page[data-direction="prev"] .pageFallShadow {
@@ -246,14 +292,12 @@
   transform-style: preserve-3d;
   --fold-top: calc(42% * (1 - var(--turn-progress)));
   --fold-bottom: calc(20% * (1 - var(--turn-progress)));
-  transition:
-    transform 0.34s ease,
-    clip-path 0.34s ease,
-    opacity 0.34s ease;
+  transition: none;
 }
 
-.page[data-dragging="true"] .turningPage {
-  transition: none;
+.page[data-dragging="true"] .turningPage,
+.page[data-settling="true"] .turningPage {
+  will-change: transform, opacity;
 }
 
 .turningPage[data-direction="next"] {
@@ -268,7 +312,8 @@
     perspective(1200px)
     rotateY(calc(var(--turn-progress) * -82deg))
     skewY(calc(var(--turn-progress) * -2.8deg))
-    translateX(calc(var(--turn-progress) * -5px));
+    translateX(calc(var(--turn-progress) * -5px))
+    translateZ(0);
 }
 
 .turningPage[data-direction="prev"] {
@@ -283,13 +328,15 @@
     perspective(1200px)
     rotateY(calc(var(--turn-progress) * 82deg))
     skewY(calc(var(--turn-progress) * 2.8deg))
-    translateX(calc(var(--turn-progress) * 5px));
+    translateX(calc(var(--turn-progress) * 5px))
+    translateZ(0);
 }
 
 .turningPageInner {
   position: absolute;
   inset: 0;
   overflow: hidden;
+  transform: translateZ(0);
   background: linear-gradient(
     145deg,
     #fffef9 0%,
@@ -299,6 +346,10 @@
   box-shadow:
     inset 0 0 0 1px rgba(255, 248, 232, 0.72),
     inset -12px 0 24px rgba(36, 24, 14, calc(0.08 + var(--turn-progress) * 0.22));
+}
+
+.page[data-settling="true"] .turningPageInner {
+  transition: box-shadow var(--turn-snapback-duration) var(--turn-ease);
 }
 
 .turningPage::before {
@@ -317,6 +368,11 @@
     rgba(255, 255, 255, 0.85)
   );
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.45);
+  transform: translateZ(0);
+}
+
+.page[data-settling="true"] .turningPage::before {
+  transition: opacity var(--turn-snapback-duration) var(--turn-ease);
 }
 
 .turningPage[data-direction="next"]::before {
@@ -340,6 +396,11 @@
     rgba(18, 12, 8, calc(0.12 + var(--turn-progress) * 0.38)) 18%,
     transparent 42%
   );
+  transform: translateZ(0);
+}
+
+.page[data-settling="true"] .turningPage::after {
+  transition: opacity var(--turn-snapback-duration) var(--turn-ease);
 }
 
 .turningPage[data-direction="prev"]::after {
@@ -361,8 +422,16 @@
   object-fit: contain;
   object-position: center center;
   opacity: calc(0.14 + var(--turn-progress) * 0.22);
-  transform: translate(-50%, -50%) scaleX(-1);
+  transform: translate(-50%, -50%) scaleX(-1) translateZ(0);
   filter: blur(0.4px) saturate(0.85);
+}
+
+.page[data-settling="true"] .turningGhost {
+  transition: opacity var(--turn-snapback-duration) var(--turn-ease);
+}
+
+.page[data-dragging="true"] .turningGhost {
+  transition: none;
 }
 
 .page[data-turning="true"] .pageCurl {
@@ -419,6 +488,7 @@
   object-fit: contain;
   object-position: center center;
   filter: drop-shadow(0 5px 14px rgba(46, 32, 18, 0.16));
+  transform: translateZ(0);
 }
 
 .navBtn {
