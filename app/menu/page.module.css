@@ -442,62 +442,55 @@
   right: 0;
   bottom: 0;
   z-index: 20;
-  padding: 12px;
-  background: rgba(20, 16, 13, 0.94);
-  backdrop-filter: blur(10px);
+  padding: 18px 24px calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(15, 12, 9, 0.92), rgba(5, 4, 3, 0.98));
+  border-top: 1px solid rgba(214, 170, 82, 0.22);
   display: flex;
-  gap: 10px;
   justify-content: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.28);
+  gap: 32px;
 }
 
 .reserveBtn,
 .telBtn {
+  width: min(38vw, 420px);
+  min-height: 64px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(44vw, 220px);
-  padding: 12px 10px;
-  border-radius: 999px;
+  gap: 14px;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: clamp(16px, 2vw, 24px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .reserveBtn {
-  min-height: 48px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #e2c06d 0%, #c8963d 52%, #b7832f 100%);
-  color: #24180f;
-  border: 1px solid rgba(255, 228, 168, 0.38);
-  box-shadow:
-    0 8px 22px rgba(184, 132, 47, 0.34),
-    inset 0 1px 0 rgba(255, 248, 220, 0.36);
+  color: #2a1607;
+  background: linear-gradient(180deg, #f2cf75 0%, #d6a13d 52%, #b47a24 100%);
+  border: 1px solid rgba(255, 225, 145, 0.75);
 }
 
 .telBtn {
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 2px;
-  min-height: 62px;
-  background: #fff;
-  color: #1f1a17;
-  border: 1px solid rgba(196, 162, 92, 0.58);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  color: #2a1607;
+  background: linear-gradient(180deg, #fffdf7 0%, #f8efe2 100%);
+  border: 1px solid rgba(214, 170, 82, 0.75);
 }
 
-.telTitle {
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.2;
+.btnIcon {
+  flex-shrink: 0;
+  font-size: 0.82em;
+  line-height: 1;
+  opacity: 0.88;
 }
 
 .telNumber {
-  font-size: 13px;
-  color: #666;
-  letter-spacing: 0.08em;
-  line-height: 1.2;
+  font-size: 0.9em;
+  letter-spacing: 0.04em;
 }
 
 @media (max-width: 767px) {
@@ -519,5 +512,23 @@
   .counter {
     font-size: 0.86rem;
     letter-spacing: 0.2em;
+  }
+
+  .actions {
+    gap: 10px;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .reserveBtn,
+  .telBtn {
+    width: 50%;
+    min-height: 58px;
+    border-radius: 18px;
+    gap: 8px;
+    font-size: 15px;
+  }
+
+  .telNumber {
+    font-size: 12px;
   }
 }
