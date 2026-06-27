@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import styles from "./page.module.css";
 
 const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
@@ -13,7 +19,8 @@ const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
 });
 
 const MOBILE_BREAKPOINT = 768;
-const SWIPE_THRESHOLD = 48;
+const DRAG_THRESHOLD = 72;
+const MAX_DRAG = 148;
 const PHONE_NUMBER = "0484415517";
 
 type Layout = {
@@ -71,6 +78,31 @@ function getLayout(): Layout {
   };
 }
 
+function clampDragOffset(
+  offset: number,
+  canGoPrev: boolean,
+  canGoNext: boolean,
+): number {
+  let clamped = offset;
+
+  if (!canGoPrev && clamped > 0) {
+    clamped *= 0.22;
+  }
+
+  if (!canGoNext && clamped < 0) {
+    clamped *= 0.22;
+  }
+
+  return Math.max(-MAX_DRAG, Math.min(MAX_DRAG, clamped));
+}
+
+function getDragTransform(offsetX: number): string {
+  const rotateY = offsetX * 0.075;
+  const translateX = offsetX * 0.42;
+
+  return `perspective(1200px) rotateY(${rotateY}deg) translateX(${translateX}px)`;
+}
+
 type MenuPageProps = {
   page: (typeof MENU_PAGES)[number];
   variant: "left" | "right" | "single";
@@ -107,7 +139,8 @@ function MenuPage({ page, variant, empty = false }: MenuPageProps) {
 
 export default function MenuBook() {
   const stageRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef<number | null>(null);
+  const dragStartXRef = useRef(0);
+  const activePointerIdRef = useRef<number | null>(null);
   const [layout, setLayout] = useState<Layout>({
     isMobile: true,
     pageWidth: 320,
@@ -117,6 +150,8 @@ export default function MenuBook() {
   const [animDirection, setAnimDirection] = useState<"next" | "prev" | null>(
     null,
   );
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
 
   useEffect(() => {
     const updateLayout = () => {
@@ -164,6 +199,8 @@ export default function MenuBook() {
   const maxLeftPage = getMaxLeftPage(layout.isMobile);
   const isFirstPage = currentPage <= 0;
   const isLastPage = currentPage >= maxLeftPage;
+  const canGoPrev = !isFirstPage;
+  const canGoNext = !isLastPage;
 
   const goPrev = useCallback(() => {
     const nextPage = layout.isMobile
@@ -191,42 +228,114 @@ export default function MenuBook() {
     setCurrentPage(nextPage);
   }, [currentPage, layout.isMobile, maxLeftPage]);
 
-  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    touchStartX.current = event.changedTouches[0]?.clientX ?? null;
+  const finishDrag = useCallback(
+    (offsetX: number) => {
+      activePointerIdRef.current = null;
+      setIsDragging(false);
+
+      if (offsetX <= -DRAG_THRESHOLD && canGoNext) {
+        setDragOffset(0);
+        goNext();
+        return;
+      }
+
+      if (offsetX >= DRAG_THRESHOLD && canGoPrev) {
+        setDragOffset(0);
+        goPrev();
+        return;
+      }
+
+      if (offsetX === 0) {
+        setDragOffset(0);
+        return;
+      }
+
+      requestAnimationFrame(() => {
+        setDragOffset(0);
+      });
+    },
+    [canGoNext, canGoPrev, goNext, goPrev],
+  );
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (animDirection || event.button > 0) {
+      return;
+    }
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    activePointerIdRef.current = event.pointerId;
+    dragStartXRef.current = event.clientX;
+    setAnimDirection(null);
+    setIsDragging(true);
+    setDragOffset(0);
   };
 
-  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (!layout.isMobile || touchStartX.current === null) {
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) {
       return;
     }
 
-    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
-    const delta = endX - touchStartX.current;
-    touchStartX.current = null;
+    const offset = clampDragOffset(
+      event.clientX - dragStartXRef.current,
+      canGoPrev,
+      canGoNext,
+    );
+    setDragOffset(offset);
+  };
 
-    if (delta <= -SWIPE_THRESHOLD) {
-      goNext();
+  const getReleaseOffset = (clientX: number) =>
+    clampDragOffset(clientX - dragStartXRef.current, canGoPrev, canGoNext);
+
+  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) {
       return;
     }
 
-    if (delta >= SWIPE_THRESHOLD) {
-      goPrev();
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
     }
+
+    finishDrag(getReleaseOffset(event.clientX));
+  };
+
+  const handlePointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    finishDrag(getReleaseOffset(event.clientX));
   };
 
   const rightPage = layout.isMobile ? null : MENU_PAGES[currentPage + 1];
   const bookViewClassName = [
     styles.bookView,
     layout.isMobile ? styles.bookViewSingle : styles.bookViewSpread,
-  ].join(" ");
-
-  const spreadClassName = [
-    styles.spread,
-    animDirection === "next" ? styles.spreadNext : "",
-    animDirection === "prev" ? styles.spreadPrev : "",
+    isDragging ? styles.bookViewDragging : "",
   ]
     .filter(Boolean)
     .join(" ");
+
+  const isDragVisualActive = isDragging || dragOffset !== 0;
+  const spreadClassName = [
+    styles.spread,
+    isDragging ? styles.spreadDragging : "",
+    !isDragVisualActive && animDirection === "next" ? styles.spreadNext : "",
+    !isDragVisualActive && animDirection === "prev" ? styles.spreadPrev : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const spreadStyle =
+    isDragVisualActive
+      ? {
+          transform: getDragTransform(dragOffset),
+          transition: isDragging ? "none" : "transform 0.32s ease",
+        }
+      : undefined;
 
   return (
     <main className={styles.wrap}>
@@ -251,10 +360,16 @@ export default function MenuBook() {
             <div
               className={bookViewClassName}
               style={{ width: layout.spreadWidth }}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerCancel}
             >
-              <div className={spreadClassName} key={currentPage}>
+              <div
+                className={spreadClassName}
+                style={spreadStyle}
+                key={currentPage}
+              >
                 <MenuPage
                   page={MENU_PAGES[currentPage]}
                   variant={layout.isMobile ? "single" : "left"}
