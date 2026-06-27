@@ -2,16 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-
-type ReserveMenuItem = {
-  id: string;
-  name: string;
-  price: number;
-  description?: string;
-  imageUrl?: string;
-  label?: string;
-  itemType?: "bento" | "drink" | "extra";
-};
+import MenuCard, { type ReserveMenuItem } from "../../../components/MenuCard";
+import { menuImageUrl } from "../../../lib/menuImage";
 
 type CartItem = {
   id: string;
@@ -35,13 +27,6 @@ type ReservationDraft = {
   note?: string;
 };
 
-type MenuCardViewProps = {
-  item: ReserveMenuItem;
-  cartQty: number;
-  onIncrement: (item: ReserveMenuItem) => void;
-  onDecrement: (item: ReserveMenuItem) => void;
-};
-
 const STORAGE_KEYS = [
   "kamurado-reserve-draft",
   "kamurado-reservation-draft",
@@ -54,8 +39,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "karaage_bento",
     name: "からあげ弁当",
     price: 700,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/5.png",
+    imageUrl: menuImageUrl("5.png"),
     description:
       "定番人気。外は香ばしく、中はジューシーに仕上げた定番のお弁当です。",
     label: "人気",
@@ -65,8 +49,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "nanban_bento",
     name: "チキン南蛮弁当",
     price: 900,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/3.png",
+    imageUrl: menuImageUrl("3.png"),
     description:
       "甘酢とタルタルの相性が抜群。満足感のある一品です。",
     label: "おすすめ",
@@ -76,8 +59,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "shogayaki_bento",
     name: "生姜焼き弁当",
     price: 700,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/6.png",
+    imageUrl: menuImageUrl("6.png"),
     description:
       "ごはんが進む王道の味。やわらかいお肉と香りの良い生姜だれ。",
     itemType: "bento",
@@ -86,8 +68,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "original_hamburg_bento",
     name: "オリジナルハンバーグ弁当",
     price: 800,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/9.png",
+    imageUrl: menuImageUrl("9.png"),
     description:
       "肉感と玉ねぎの食感を楽しめる、こだわりのハンバーグ弁当です。",
     itemType: "bento",
@@ -96,8 +77,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "cheese_hamburg_bento",
     name: "チーズハンバーグ弁当",
     price: 850,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/4.png",
+    imageUrl: menuImageUrl("4.png"),
     description:
       "濃厚チーズを合わせた、満足感たっぷりのハンバーグ弁当です。",
     itemType: "bento",
@@ -106,8 +86,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "oroshi_ponzu_hamburg_bento",
     name: "おろしポン酢ハンバーグ弁当",
     price: 850,
-    imageUrl:
-      "https://teppanyaki-toda.com/wp-content/uploads/2026/05/おろしポン酢ハンバーグ＿バラン.png",
+    imageUrl: menuImageUrl("おろしポン酢ハンバーグ＿バラン.png"),
     description:
       "大根おろしとポン酢でさっぱり食べられるハンバーグ弁当です。",
     itemType: "bento",
@@ -116,8 +95,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "demiglace_hamburg_bento",
     name: "デミグラスソースハンバーグ弁当",
     price: 850,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/1.png",
+    imageUrl: menuImageUrl("1.png"),
     description:
       "コクのあるデミグラスソースで仕上げた王道ハンバーグ弁当です。",
     itemType: "bento",
@@ -126,8 +104,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "chicken_katsu_bento",
     name: "チキンカツ弁当",
     price: 750,
-    imageUrl:
-      "https://teppanyaki-toda.com/wp-content/uploads/2026/05/チキンカツ弁当-1.png",
+    imageUrl: menuImageUrl("チキンカツ弁当-1.png"),
     description:
       "サクッと揚げたチキンカツを楽しめる、食べ応えのあるお弁当です。",
     itemType: "bento",
@@ -136,8 +113,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "chicken_katsu_tartar_bento",
     name: "チキンカツ弁当 タルタルソースがけ",
     price: 800,
-    imageUrl:
-      "https://komradefoods1025-geskw.wpcomstaging.com/wp-content/uploads/2026/05/7.png",
+    imageUrl: menuImageUrl("7.png"),
     description:
       "サクサクのチキンカツにタルタルソースを合わせた満足系のお弁当です。",
     itemType: "bento",
@@ -146,8 +122,7 @@ const BENTO_MENUS: ReserveMenuItem[] = [
     id: "chicken_katsu_oroshi_ponzu_bento",
     name: "チキンカツおろしポン酢弁当",
     price: 750,
-    imageUrl:
-      "https://teppanyaki-toda.com/wp-content/uploads/2026/05/チキンカツおろしポン酢＿バラン.png",
+    imageUrl: menuImageUrl("チキンカツおろしポン酢＿バラン.png"),
     description:
       "サクッと揚げたチキンカツを、おろしポン酢でさっぱり楽しめるお弁当です。",
     itemType: "bento",
@@ -159,217 +134,11 @@ const EXTRA_MENUS: ReserveMenuItem[] = [
     id: "extra_karaage",
     name: "追加唐揚げ",
     price: 80,
-    imageUrl:
-      "https://teppanyaki-toda.com/wp-content/uploads/2026/05/40da5886-71ac-424d-b021-d2a8cc2295c3.png",
+    imageUrl: menuImageUrl("40da5886-71ac-424d-b021-d2a8cc2295c3.png"),
     description: "もう1個食べたい時に。1個から追加できます。",
     itemType: "extra",
   },
 ];
-
-function MenuCardView({
-  item,
-  cartQty,
-  onIncrement,
-  onDecrement,
-}: MenuCardViewProps) {
-  return (
-    <article
-      className="rounded-3xl border border-stone-200 bg-white"
-      style={{
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        minHeight: 420,
-      }}
-    >
-      <div
-        style={{
-          height: 180,
-          background: "#f6efe4",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          borderBottom: "1px solid rgba(189,167,142,0.25)",
-          overflow: "hidden",
-        }}
-      >
-        {item.imageUrl && item.imageUrl.trim() ? (
-          <img
-            src={item.imageUrl}
-            alt={item.name}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-              background: "#f6efe4",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              textAlign: "center",
-              color: "#8a6240",
-              fontWeight: 700,
-              letterSpacing: "0.12em",
-              fontSize: 14,
-            }}
-          >
-            KAMURADO
-          </div>
-        )}
-      </div>
-
-      <div
-        className="p-6"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 16,
-          flex: 1,
-        }}
-      >
-       <div
-  style={{
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-  }}
->
-  <div style={{ minWidth: 0, flex: 1 }}>
-    {item.label ? (
-      <div
-        className="rounded-full bg-amber-900 text-white"
-        style={{
-          display: "inline-flex",
-          marginBottom: 12,
-          fontSize: 13,
-          padding: "7px 14px",
-        }}
-      >
-        {item.label}
-      </div>
-    ) : null}
-
-    <h3
-      style={{
-        fontSize: 22,
-        lineHeight: 1.35,
-        overflowWrap: "anywhere",
-        wordBreak: "break-word",
-      }}
-    >
-      {item.name}
-    </h3>
-  </div>
-
-  <div
-    style={{
-      flexShrink: 0,
-      color: "#b88b43",
-      fontWeight: 700,
-      fontSize: 18,
-      whiteSpace: "nowrap",
-    }}
-  >
-    ¥{item.price.toLocaleString("ja-JP")}
-  </div>
-</div>
-
-        <p
-          style={{
-            fontSize: 16,
-            lineHeight: 1.9,
-            minHeight: 88,
-            overflowWrap: "anywhere",
-            wordBreak: "break-word",
-          }}
-        >
-          {item.description ?? ""}
-        </p>
-
-        <div style={{ marginTop: "auto" }}>
-          <div
-            style={{
-              color: "#6d6258",
-              fontSize: 15,
-              marginBottom: 12,
-            }}
-          >
-            {cartQty > 0 ? `カート内 ${cartQty}点` : "カートに追加できます"}
-          </div>
-
-          {cartQty > 0 ? (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => onDecrement(item)}
-                className="inline-flex items-center justify-center border"
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 18,
-                  fontSize: 28,
-                  background: "#fffdf9",
-                }}
-              >
-                −
-              </button>
-
-              <div
-                style={{
-                  minWidth: 60,
-                  textAlign: "center",
-                  fontSize: 28,
-                  fontWeight: 700,
-                  color: "#2d241c",
-                }}
-              >
-                {cartQty}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => onIncrement(item)}
-                className="inline-flex items-center justify-center bg-amber-900 text-white"
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 18,
-                  fontSize: 28,
-                }}
-              >
-                ＋
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => onIncrement(item)}
-              className="inline-flex items-center justify-center bg-amber-900 text-white"
-              style={{
-                width: "100%",
-                padding: "14px 18px",
-                borderRadius: 18,
-                fontSize: 18,
-                fontWeight: 700,
-              }}
-            >
-              カートに追加
-            </button>
-          )}
-        </div>
-      </div>
-    </article>
-  );
-}
 
 function safeParseDraft(raw: string | null): ReservationDraft | null {
   if (!raw) return null;
@@ -580,7 +349,7 @@ export default function ReserveMenuPage() {
             }}
           >
             {BENTO_MENUS.map((item) => (
-              <MenuCardView
+              <MenuCard
                 key={item.id}
                 item={item}
                 cartQty={itemQtyMap.get(item.id) || 0}
@@ -619,7 +388,7 @@ export default function ReserveMenuPage() {
             }}
           >
             {EXTRA_MENUS.map((item) => (
-              <MenuCardView
+              <MenuCard
                 key={item.id}
                 item={item}
                 cartQty={itemQtyMap.get(item.id) || 0}

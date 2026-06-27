@@ -1,5 +1,7 @@
 "use client";
 
+import MenuImage from "./MenuImage";
+
 export type ReserveMenuItem = {
   id: string;
   name: string;
@@ -27,8 +29,8 @@ export default function MenuCard({
     item.itemType === "drink"
       ? "ドリンク"
       : item.itemType === "extra"
-      ? "追加メニュー"
-      : item.label || "お弁当";
+        ? "追加メニュー"
+        : item.label || "お弁当";
 
   return (
     <article
@@ -49,38 +51,17 @@ export default function MenuCard({
           overflow: "hidden",
         }}
       >
-        {item.imageUrl ? (
-          <img
-  src={encodeURI(item.imageUrl)}
-  alt={item.name}
-  referrerPolicy="no-referrer"
-  onError={(e) => {
-    e.currentTarget.style.display = "none";
-  }}
-  style={{
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    display: "block",
-  }}
-/>
-        ) : (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#9a6b3d",
-              fontWeight: 700,
-              letterSpacing: "0.08em",
-              fontSize: 18,
-            }}
-          >
-            KAMURADO
-          </div>
-        )}
+        <MenuImage
+          src={item.imageUrl}
+          alt={item.name}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            display: "block",
+            background: "#f5efe4",
+          }}
+        />
       </div>
 
       <div

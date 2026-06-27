@@ -1,4 +1,6 @@
+"use client";
 
+import MenuImage from "../MenuImage";
 
 type MenuItem = {
   id: string;
@@ -24,17 +26,17 @@ export default function MenuCard({
   return (
     <div className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition hover:shadow-md">
       <div className="relative aspect-[4/3] bg-stone-100">
-        {item.imageUrl ? (
-          <img
-            src={item.imageUrl}
-            alt={item.name}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-sm text-stone-400">
-            NO IMAGE
-          </div>
-        )}
+        <MenuImage
+          src={item.imageUrl}
+          alt={item.name}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            display: "block",
+            background: "#f5efe4",
+          }}
+        />
 
         {item.badge ? (
           <div className="absolute left-3 top-3 rounded-full bg-amber-900 px-3 py-1 text-xs font-medium text-white">
