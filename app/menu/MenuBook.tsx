@@ -1,14 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
+import { PageFlip } from "page-flip";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 
 const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
@@ -20,59 +14,34 @@ const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
 });
 
 const MOBILE_BREAKPOINT = 768;
-const DRAG_THRESHOLD = 72;
-const MAX_DRAG = 148;
 const PHONE_NUMBER = "0484415517";
 
-type Layout = {
+type BookSize = {
+  width: number;
+  height: number;
   isMobile: boolean;
-  pageWidth: number;
-  spreadWidth: number;
 };
-
-type DragDirection = "next" | "prev" | null;
-
-type PageTurnState = {
-  progress: number;
-  direction: DragDirection;
-  dragging: boolean;
-  settling: boolean;
-  isTarget: boolean;
-};
-
-const SNAPBACK_MS = 380;
 
 function getViewportHeight(): number {
   return window.visualViewport?.height ?? window.innerHeight;
 }
 
-function getMaxLeftPage(isMobile: boolean): number {
-  if (isMobile) {
-    return MENU_PAGES.length - 1;
-  }
-
-  return MENU_PAGES.length % 2 === 1
-    ? MENU_PAGES.length - 1
-    : MENU_PAGES.length - 2;
-}
-
-function getLayout(): Layout {
+function getBookSize(): BookSize {
   if (typeof window === "undefined") {
-    return { isMobile: true, pageWidth: 320, spreadWidth: 320 };
+    return { width: 320, height: 320, isMobile: true };
   }
 
   const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
   const viewportHeight = getViewportHeight();
-  const footerHeight = 96;
-  const counterHeight = 32;
-  const verticalPadding = 24;
-  const navSpace = isMobile ? 84 : 100;
-  const horizontalPadding = 24;
-  const maxPageWidth = isMobile ? 360 : 340;
+  const footerHeight = 148;
+  const verticalPadding = 28;
+  const navSpace = isMobile ? 84 : 108;
+  const horizontalPadding = 28;
+  const maxPageWidth = isMobile ? 360 : 350;
 
   const maxPageHeight = Math.max(
-    160,
-    viewportHeight - footerHeight - counterHeight - verticalPadding,
+    200,
+    viewportHeight - footerHeight - verticalPadding,
   );
   const contentWidth = window.innerWidth - horizontalPadding - navSpace;
   const pageWidth = Math.floor(
@@ -82,436 +51,123 @@ function getLayout(): Layout {
       maxPageHeight,
     ),
   );
-  const size = Math.max(200, pageWidth);
+  const size = Math.max(220, pageWidth);
 
   return {
+    width: size,
+    height: size,
     isMobile,
-    pageWidth: size,
-    spreadWidth: isMobile ? size : size * 2,
   };
-}
-
-function clampDragOffset(
-  offset: number,
-  canGoPrev: boolean,
-  canGoNext: boolean,
-): number {
-  let clamped = offset;
-
-  if (!canGoPrev && clamped > 0) {
-    clamped *= 0.22;
-  }
-
-  if (!canGoNext && clamped < 0) {
-    clamped *= 0.22;
-  }
-
-  return Math.max(-MAX_DRAG, Math.min(MAX_DRAG, clamped));
-}
-
-function getDragProgress(offset: number): number {
-  return Math.min(1, Math.abs(offset) / MAX_DRAG);
-}
-
-function getDragDirection(offset: number): DragDirection {
-  if (offset <= -6) {
-    return "next";
-  }
-
-  if (offset >= 6) {
-    return "prev";
-  }
-
-  return null;
-}
-
-function isPageTurnTarget(
-  variant: "left" | "right" | "single",
-  direction: DragDirection,
-  isMobile: boolean,
-  hasRightPage: boolean,
-): boolean {
-  if (!direction) {
-    return false;
-  }
-
-  if (isMobile) {
-    return true;
-  }
-
-  if (direction === "next") {
-    return hasRightPage ? variant === "right" : variant === "left";
-  }
-
-  return variant === "left";
-}
-
-type MenuPageProps = {
-  page: (typeof MENU_PAGES)[number];
-  variant: "left" | "right" | "single";
-  empty?: boolean;
-  turn: PageTurnState;
-};
-
-function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
-  const pageClassName = [
-    styles.page,
-    variant === "left" ? styles.pageLeft : "",
-    variant === "right" ? styles.pageRight : "",
-    variant === "single" ? styles.pageSingle : "",
-    empty ? styles.pageEmpty : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const pageStyle: CSSProperties | undefined = turn.isTarget
-    ? { ["--turn-progress" as string]: String(turn.progress) }
-    : undefined;
-
-  const showTurningPage =
-    turn.isTarget && (turn.progress > 0 || turn.settling) && turn.direction;
-
-  return (
-    <div
-      className={pageClassName}
-      style={pageStyle}
-      data-dragging={turn.dragging ? "true" : undefined}
-      data-settling={turn.settling ? "true" : undefined}
-      data-direction={turn.isTarget ? turn.direction ?? undefined : undefined}
-      data-turning={showTurningPage ? "true" : undefined}
-    >
-      {!empty ? (
-        <div className={styles.pageScene}>
-          <span className={styles.pageDropShadow} aria-hidden />
-          <span className={styles.pageFallShadow} aria-hidden />
-          <img
-            src={page.src}
-            alt={page.alt}
-            className={styles.pageImage}
-            draggable={false}
-          />
-          {showTurningPage ? (
-            <div
-              className={styles.turningPage}
-              data-direction={turn.direction ?? undefined}
-              aria-hidden
-            >
-              <div className={styles.turningPageInner}>
-                <img
-                  src={page.src}
-                  alt=""
-                  className={styles.turningGhost}
-                  draggable={false}
-                />
-              </div>
-            </div>
-          ) : null}
-          <span className={styles.pageCurl} aria-hidden />
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 export default function MenuBook() {
   const stageRef = useRef<HTMLDivElement>(null);
-  const dragStartXRef = useRef(0);
-  const activePointerIdRef = useRef<number | null>(null);
-  const pendingDragOffsetRef = useRef<number | null>(null);
-  const dragRafRef = useRef<number | null>(null);
-  const snapBackTimerRef = useRef<number | null>(null);
-  const snapBackDirectionRef = useRef<DragDirection>(null);
-  const [layout, setLayout] = useState<Layout>({
+  const bookRef = useRef<HTMLDivElement>(null);
+  const pageFlipRef = useRef<PageFlip | null>(null);
+  const [bookSize, setBookSize] = useState<BookSize>({
+    width: 320,
+    height: 320,
     isMobile: true,
-    pageWidth: 320,
-    spreadWidth: 320,
   });
   const [currentPage, setCurrentPage] = useState(0);
-  const [animDirection, setAnimDirection] = useState<DragDirection>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isSnapBack, setIsSnapBack] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const updateLayout = () => {
+    const updateSize = () => {
       requestAnimationFrame(() => {
-        setLayout(getLayout());
+        setBookSize(getBookSize());
       });
     };
 
-    updateLayout();
+    updateSize();
 
     const stage = stageRef.current;
     const resizeObserver =
       stage && typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(updateLayout)
+        ? new ResizeObserver(updateSize)
         : null;
 
     if (stage) {
       resizeObserver?.observe(stage);
     }
 
-    window.addEventListener("resize", updateLayout);
-    window.visualViewport?.addEventListener("resize", updateLayout);
+    window.addEventListener("resize", updateSize);
+    window.visualViewport?.addEventListener("resize", updateSize);
 
     return () => {
       resizeObserver?.disconnect();
-      window.removeEventListener("resize", updateLayout);
-      window.visualViewport?.removeEventListener("resize", updateLayout);
+      window.removeEventListener("resize", updateSize);
+      window.visualViewport?.removeEventListener("resize", updateSize);
     };
   }, []);
 
   useEffect(() => {
-    if (!animDirection) {
+    const host = bookRef.current;
+    if (!host) {
       return;
     }
 
-    const timer = window.setTimeout(() => {
-      setAnimDirection(null);
-    }, 680);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [animDirection, currentPage]);
-
-  useEffect(() => {
-    return () => {
-      if (dragRafRef.current !== null) {
-        cancelAnimationFrame(dragRafRef.current);
-      }
-
-      if (snapBackTimerRef.current !== null) {
-        window.clearTimeout(snapBackTimerRef.current);
-      }
-    };
-  }, []);
-
-  const beginSnapBack = useCallback((direction: DragDirection) => {
-    if (!direction) {
-      setDragOffset(0);
+    const pages = host.querySelectorAll<HTMLElement>(`.${styles.flipPage}`);
+    if (pages.length === 0) {
       return;
     }
 
-    snapBackDirectionRef.current = direction;
-    setIsSnapBack(true);
+    setReady(false);
 
-    if (snapBackTimerRef.current !== null) {
-      window.clearTimeout(snapBackTimerRef.current);
-    }
-
-    snapBackTimerRef.current = window.setTimeout(() => {
-      setIsSnapBack(false);
-      snapBackDirectionRef.current = null;
-      snapBackTimerRef.current = null;
-    }, SNAPBACK_MS + 40);
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setDragOffset(0);
-      });
+    const pageFlip = new PageFlip(host, {
+      width: bookSize.width,
+      height: bookSize.height,
+      size: "stretch",
+      minWidth: 220,
+      maxWidth: bookSize.isMobile ? 380 : 360,
+      minHeight: 220,
+      maxHeight: bookSize.isMobile ? 380 : 360,
+      drawShadow: true,
+      flippingTime: 700,
+      usePortrait: true,
+      maxShadowOpacity: 0.88,
+      mobileScrollSupport: true,
+      swipeDistance: 28,
+      showCover: false,
+      autoSize: true,
+      useMouseEvents: true,
     });
-  }, []);
 
-  const flushDragOffset = useCallback(() => {
-    dragRafRef.current = null;
+    pageFlip.on("init", (event) => {
+      const payload = event.data as { page: number };
+      setCurrentPage(payload.page);
+      setReady(true);
+    });
 
-    if (pendingDragOffsetRef.current !== null) {
-      setDragOffset(pendingDragOffsetRef.current);
-      pendingDragOffsetRef.current = null;
-    }
-  }, []);
+    pageFlip.on("flip", (event) => {
+      setCurrentPage(event.data as number);
+    });
 
-  const scheduleDragOffset = useCallback(
-    (offset: number) => {
-      pendingDragOffsetRef.current = offset;
+    pageFlip.loadFromHtml(Array.from(pages));
+    pageFlipRef.current = pageFlip;
 
-      if (dragRafRef.current === null) {
-        dragRafRef.current = requestAnimationFrame(flushDragOffset);
-      }
-    },
-    [flushDragOffset],
-  );
+    return () => {
+      pageFlip.destroy();
+      pageFlipRef.current = null;
+      setReady(false);
+    };
+  }, [bookSize.height, bookSize.isMobile, bookSize.width]);
 
-  const maxLeftPage = getMaxLeftPage(layout.isMobile);
+  const pageCount = MENU_PAGES.length;
   const isFirstPage = currentPage <= 0;
-  const isLastPage = currentPage >= maxLeftPage;
-  const canGoPrev = !isFirstPage;
-  const canGoNext = !isLastPage;
+  const isLastPage = currentPage >= pageCount - 1;
 
   const goPrev = useCallback(() => {
-    const nextPage = layout.isMobile
-      ? Math.max(0, currentPage - 1)
-      : Math.max(0, currentPage - 2);
-
-    if (nextPage === currentPage) {
-      return;
-    }
-
-    setAnimDirection("prev");
-    setCurrentPage(nextPage);
-  }, [currentPage, layout.isMobile]);
+    pageFlipRef.current?.flipPrev();
+  }, []);
 
   const goNext = useCallback(() => {
-    const nextPage = layout.isMobile
-      ? Math.min(maxLeftPage, currentPage + 1)
-      : Math.min(maxLeftPage, currentPage + 2);
+    pageFlipRef.current?.flipNext();
+  }, []);
 
-    if (nextPage === currentPage) {
-      return;
-    }
-
-    setAnimDirection("next");
-    setCurrentPage(nextPage);
-  }, [currentPage, layout.isMobile, maxLeftPage]);
-
-  const finishDrag = useCallback(
-    (offsetX: number) => {
-      activePointerIdRef.current = null;
-
-      if (dragRafRef.current !== null) {
-        cancelAnimationFrame(dragRafRef.current);
-        dragRafRef.current = null;
-      }
-
-      if (pendingDragOffsetRef.current !== null) {
-        setDragOffset(pendingDragOffsetRef.current);
-        pendingDragOffsetRef.current = null;
-      }
-
-      setIsDragging(false);
-      setIsSnapBack(false);
-
-      if (offsetX <= -DRAG_THRESHOLD && canGoNext) {
-        setDragOffset(0);
-        goNext();
-        return;
-      }
-
-      if (offsetX >= DRAG_THRESHOLD && canGoPrev) {
-        setDragOffset(0);
-        goPrev();
-        return;
-      }
-
-      if (offsetX === 0) {
-        setDragOffset(0);
-        return;
-      }
-
-      beginSnapBack(getDragDirection(offsetX));
-    },
-    [beginSnapBack, canGoNext, canGoPrev, goNext, goPrev],
-  );
-
-  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (animDirection || event.button > 0) {
-      return;
-    }
-
-    if (dragRafRef.current !== null) {
-      cancelAnimationFrame(dragRafRef.current);
-      dragRafRef.current = null;
-    }
-
-    pendingDragOffsetRef.current = null;
-    setIsSnapBack(false);
-    snapBackDirectionRef.current = null;
-
-    event.currentTarget.setPointerCapture(event.pointerId);
-    activePointerIdRef.current = event.pointerId;
-    dragStartXRef.current = event.clientX;
-    setAnimDirection(null);
-    setIsDragging(true);
-    setDragOffset(0);
-  };
-
-  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (activePointerIdRef.current !== event.pointerId) {
-      return;
-    }
-
-    const offset = clampDragOffset(
-      event.clientX - dragStartXRef.current,
-      canGoPrev,
-      canGoNext,
-    );
-    scheduleDragOffset(offset);
-  };
-
-  const getReleaseOffset = (clientX: number) =>
-    clampDragOffset(clientX - dragStartXRef.current, canGoPrev, canGoNext);
-
-  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (activePointerIdRef.current !== event.pointerId) {
-      return;
-    }
-
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-
-    finishDrag(getReleaseOffset(event.clientX));
-  };
-
-  const handlePointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (activePointerIdRef.current !== event.pointerId) {
-      return;
-    }
-
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-
-    finishDrag(getReleaseOffset(event.clientX));
-  };
-
-  const rightPage = layout.isMobile ? null : MENU_PAGES[currentPage + 1];
-  const hasRightPage = Boolean(rightPage);
-  const dragDirection = getDragDirection(dragOffset);
-  const activeDirection = isSnapBack
-    ? snapBackDirectionRef.current
-    : dragDirection;
-  const dragProgress = getDragProgress(dragOffset);
-  const isDragActive = isDragging || dragOffset !== 0 || isSnapBack;
-
-  const buildTurnState = (
-    variant: "left" | "right" | "single",
-  ): PageTurnState => {
-    const isTarget = isPageTurnTarget(
-      variant,
-      activeDirection,
-      layout.isMobile,
-      hasRightPage,
-    );
-    const progress = isTarget ? dragProgress : 0;
-    const settling = isSnapBack && isTarget;
-
-    return {
-      progress,
-      direction: isTarget ? activeDirection : null,
-      dragging: isDragging && isTarget,
-      settling,
-      isTarget,
-    };
-  };
-
-  const bookViewClassName = [
-    styles.bookView,
-    layout.isMobile ? styles.bookViewSingle : styles.bookViewSpread,
-    isDragging ? styles.bookViewDragging : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const spreadClassName = [
-    styles.spread,
-    isDragging ? styles.spreadDragging : "",
-    !isDragActive && animDirection === "next" ? styles.spreadNext : "",
-    !isDragActive && animDirection === "prev" ? styles.spreadPrev : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const goToPage = useCallback((index: number) => {
+    pageFlipRef.current?.turnToPage(index);
+  }, []);
 
   return (
     <main className={styles.wrap}>
@@ -526,7 +182,7 @@ export default function MenuBook() {
             type="button"
             className={styles.navBtn}
             onClick={goPrev}
-            disabled={isFirstPage}
+            disabled={!ready || isFirstPage}
             aria-label="前のページ"
           >
             ‹
@@ -534,33 +190,61 @@ export default function MenuBook() {
 
           <div className={styles.bookColumn}>
             <div
-              className={bookViewClassName}
-              style={{ width: layout.spreadWidth }}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerCancel}
+              className={styles.bookShell}
+              style={{
+                width: bookSize.isMobile
+                  ? bookSize.width + 28
+                  : bookSize.width * 2 + 28,
+              }}
             >
-              <div className={spreadClassName} key={currentPage}>
-                <MenuPage
-                  page={MENU_PAGES[currentPage]}
-                  variant={layout.isMobile ? "single" : "left"}
-                  turn={buildTurnState(layout.isMobile ? "single" : "left")}
-                />
-
-                {!layout.isMobile && (
-                  <MenuPage
-                    page={rightPage ?? MENU_PAGES[currentPage]}
-                    variant="right"
-                    empty={!rightPage}
-                    turn={buildTurnState("right")}
-                  />
-                )}
+              <div className={styles.bookCoverEdge} aria-hidden />
+              <div
+                className={styles.bookFlipHost}
+                key={`${bookSize.width}-${bookSize.height}-${bookSize.isMobile}`}
+              >
+                <div ref={bookRef} className={styles.bookRoot}>
+                  {MENU_PAGES.map((page) => (
+                    <div key={page.src} className={styles.flipPage}>
+                      <div className={styles.pageFace}>
+                        <img
+                          src={page.src}
+                          alt={page.alt}
+                          className={styles.pageImage}
+                          draggable={false}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
+              <div className={styles.bookSpineGlow} aria-hidden />
+            </div>
+
+            <div
+              className={styles.dots}
+              role="tablist"
+              aria-label="ページインジケーター"
+            >
+              {MENU_PAGES.map((page, index) => (
+                <button
+                  key={page.src}
+                  type="button"
+                  role="tab"
+                  className={
+                    index === currentPage
+                      ? `${styles.dot} ${styles.dotActive}`
+                      : styles.dot
+                  }
+                  aria-label={`${index + 1}ページ目`}
+                  aria-selected={index === currentPage}
+                  disabled={!ready}
+                  onClick={() => goToPage(index)}
+                />
+              ))}
             </div>
 
             <div className={styles.counter}>
-              {currentPage + 1} / {MENU_PAGES.length}
+              {currentPage + 1} / {pageCount}
             </div>
           </div>
 
@@ -568,7 +252,7 @@ export default function MenuBook() {
             type="button"
             className={styles.navBtn}
             onClick={goNext}
-            disabled={isLastPage}
+            disabled={!ready || isLastPage}
             aria-label="次のページ"
           >
             ›
