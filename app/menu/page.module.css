@@ -1,13 +1,18 @@
 .wrap {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   background:
     radial-gradient(circle at 20% 0%, rgba(184, 139, 67, 0.12), transparent 34%),
     linear-gradient(180deg, #1f1a17 0%, #2f241c 42%, #15110f 100%);
   color: #f7f2ea;
-  padding: 20px 12px 96px;
+  padding:
+    max(14px, env(safe-area-inset-top))
+    12px
+    calc(96px + env(safe-area-inset-bottom));
   text-align: center;
 }
 
@@ -23,28 +28,45 @@
 }
 
 .header p {
-  margin: 0 0 16px;
+  margin: 0;
   font-size: 0.82rem;
   color: rgba(247, 242, 234, 0.78);
 }
 
-.bookArea {
+.stage {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 0;
+}
+
+.bookArea {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  width: 100%;
   min-height: 0;
 }
 
 .flipBookWrap {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-shrink: 0;
   min-width: 0;
 }
 
 .flipBook {
+  margin: 0 auto;
+}
+
+.flipBook :global(.stf__parent) {
   margin: 0 auto;
 }
 
@@ -66,12 +88,14 @@
 }
 
 .pageImage {
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
   object-fit: contain;
   object-position: center;
   display: block;
-  background: #f8f1df;
+  background: transparent;
 }
 
 .navBtn {
@@ -96,7 +120,7 @@
 
 .counter {
   flex-shrink: 0;
-  margin-top: 12px;
+  margin: 0;
   font-size: 0.88rem;
   color: rgba(247, 242, 234, 0.88);
   letter-spacing: 0.08em;
@@ -142,10 +166,6 @@
 }
 
 @media (max-width: 767px) {
-  .wrap {
-    padding-top: 14px;
-  }
-
   .navBtn {
     width: 32px;
     height: 52px;
