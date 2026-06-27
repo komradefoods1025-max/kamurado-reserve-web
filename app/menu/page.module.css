@@ -66,6 +66,7 @@
   cursor: grab;
   user-select: none;
   overflow: hidden;
+  perspective: 1400px;
 }
 
 .bookViewDragging {
@@ -162,39 +163,18 @@
   background: linear-gradient(180deg, #f7efd9 0%, #f2e6cc 100%);
   border: 1px solid rgba(196, 162, 92, 0.42);
   box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.42);
-  --drag-progress: 0;
-  transform: perspective(1000px);
-  transition:
-    transform 0.34s ease,
-    box-shadow 0.34s ease;
+  --turn-progress: 0;
 }
 
-.page[data-dragging="true"] {
-  transition: none;
-}
-
-.page[data-turning="true"][data-direction="next"] {
-  transform: perspective(1000px)
-    rotateY(calc(var(--drag-progress) * -18deg))
-    skewY(calc(var(--drag-progress) * -1.2deg))
-    translateX(calc(var(--drag-progress) * -2px));
-  transform-origin: left center;
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 248, 232, 0.42),
-    calc(var(--drag-progress) * 6px) calc(var(--drag-progress) * 8px)
-      calc(var(--drag-progress) * 18px) rgba(24, 16, 10, 0.18);
-}
-
-.page[data-turning="true"][data-direction="prev"] {
-  transform: perspective(1000px)
-    rotateY(calc(var(--drag-progress) * 18deg))
-    skewY(calc(var(--drag-progress) * 1.2deg))
-    translateX(calc(var(--drag-progress) * 2px));
-  transform-origin: right center;
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 248, 232, 0.42),
-    calc(var(--drag-progress) * -6px) calc(var(--drag-progress) * 8px)
-      calc(var(--drag-progress) * 18px) rgba(24, 16, 10, 0.18);
+.pageScene {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: perspective(1200px);
 }
 
 .pageRight {
@@ -205,82 +185,184 @@
   background: linear-gradient(180deg, #f1e5cf 0%, #e9dcc3 100%);
 }
 
-.pageLiftShadow {
+.pageDropShadow {
   position: absolute;
-  left: 10%;
-  right: 10%;
-  bottom: 3%;
-  height: 16%;
+  inset: 0;
+  z-index: 4;
   pointer-events: none;
+  opacity: calc(var(--turn-progress) * 0.92);
+  background: linear-gradient(
+    118deg,
+    transparent calc(28% - var(--turn-progress) * 8%),
+    rgba(16, 10, 6, calc(0.12 + var(--turn-progress) * 0.42))
+      calc(36% + var(--turn-progress) * 18%),
+    rgba(16, 10, 6, calc(0.04 + var(--turn-progress) * 0.18))
+      calc(58% + var(--turn-progress) * 12%),
+    transparent calc(74% + var(--turn-progress) * 8%)
+  );
+}
+
+.page[data-direction="prev"] .pageDropShadow {
+  background: linear-gradient(
+    242deg,
+    transparent calc(28% - var(--turn-progress) * 8%),
+    rgba(16, 10, 6, calc(0.12 + var(--turn-progress) * 0.42))
+      calc(36% + var(--turn-progress) * 18%),
+    rgba(16, 10, 6, calc(0.04 + var(--turn-progress) * 0.18))
+      calc(58% + var(--turn-progress) * 12%),
+    transparent calc(74% + var(--turn-progress) * 8%)
+  );
+}
+
+.pageFallShadow {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 2%;
+  height: 18%;
   z-index: 2;
-  opacity: 0;
+  pointer-events: none;
+  opacity: calc(var(--turn-progress) * 0.75);
   border-radius: 50%;
   background: radial-gradient(
     ellipse at center,
-    rgba(24, 16, 10, calc(var(--drag-progress) * 0.28)) 0%,
+    rgba(20, 12, 8, calc(0.18 + var(--turn-progress) * 0.32)) 0%,
     transparent 72%
   );
-  transform: skewX(calc(var(--drag-progress) * -10deg))
-    translateY(calc(var(--drag-progress) * 4px));
-  transition: opacity 0.2s ease;
+  transform: skewX(calc(var(--turn-progress) * -12deg))
+    translateY(calc(var(--turn-progress) * 5px));
 }
 
-.page[data-turning="true"] .pageLiftShadow {
-  opacity: 1;
+.page[data-direction="prev"] .pageFallShadow {
+  transform: skewX(calc(var(--turn-progress) * 12deg))
+    translateY(calc(var(--turn-progress) * 5px));
 }
 
-.pageTurnLayer {
+.turningPage {
   position: absolute;
+  inset: 0;
+  z-index: 8;
   pointer-events: none;
-  z-index: 6;
-  opacity: 0;
-  transition: opacity 0.16s ease;
+  transform-style: preserve-3d;
+  --fold-top: calc(42% * (1 - var(--turn-progress)));
+  --fold-bottom: calc(20% * (1 - var(--turn-progress)));
+  transition:
+    transform 0.34s ease,
+    clip-path 0.34s ease,
+    opacity 0.34s ease;
 }
 
-.page[data-turning="true"] .pageTurnLayer {
-  opacity: calc(0.35 + var(--drag-progress) * 0.65);
+.page[data-dragging="true"] .turningPage {
+  transition: none;
 }
 
-.page[data-direction="next"] .pageTurnLayer {
-  right: 0;
-  bottom: 0;
-  width: calc(30% + var(--drag-progress) * 38%);
-  height: calc(30% + var(--drag-progress) * 38%);
-  clip-path: polygon(100% 0, 100% 100%, 0 100%);
-  transform-origin: 100% 100%;
-  transform: rotate(calc(var(--drag-progress) * -34deg))
-    skewX(calc(var(--drag-progress) * -7deg));
+.turningPage[data-direction="next"] {
+  clip-path: polygon(
+    var(--fold-top) 0,
+    100% 0,
+    100% 100%,
+    var(--fold-bottom) 100%
+  );
+  transform-origin: left center;
+  transform:
+    perspective(1200px)
+    rotateY(calc(var(--turn-progress) * -82deg))
+    skewY(calc(var(--turn-progress) * -2.8deg))
+    translateX(calc(var(--turn-progress) * -5px));
+}
+
+.turningPage[data-direction="prev"] {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--fold-top)) 0,
+    calc(100% - var(--fold-bottom)) 100%,
+    0 100%
+  );
+  transform-origin: right center;
+  transform:
+    perspective(1200px)
+    rotateY(calc(var(--turn-progress) * 82deg))
+    skewY(calc(var(--turn-progress) * 2.8deg))
+    translateX(calc(var(--turn-progress) * 5px));
+}
+
+.turningPageInner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
   background: linear-gradient(
-    325deg,
-    rgba(255, 253, 247, 0.98) 0%,
-    rgba(243, 228, 196, 0.92) 42%,
-    rgba(214, 186, 132, 0.78) 100%
+    145deg,
+    #fffef9 0%,
+    #f8f0dc 42%,
+    #ead5aa 100%
   );
   box-shadow:
-    inset 3px 3px 8px rgba(255, 255, 255, 0.55),
-    inset -5px -5px 14px rgba(46, 32, 18, 0.16),
-    -5px 6px 14px rgba(24, 16, 10, 0.14);
+    inset 0 0 0 1px rgba(255, 248, 232, 0.72),
+    inset -12px 0 24px rgba(36, 24, 14, calc(0.08 + var(--turn-progress) * 0.22));
 }
 
-.page[data-direction="prev"] .pageTurnLayer {
-  left: 0;
+.turningPage::before {
+  content: "";
+  position: absolute;
+  top: 0;
   bottom: 0;
-  width: calc(30% + var(--drag-progress) * 38%);
-  height: calc(30% + var(--drag-progress) * 38%);
-  clip-path: polygon(0 0, 100% 100%, 0 100%);
-  transform-origin: 0 100%;
-  transform: rotate(calc(var(--drag-progress) * 34deg))
-    skewX(calc(var(--drag-progress) * 7deg));
+  width: 4px;
+  z-index: 10;
+  pointer-events: none;
+  opacity: calc(0.35 + var(--turn-progress) * 0.65);
   background: linear-gradient(
-    35deg,
-    rgba(255, 253, 247, 0.98) 0%,
-    rgba(243, 228, 196, 0.92) 42%,
-    rgba(214, 186, 132, 0.78) 100%
+    to bottom,
+    rgba(255, 255, 255, 0.95),
+    rgba(255, 248, 230, 0.55),
+    rgba(255, 255, 255, 0.85)
   );
-  box-shadow:
-    inset 3px 3px 8px rgba(255, 255, 255, 0.55),
-    inset 5px -5px 14px rgba(46, 32, 18, 0.16),
-    5px 6px 14px rgba(24, 16, 10, 0.14);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.45);
+}
+
+.turningPage[data-direction="next"]::before {
+  left: max(0px, calc(var(--fold-top) - 2px));
+}
+
+.turningPage[data-direction="prev"]::before {
+  right: max(0px, calc(var(--fold-top) - 2px));
+}
+
+.turningPage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background: linear-gradient(
+    to left,
+    transparent 0%,
+    rgba(18, 12, 8, calc(0.06 + var(--turn-progress) * 0.28)) 12%,
+    rgba(18, 12, 8, calc(0.12 + var(--turn-progress) * 0.38)) 18%,
+    transparent 42%
+  );
+}
+
+.turningPage[data-direction="prev"]::after {
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(18, 12, 8, calc(0.06 + var(--turn-progress) * 0.28)) 12%,
+    rgba(18, 12, 8, calc(0.12 + var(--turn-progress) * 0.38)) 18%,
+    transparent 42%
+  );
+}
+
+.turningGhost {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 96%;
+  height: 96%;
+  object-fit: contain;
+  object-position: center center;
+  opacity: calc(0.14 + var(--turn-progress) * 0.22);
+  transform: translate(-50%, -50%) scaleX(-1);
+  filter: blur(0.4px) saturate(0.85);
 }
 
 .page[data-turning="true"] .pageCurl {
@@ -332,11 +414,11 @@
   height: 96%;
   max-width: 96%;
   max-height: 96%;
+  margin: auto;
   border-radius: 6px;
   object-fit: contain;
   object-position: center center;
   filter: drop-shadow(0 5px 14px rgba(46, 32, 18, 0.16));
-  transform: translateZ(0);
 }
 
 .navBtn {
