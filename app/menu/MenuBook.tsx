@@ -162,8 +162,10 @@ function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
     .join(" ");
 
   const pageStyle: CSSProperties | undefined = turn.isTarget
-    ? { ["--drag-progress" as string]: String(turn.progress) }
+    ? { ["--turn-progress" as string]: String(turn.progress) }
     : undefined;
+
+  const showTurningPage = turn.isTarget && turn.progress > 0 && turn.direction;
 
   return (
     <div
@@ -171,20 +173,36 @@ function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
       style={pageStyle}
       data-dragging={turn.active && turn.isTarget ? "true" : undefined}
       data-direction={turn.isTarget ? turn.direction ?? undefined : undefined}
-      data-turning={turn.isTarget && turn.progress > 0 ? "true" : undefined}
+      data-turning={showTurningPage ? "true" : undefined}
     >
       {!empty ? (
-        <>
-          <span className={styles.pageLiftShadow} aria-hidden />
+        <div className={styles.pageScene}>
+          <span className={styles.pageDropShadow} aria-hidden />
+          <span className={styles.pageFallShadow} aria-hidden />
           <img
             src={page.src}
             alt={page.alt}
             className={styles.pageImage}
             draggable={false}
           />
-          <span className={styles.pageTurnLayer} aria-hidden />
+          {showTurningPage ? (
+            <div
+              className={styles.turningPage}
+              data-direction={turn.direction ?? undefined}
+              aria-hidden
+            >
+              <div className={styles.turningPageInner}>
+                <img
+                  src={page.src}
+                  alt=""
+                  className={styles.turningGhost}
+                  draggable={false}
+                />
+              </div>
+            </div>
+          ) : null}
           <span className={styles.pageCurl} aria-hidden />
-        </>
+        </div>
       ) : null}
     </div>
   );
