@@ -543,10 +543,16 @@ export default function MenuBook() {
 
       <div className={styles.actions}>
         <Link href="/" className={styles.reserveBtn}>
-          ランチ予約へ
+          <span className={styles.btnIcon} aria-hidden="true">
+            ▣
+          </span>
+          <span>ランチ予約へ</span>
         </Link>
         <a href={`tel:${PHONE_NUMBER}`} className={styles.telBtn}>
-          <span className={styles.telTitle}>電話する</span>
+          <span className={styles.btnIcon} aria-hidden="true">
+            ☎
+          </span>
+          <span>電話する</span>
           <span className={styles.telNumber}>048-441-5517</span>
         </a>
       </div>
