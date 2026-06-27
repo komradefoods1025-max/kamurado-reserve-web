@@ -6,6 +6,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import styles from "./page.module.css";
@@ -27,6 +28,15 @@ type Layout = {
   isMobile: boolean;
   pageWidth: number;
   spreadWidth: number;
+};
+
+type DragDirection = "next" | "prev" | null;
+
+type PageTurnState = {
+  progress: number;
+  direction: DragDirection;
+  active: boolean;
+  isTarget: boolean;
 };
 
 function getViewportHeight(): number {
@@ -96,20 +106,51 @@ function clampDragOffset(
   return Math.max(-MAX_DRAG, Math.min(MAX_DRAG, clamped));
 }
 
-function getDragTransform(offsetX: number): string {
-  const rotateY = offsetX * 0.075;
-  const translateX = offsetX * 0.42;
+function getDragProgress(offset: number): number {
+  return Math.min(1, Math.abs(offset) / MAX_DRAG);
+}
 
-  return `perspective(1200px) rotateY(${rotateY}deg) translateX(${translateX}px)`;
+function getDragDirection(offset: number): DragDirection {
+  if (offset <= -6) {
+    return "next";
+  }
+
+  if (offset >= 6) {
+    return "prev";
+  }
+
+  return null;
+}
+
+function isPageTurnTarget(
+  variant: "left" | "right" | "single",
+  direction: DragDirection,
+  isMobile: boolean,
+  hasRightPage: boolean,
+): boolean {
+  if (!direction) {
+    return false;
+  }
+
+  if (isMobile) {
+    return true;
+  }
+
+  if (direction === "next") {
+    return hasRightPage ? variant === "right" : variant === "left";
+  }
+
+  return variant === "left";
 }
 
 type MenuPageProps = {
   page: (typeof MENU_PAGES)[number];
   variant: "left" | "right" | "single";
   empty?: boolean;
+  turn: PageTurnState;
 };
 
-function MenuPage({ page, variant, empty = false }: MenuPageProps) {
+function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
   const pageClassName = [
     styles.page,
     variant === "left" ? styles.pageLeft : "",
@@ -120,16 +161,28 @@ function MenuPage({ page, variant, empty = false }: MenuPageProps) {
     .filter(Boolean)
     .join(" ");
 
+  const pageStyle: CSSProperties | undefined = turn.isTarget
+    ? { ["--drag-progress" as string]: String(turn.progress) }
+    : undefined;
+
   return (
-    <div className={pageClassName}>
+    <div
+      className={pageClassName}
+      style={pageStyle}
+      data-dragging={turn.active && turn.isTarget ? "true" : undefined}
+      data-direction={turn.isTarget ? turn.direction ?? undefined : undefined}
+      data-turning={turn.isTarget && turn.progress > 0 ? "true" : undefined}
+    >
       {!empty ? (
         <>
+          <span className={styles.pageLiftShadow} aria-hidden />
           <img
             src={page.src}
             alt={page.alt}
             className={styles.pageImage}
             draggable={false}
           />
+          <span className={styles.pageTurnLayer} aria-hidden />
           <span className={styles.pageCurl} aria-hidden />
         </>
       ) : null}
@@ -147,9 +200,7 @@ export default function MenuBook() {
     spreadWidth: 320,
   });
   const [currentPage, setCurrentPage] = useState(0);
-  const [animDirection, setAnimDirection] = useState<"next" | "prev" | null>(
-    null,
-  );
+  const [animDirection, setAnimDirection] = useState<DragDirection>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
 
@@ -311,6 +362,29 @@ export default function MenuBook() {
   };
 
   const rightPage = layout.isMobile ? null : MENU_PAGES[currentPage + 1];
+  const hasRightPage = Boolean(rightPage);
+  const dragDirection = getDragDirection(dragOffset);
+  const dragProgress = getDragProgress(dragOffset);
+  const isDragActive = isDragging || dragOffset !== 0;
+
+  const buildTurnState = (
+    variant: "left" | "right" | "single",
+  ): PageTurnState => {
+    const isTarget = isPageTurnTarget(
+      variant,
+      dragDirection,
+      layout.isMobile,
+      hasRightPage,
+    );
+
+    return {
+      progress: isTarget ? dragProgress : 0,
+      direction: isTarget ? dragDirection : null,
+      active: isDragActive,
+      isTarget,
+    };
+  };
+
   const bookViewClassName = [
     styles.bookView,
     layout.isMobile ? styles.bookViewSingle : styles.bookViewSpread,
@@ -319,23 +393,14 @@ export default function MenuBook() {
     .filter(Boolean)
     .join(" ");
 
-  const isDragVisualActive = isDragging || dragOffset !== 0;
   const spreadClassName = [
     styles.spread,
     isDragging ? styles.spreadDragging : "",
-    !isDragVisualActive && animDirection === "next" ? styles.spreadNext : "",
-    !isDragVisualActive && animDirection === "prev" ? styles.spreadPrev : "",
+    !isDragActive && animDirection === "next" ? styles.spreadNext : "",
+    !isDragActive && animDirection === "prev" ? styles.spreadPrev : "",
   ]
     .filter(Boolean)
     .join(" ");
-
-  const spreadStyle =
-    isDragVisualActive
-      ? {
-          transform: getDragTransform(dragOffset),
-          transition: isDragging ? "none" : "transform 0.32s ease",
-        }
-      : undefined;
 
   return (
     <main className={styles.wrap}>
@@ -365,14 +430,11 @@ export default function MenuBook() {
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerCancel}
             >
-              <div
-                className={spreadClassName}
-                style={spreadStyle}
-                key={currentPage}
-              >
+              <div className={spreadClassName} key={currentPage}>
                 <MenuPage
                   page={MENU_PAGES[currentPage]}
                   variant={layout.isMobile ? "single" : "left"}
+                  turn={buildTurnState(layout.isMobile ? "single" : "left")}
                 />
 
                 {!layout.isMobile && (
@@ -380,6 +442,7 @@ export default function MenuBook() {
                     page={rightPage ?? MENU_PAGES[currentPage]}
                     variant="right"
                     empty={!rightPage}
+                    turn={buildTurnState("right")}
                   />
                 )}
               </div>
