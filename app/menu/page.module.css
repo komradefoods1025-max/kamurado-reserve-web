@@ -50,58 +50,76 @@
   flex-shrink: 0;
 }
 
-.flipBookWrap {
+.bookView {
   position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   flex-shrink: 0;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 7;
-  overflow: hidden;
-  min-width: 0;
+  max-width: 100%;
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+  touch-action: pan-y;
 }
 
-.flipBook {
-  margin: 0 auto;
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.bookPlaceholder {
+.spread {
+  display: flex;
   width: 100%;
-  height: 100%;
-  border-radius: 12px;
-  background: rgba(248, 241, 223, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transform-origin: center center;
+}
+
+.spreadNext {
+  animation: pageTurnNext 0.45s ease;
+}
+
+.spreadPrev {
+  animation: pageTurnPrev 0.45s ease;
+}
+
+@keyframes pageTurnNext {
+  from {
+    opacity: 0.55;
+    transform: perspective(1200px) rotateY(-10deg) translateX(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pageTurnPrev {
+  from {
+    opacity: 0.55;
+    transform: perspective(1200px) rotateY(10deg) translateX(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .page {
   box-sizing: border-box;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 8px;
-  background: #f8f1df;
-  overflow: hidden;
-}
-
-.pageInner {
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
+  padding: 8px;
+  background: #f8f1df;
+}
+
+.pageRight {
+  border-left: 1px solid rgba(31, 26, 23, 0.08);
+}
+
+.pageEmpty {
+  background: #f3ebd6;
 }
 
 .pageImage {
   display: block;
-  max-width: 100%;
-  max-height: 100%;
+  max-width: min(100%, var(--page-max-width));
+  max-height: var(--page-max-height);
   width: auto;
   height: auto;
   border-radius: 8px;
@@ -185,10 +203,6 @@
   .bookArea {
     gap: 8px;
     padding-inline: 0;
-  }
-
-  .flipBookWrap {
-    aspect-ratio: 4 / 3;
   }
 
   .bookColumn {
