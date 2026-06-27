@@ -268,7 +268,7 @@ export default function MenuBook() {
         <Link href="/" className={styles.reserveBtn}>
           ランチ予約へ
         </Link>
-        <a href="tel:0480000000" className={styles.telBtn}>
+        <a href="tel:0484415517" className={styles.telBtn}>
           電話する
         </a>
       </div>
