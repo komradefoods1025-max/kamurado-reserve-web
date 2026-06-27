@@ -62,7 +62,15 @@
     0 28px 64px rgba(0, 0, 0, 0.58),
     0 10px 28px rgba(38, 24, 12, 0.34),
     0 0 42px rgba(184, 139, 67, 0.14);
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
   overflow: hidden;
+  perspective: 1400px;
+}
+
+.bookViewDragging {
+  cursor: grabbing;
 }
 
 .bookView::before {
@@ -103,6 +111,12 @@
   width: 100%;
 }
 
+@property --turn-progress {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
 .page {
   position: relative;
   box-sizing: border-box;
@@ -117,6 +131,255 @@
   background: linear-gradient(180deg, #f7efd9 0%, #f2e6cc 100%);
   border: 1px solid rgba(196, 162, 92, 0.42);
   box-shadow: inset 0 0 0 1px rgba(255, 248, 232, 0.42);
+  --turn-progress: 0;
+  --turn-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --turn-snapback-duration: 380ms;
+}
+
+.page[data-settling="true"] {
+  transition: --turn-progress var(--turn-snapback-duration) var(--turn-ease);
+}
+
+.page[data-dragging="true"] {
+  transition: none;
+}
+
+.pageScene {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: perspective(1200px) translateZ(0);
+}
+
+.pageLeft {
+  box-shadow: inset -1px 0 0 rgba(196, 162, 92, 0.16);
+}
+
+.pageRight {
+  box-shadow: inset 1px 0 0 rgba(196, 162, 92, 0.16);
+}
+
+.pageDropShadow {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: calc(var(--turn-progress) * 0.9);
+  transform: translateZ(0);
+  background: linear-gradient(
+    118deg,
+    transparent calc(26% - var(--turn-progress) * 8%),
+    rgba(16, 10, 6, calc(0.1 + var(--turn-progress) * 0.4))
+      calc(34% + var(--turn-progress) * 18%),
+    rgba(16, 10, 6, calc(0.04 + var(--turn-progress) * 0.16))
+      calc(56% + var(--turn-progress) * 12%),
+    transparent calc(72% + var(--turn-progress) * 8%)
+  );
+}
+
+.page[data-direction="prev"] .pageDropShadow {
+  background: linear-gradient(
+    242deg,
+    transparent calc(26% - var(--turn-progress) * 8%),
+    rgba(16, 10, 6, calc(0.1 + var(--turn-progress) * 0.4))
+      calc(34% + var(--turn-progress) * 18%),
+    rgba(16, 10, 6, calc(0.04 + var(--turn-progress) * 0.16))
+      calc(56% + var(--turn-progress) * 12%),
+    transparent calc(72% + var(--turn-progress) * 8%)
+  );
+}
+
+.page[data-settling="true"] .pageDropShadow {
+  transition: opacity var(--turn-snapback-duration) var(--turn-ease);
+}
+
+.page[data-dragging="true"] .pageDropShadow {
+  transition: none;
+}
+
+.page[data-dragging="true"] .pageDropShadow,
+.page[data-settling="true"] .pageDropShadow {
+  will-change: opacity;
+}
+
+.pageFallShadow {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 2%;
+  height: 16%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: calc(var(--turn-progress) * 0.72);
+  border-radius: 50%;
+  transform: skewX(calc(var(--turn-progress) * -10deg))
+    translateY(calc(var(--turn-progress) * 4px))
+    translateZ(0);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(20, 12, 8, calc(0.16 + var(--turn-progress) * 0.28)) 0%,
+    transparent 72%
+  );
+}
+
+.page[data-direction="prev"] .pageFallShadow {
+  transform: skewX(calc(var(--turn-progress) * 10deg))
+    translateY(calc(var(--turn-progress) * 4px))
+    translateZ(0);
+}
+
+.page[data-settling="true"] .pageFallShadow {
+  transition:
+    opacity var(--turn-snapback-duration) var(--turn-ease),
+    transform var(--turn-snapback-duration) var(--turn-ease);
+}
+
+.page[data-dragging="true"] .pageFallShadow {
+  transition: none;
+}
+
+.page[data-dragging="true"] .pageFallShadow,
+.page[data-settling="true"] .pageFallShadow {
+  will-change: opacity, transform;
+}
+
+.turningPage {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  --fold-top: calc(40% * (1 - var(--turn-progress)));
+  --fold-bottom: calc(18% * (1 - var(--turn-progress)));
+  transition: none;
+}
+
+.page[data-dragging="true"] .turningPage,
+.page[data-settling="true"] .turningPage {
+  will-change: transform, opacity;
+}
+
+.turningPage[data-direction="next"] {
+  clip-path: polygon(
+    var(--fold-top) 0,
+    100% 0,
+    100% 100%,
+    var(--fold-bottom) 100%
+  );
+  transform-origin: left center;
+  transform:
+    perspective(1200px)
+    rotateY(calc(var(--turn-progress) * -78deg))
+    skewY(calc(var(--turn-progress) * -2.4deg))
+    translateX(calc(var(--turn-progress) * -4px))
+    translateZ(0);
+}
+
+.turningPage[data-direction="prev"] {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--fold-top)) 0,
+    calc(100% - var(--fold-bottom)) 100%,
+    0 100%
+  );
+  transform-origin: right center;
+  transform:
+    perspective(1200px)
+    rotateY(calc(var(--turn-progress) * 78deg))
+    skewY(calc(var(--turn-progress) * 2.4deg))
+    translateX(calc(var(--turn-progress) * 4px))
+    translateZ(0);
+}
+
+.turningPageInner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: translateZ(0);
+  background: linear-gradient(
+    145deg,
+    #fffef9 0%,
+    #f8f0dc 42%,
+    #ead5aa 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 248, 232, 0.72),
+    inset -10px 0 20px rgba(36, 24, 14, calc(0.08 + var(--turn-progress) * 0.2));
+}
+
+.turningPageEdge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(236, 220, 188, 0.72) 50%,
+    rgba(255, 255, 255, 0.86) 100%
+  );
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.35);
+}
+
+.turningPage[data-direction="next"] .turningPageEdge {
+  left: max(0px, calc(var(--fold-top) - 1px));
+}
+
+.turningPage[data-direction="prev"] .turningPageEdge {
+  right: max(0px, calc(var(--fold-top) - 1px));
+}
+
+.turningPage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  transform: translateZ(0);
+  background: linear-gradient(
+    to left,
+    transparent 0%,
+    rgba(18, 12, 8, calc(0.05 + var(--turn-progress) * 0.26)) 12%,
+    rgba(18, 12, 8, calc(0.1 + var(--turn-progress) * 0.34)) 18%,
+    transparent 40%
+  );
+}
+
+.turningPage[data-direction="prev"]::after {
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(18, 12, 8, calc(0.05 + var(--turn-progress) * 0.26)) 12%,
+    rgba(18, 12, 8, calc(0.1 + var(--turn-progress) * 0.34)) 18%,
+    transparent 40%
+  );
+}
+
+.turningGhost {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 96%;
+  height: 96%;
+  object-fit: contain;
+  object-position: center center;
+  opacity: calc(0.12 + var(--turn-progress) * 0.2);
+  transform: translate(-50%, -50%) scaleX(-1) translateZ(0);
+  filter: blur(0.35px) saturate(0.85);
+}
+
+.page[data-settling="true"] .turningGhost {
+  transition: opacity var(--turn-snapback-duration) var(--turn-ease);
+}
+
+.page[data-dragging="true"] .turningGhost {
+  transition: none;
 }
 
 .pageEmpty {
@@ -124,6 +387,8 @@
 }
 
 .pageImage {
+  position: relative;
+  z-index: 3;
   display: block;
   width: 96%;
   height: 96%;
@@ -133,6 +398,7 @@
   object-position: center center;
   border-radius: 6px;
   filter: drop-shadow(0 5px 14px rgba(46, 32, 18, 0.16));
+  transform: translateZ(0);
   user-select: none;
   -webkit-user-drag: none;
 }

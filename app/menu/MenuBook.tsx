@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import styles from "./page.module.css";
 
 const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
@@ -14,11 +21,25 @@ const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
 
 const MOBILE_BREAKPOINT = 768;
 const PHONE_NUMBER = "0484415517";
+const MAX_DRAG = 148;
+const TURN_THRESHOLD = 0.35;
+const VELOCITY_THRESHOLD = 0.42;
+const SNAPBACK_MS = 380;
 
 type Layout = {
   isMobile: boolean;
   pageWidth: number;
   spreadWidth: number;
+};
+
+type DragDirection = "next" | "prev" | null;
+
+type PageTurnState = {
+  progress: number;
+  direction: DragDirection;
+  dragging: boolean;
+  settling: boolean;
+  isTarget: boolean;
 };
 
 const DEFAULT_LAYOUT: Layout = {
@@ -37,31 +58,145 @@ function getMaxLeftPage(isMobile: boolean): number {
     : MENU_PAGES.length - 2;
 }
 
+function clampDragOffset(
+  offset: number,
+  canGoPrev: boolean,
+  canGoNext: boolean,
+): number {
+  let clamped = offset;
+
+  if (!canGoPrev && clamped > 0) {
+    clamped *= 0.22;
+  }
+
+  if (!canGoNext && clamped < 0) {
+    clamped *= 0.22;
+  }
+
+  return Math.max(-MAX_DRAG, Math.min(MAX_DRAG, clamped));
+}
+
+function getDragProgress(offset: number): number {
+  return Math.min(1, Math.abs(offset) / MAX_DRAG);
+}
+
+function getDragDirection(offset: number): DragDirection {
+  if (offset <= -8) {
+    return "next";
+  }
+
+  if (offset >= 8) {
+    return "prev";
+  }
+
+  return null;
+}
+
+function isPageTurnTarget(
+  variant: "left" | "right" | "single",
+  direction: DragDirection,
+  isMobile: boolean,
+  hasRightPage: boolean,
+): boolean {
+  if (!direction) {
+    return false;
+  }
+
+  if (isMobile) {
+    return true;
+  }
+
+  if (direction === "next") {
+    return hasRightPage ? variant === "right" : variant === "left";
+  }
+
+  return variant === "left";
+}
+
 type MenuPageProps = {
   page: (typeof MENU_PAGES)[number];
+  variant: "left" | "right" | "single";
   empty?: boolean;
+  turn: PageTurnState;
 };
 
-function MenuPage({ page, empty = false }: MenuPageProps) {
+function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
+  const pageClassName = [
+    styles.page,
+    variant === "left" ? styles.pageLeft : "",
+    variant === "right" ? styles.pageRight : "",
+    variant === "single" ? styles.pageSingle : "",
+    empty ? styles.pageEmpty : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const pageStyle: CSSProperties | undefined = turn.isTarget
+    ? { ["--turn-progress" as string]: String(turn.progress) }
+    : undefined;
+
+  const showTurningPage =
+    turn.isTarget && (turn.progress > 0 || turn.settling) && turn.direction;
+
   if (empty) {
-    return <div className={`${styles.page} ${styles.pageEmpty}`} aria-hidden />;
+    return <div className={pageClassName} aria-hidden />;
   }
 
   return (
-    <div className={styles.page}>
-      <img
-        src={page.src}
-        alt={page.alt}
-        className={styles.pageImage}
-        draggable={false}
-      />
+    <div
+      className={pageClassName}
+      style={pageStyle}
+      data-dragging={turn.dragging ? "true" : undefined}
+      data-settling={turn.settling ? "true" : undefined}
+      data-direction={turn.isTarget ? turn.direction ?? undefined : undefined}
+      data-turning={showTurningPage ? "true" : undefined}
+    >
+      <div className={styles.pageScene}>
+        <span className={styles.pageDropShadow} aria-hidden />
+        <span className={styles.pageFallShadow} aria-hidden />
+        <img
+          src={page.src}
+          alt={page.alt}
+          className={styles.pageImage}
+          draggable={false}
+        />
+        {showTurningPage ? (
+          <div
+            className={styles.turningPage}
+            data-direction={turn.direction ?? undefined}
+            aria-hidden
+          >
+            <div className={styles.turningPageInner}>
+              <span className={styles.turningPageEdge} aria-hidden />
+              <img
+                src={page.src}
+                alt=""
+                className={styles.turningGhost}
+                draggable={false}
+              />
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
 
 export default function MenuBook() {
+  const dragStartXRef = useRef(0);
+  const activePointerIdRef = useRef<number | null>(null);
+  const pendingDragOffsetRef = useRef<number | null>(null);
+  const dragRafRef = useRef<number | null>(null);
+  const snapBackTimerRef = useRef<number | null>(null);
+  const snapBackDirectionRef = useRef<DragDirection>(null);
+  const dragVelocityRef = useRef(0);
+  const lastDragSampleRef = useRef({ offset: 0, time: 0 });
+
   const [layout, setLayout] = useState<Layout>(DEFAULT_LAYOUT);
   const [currentPage, setCurrentPage] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isSnapBack, setIsSnapBack] = useState(false);
 
   useEffect(() => {
     const updateLayout = () => {
@@ -112,10 +247,53 @@ export default function MenuBook() {
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (dragRafRef.current !== null) {
+        cancelAnimationFrame(dragRafRef.current);
+      }
+
+      if (snapBackTimerRef.current !== null) {
+        window.clearTimeout(snapBackTimerRef.current);
+      }
+    };
+  }, []);
+
+  const flushDragOffset = useCallback(() => {
+    dragRafRef.current = null;
+
+    if (pendingDragOffsetRef.current !== null) {
+      setDragOffset(pendingDragOffsetRef.current);
+      pendingDragOffsetRef.current = null;
+    }
+  }, []);
+
+  const scheduleDragOffset = useCallback(
+    (offset: number) => {
+      const now = performance.now();
+      const last = lastDragSampleRef.current;
+      const elapsed = now - last.time;
+
+      if (elapsed > 0) {
+        dragVelocityRef.current =
+          (offset - last.offset) / elapsed;
+      }
+
+      lastDragSampleRef.current = { offset, time: now };
+      pendingDragOffsetRef.current = offset;
+
+      if (dragRafRef.current === null) {
+        dragRafRef.current = requestAnimationFrame(flushDragOffset);
+      }
+    },
+    [flushDragOffset],
+  );
+
   const maxLeftPage = getMaxLeftPage(layout.isMobile);
   const isFirstPage = currentPage <= 0;
   const isLastPage = currentPage >= maxLeftPage;
-  const rightPage = layout.isMobile ? null : MENU_PAGES[currentPage + 1];
+  const canGoPrev = !isFirstPage;
+  const canGoNext = !isLastPage;
 
   const goPrev = useCallback(() => {
     setCurrentPage((page) => {
@@ -132,9 +310,170 @@ export default function MenuBook() {
     });
   }, [layout.isMobile]);
 
+  const beginSnapBack = useCallback((direction: DragDirection) => {
+    if (!direction) {
+      setDragOffset(0);
+      return;
+    }
+
+    snapBackDirectionRef.current = direction;
+    setIsSnapBack(true);
+
+    if (snapBackTimerRef.current !== null) {
+      window.clearTimeout(snapBackTimerRef.current);
+    }
+
+    snapBackTimerRef.current = window.setTimeout(() => {
+      setIsSnapBack(false);
+      snapBackDirectionRef.current = null;
+      snapBackTimerRef.current = null;
+    }, SNAPBACK_MS + 40);
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setDragOffset(0);
+      });
+    });
+  }, []);
+
+  const finishDrag = useCallback(
+    (offsetX: number) => {
+      activePointerIdRef.current = null;
+
+      if (dragRafRef.current !== null) {
+        cancelAnimationFrame(dragRafRef.current);
+        dragRafRef.current = null;
+      }
+
+      if (pendingDragOffsetRef.current !== null) {
+        setDragOffset(pendingDragOffsetRef.current);
+        pendingDragOffsetRef.current = null;
+      }
+
+      setIsDragging(false);
+      setIsSnapBack(false);
+
+      const direction = getDragDirection(offsetX);
+      const progress = getDragProgress(offsetX);
+      const velocity = dragVelocityRef.current;
+      const shouldTurn =
+        direction === "next"
+          ? canGoNext &&
+            (progress >= TURN_THRESHOLD ||
+              velocity <= -VELOCITY_THRESHOLD)
+          : direction === "prev"
+            ? canGoPrev &&
+              (progress >= TURN_THRESHOLD ||
+                velocity >= VELOCITY_THRESHOLD)
+            : false;
+
+      dragVelocityRef.current = 0;
+      lastDragSampleRef.current = { offset: 0, time: 0 };
+
+      if (shouldTurn && direction === "next") {
+        setDragOffset(0);
+        goNext();
+        return;
+      }
+
+      if (shouldTurn && direction === "prev") {
+        setDragOffset(0);
+        goPrev();
+        return;
+      }
+
+      if (offsetX === 0) {
+        setDragOffset(0);
+        return;
+      }
+
+      beginSnapBack(direction);
+    },
+    [beginSnapBack, canGoNext, canGoPrev, goNext, goPrev],
+  );
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button > 0) {
+      return;
+    }
+
+    if (dragRafRef.current !== null) {
+      cancelAnimationFrame(dragRafRef.current);
+      dragRafRef.current = null;
+    }
+
+    pendingDragOffsetRef.current = null;
+    setIsSnapBack(false);
+    snapBackDirectionRef.current = null;
+    dragVelocityRef.current = 0;
+    lastDragSampleRef.current = { offset: 0, time: performance.now() };
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    activePointerIdRef.current = event.pointerId;
+    dragStartXRef.current = event.clientX;
+    setIsDragging(true);
+    setDragOffset(0);
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    const offset = clampDragOffset(
+      event.clientX - dragStartXRef.current,
+      canGoPrev,
+      canGoNext,
+    );
+    scheduleDragOffset(offset);
+  };
+
+  const getReleaseOffset = (clientX: number) =>
+    clampDragOffset(clientX - dragStartXRef.current, canGoPrev, canGoNext);
+
+  const endPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    finishDrag(getReleaseOffset(event.clientX));
+  };
+
+  const rightPage = layout.isMobile ? null : MENU_PAGES[currentPage + 1];
+  const hasRightPage = Boolean(rightPage);
+  const dragDirection = getDragDirection(dragOffset);
+  const activeDirection = isSnapBack
+    ? snapBackDirectionRef.current
+    : dragDirection;
+  const dragProgress = getDragProgress(dragOffset);
+
+  const buildTurnState = (
+    variant: "left" | "right" | "single",
+  ): PageTurnState => {
+    const isTarget = isPageTurnTarget(
+      variant,
+      activeDirection,
+      layout.isMobile,
+      hasRightPage,
+    );
+
+    return {
+      progress: isTarget ? dragProgress : 0,
+      direction: isTarget ? activeDirection : null,
+      dragging: isDragging && isTarget,
+      settling: isSnapBack && isTarget,
+      isTarget,
+    };
+  };
+
   const bookViewClassName = [
     styles.bookView,
     layout.isMobile ? styles.bookViewSingle : styles.bookViewSpread,
+    isDragging ? styles.bookViewDragging : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -143,7 +482,7 @@ export default function MenuBook() {
     <main className={styles.wrap}>
       <header className={styles.header}>
         <h1>グランドメニュー</h1>
-        <p>左右ボタンでページをめくれます</p>
+        <p>左右スワイプまたはボタンでページをめくれます</p>
       </header>
 
       <div className={styles.stage}>
@@ -162,14 +501,24 @@ export default function MenuBook() {
             <div
               className={bookViewClassName}
               style={{ width: layout.spreadWidth }}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={endPointer}
+              onPointerCancel={endPointer}
             >
               <div className={styles.spread}>
-                <MenuPage page={MENU_PAGES[currentPage]} />
+                <MenuPage
+                  page={MENU_PAGES[currentPage]}
+                  variant={layout.isMobile ? "single" : "left"}
+                  turn={buildTurnState(layout.isMobile ? "single" : "left")}
+                />
 
                 {!layout.isMobile && (
                   <MenuPage
                     page={rightPage ?? MENU_PAGES[currentPage]}
+                    variant="right"
                     empty={!rightPage}
+                    turn={buildTurnState("right")}
                   />
                 )}
               </div>
