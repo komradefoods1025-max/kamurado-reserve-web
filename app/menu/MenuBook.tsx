@@ -65,7 +65,9 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(function BookPage(
 ) {
   return (
     <div className={styles.page} ref={ref} data-density="soft">
-      <img src={src} alt={alt} className={styles.pageImage} />
+      <div className={styles.pageInner}>
+        <img src={src} alt={alt} className={styles.pageImage} />
+      </div>
     </div>
   );
 });
@@ -78,14 +80,14 @@ function getBookDimensions(stageHeight?: number): BookDimensions {
   const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
   const viewportHeight = getViewportHeight();
   const footerHeight = 96;
-  const counterHeight = 28;
-  const verticalPadding = 48;
+  const counterBlockHeight = 40;
+  const verticalPadding = 40;
   const horizontalPadding = 24;
-  const maxPageSize = isMobile ? 340 : 380;
+  const maxPageSize = isMobile ? 340 : 360;
 
   const availableWidth = window.innerWidth - horizontalPadding;
   const fallbackHeight =
-    viewportHeight - footerHeight - counterHeight - verticalPadding;
+    viewportHeight - footerHeight - counterBlockHeight - verticalPadding;
   const availableHeight = Math.max(
     220,
     Math.min(fallbackHeight, stageHeight ?? fallbackHeight),
@@ -126,7 +128,7 @@ export default function MenuBook() {
         const stageHeight = stageRef.current?.clientHeight;
         const bookAreaHeight =
           stageHeight && stageHeight > 0
-            ? Math.max(220, stageHeight - 46)
+            ? Math.max(220, stageHeight - 40)
             : undefined;
         setDims(getBookDimensions(bookAreaHeight));
       });
