@@ -1,17 +1,7 @@
 "use client";
 
-import HTMLFlipBook from "react-pageflip";
 import Link from "next/link";
-import {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type Dispatch,
-  type RefObject,
-  type SetStateAction,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 
 const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
@@ -23,172 +13,180 @@ const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
 });
 
 const MOBILE_BREAKPOINT = 768;
-const MOBILE_PAGE_ASPECT = 4 / 3;
-const PC_SPREAD_ASPECT = 16 / 7;
+const SWIPE_THRESHOLD = 48;
+
+type Layout = {
+  isMobile: boolean;
+  pageWidth: number;
+  spreadWidth: number;
+};
 
 function getViewportHeight(): number {
   return window.visualViewport?.height ?? window.innerHeight;
 }
 
-function syncPageIndex(
-  bookRef: RefObject<FlipBookHandle | null>,
-  setCurrentPage: Dispatch<SetStateAction<number>>,
-) {
-  const page = bookRef.current?.pageFlip().getCurrentPageIndex();
-  if (typeof page === "number" && Number.isFinite(page)) {
-    setCurrentPage(page);
+function getMaxLeftPage(isMobile: boolean): number {
+  if (isMobile) {
+    return MENU_PAGES.length - 1;
   }
+
+  return MENU_PAGES.length % 2 === 1
+    ? MENU_PAGES.length - 1
+    : MENU_PAGES.length - 2;
 }
 
-type BookDimensions = {
-  width: number;
-  height: number;
-  isMobile: boolean;
-};
-
-type FlipBookHandle = {
-  pageFlip: () => {
-    flipNext: () => void;
-    flipPrev: () => void;
-    getCurrentPageIndex: () => number;
-    getPageCount: () => number;
-  };
-};
-
-type BookPageProps = {
-  src: string;
-  alt: string;
-};
-
-const BookPage = forwardRef<HTMLDivElement, BookPageProps>(function BookPage(
-  { src, alt },
-  ref,
-) {
-  return (
-    <div className={styles.page} ref={ref} data-density="soft">
-      <div className={styles.pageInner}>
-        <img src={src} alt={alt} className={styles.pageImage} />
-      </div>
-    </div>
-  );
-});
-
-function getBookDimensions(): BookDimensions {
+function getLayout(): Layout {
   if (typeof window === "undefined") {
-    return { width: 320, height: 240, isMobile: true };
+    return { isMobile: true, pageWidth: 320, spreadWidth: 320 };
   }
 
   const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
   const viewportHeight = getViewportHeight();
   const footerHeight = 96;
-  const counterBlockHeight = 32;
+  const counterHeight = 32;
   const verticalPadding = 24;
   const navSpace = isMobile ? 84 : 100;
   const horizontalPadding = 24;
-  const maxPageWidth = isMobile ? 320 : 340;
-  const minPageWidth = 200;
+  const maxPageWidth = isMobile ? 360 : 340;
 
-  const maxBookHeight = Math.max(
+  const maxPageHeight = Math.max(
     160,
-    viewportHeight - footerHeight - counterBlockHeight - verticalPadding,
+    viewportHeight - footerHeight - counterHeight - verticalPadding,
   );
   const contentWidth = window.innerWidth - horizontalPadding - navSpace;
-
-  if (isMobile) {
-    let pageWidth = Math.floor(Math.min(contentWidth, maxPageWidth));
-    let pageHeight = Math.floor(pageWidth / MOBILE_PAGE_ASPECT);
-
-    if (pageHeight > maxBookHeight) {
-      pageHeight = Math.floor(maxBookHeight);
-      pageWidth = Math.floor(pageHeight * MOBILE_PAGE_ASPECT);
-    }
-
-    pageWidth = Math.max(minPageWidth, pageWidth);
-    pageHeight = Math.max(
-      Math.floor(minPageWidth / MOBILE_PAGE_ASPECT),
-      pageHeight,
-    );
-
-    return { width: pageWidth, height: pageHeight, isMobile: true };
-  }
-
-  let pageWidth = Math.floor(Math.min(contentWidth / 2, maxPageWidth));
-  let pageHeight = Math.floor((pageWidth * 2) / PC_SPREAD_ASPECT);
-
-  if (pageHeight > maxBookHeight) {
-    pageHeight = Math.floor(maxBookHeight);
-    pageWidth = Math.floor((pageHeight * PC_SPREAD_ASPECT) / 2);
-  }
-
-  pageWidth = Math.max(minPageWidth, pageWidth);
-  pageHeight = Math.max(
-    Math.floor((minPageWidth * 2) / PC_SPREAD_ASPECT),
-    pageHeight,
+  const pageWidth = Math.floor(
+    Math.min(
+      isMobile ? contentWidth : contentWidth / 2,
+      maxPageWidth,
+      maxPageHeight,
+    ),
   );
+  const size = Math.max(200, pageWidth);
 
-  return { width: pageWidth, height: pageHeight, isMobile: false };
+  return {
+    isMobile,
+    pageWidth: size,
+    spreadWidth: isMobile ? size : size * 2,
+  };
 }
 
 export default function MenuBook() {
-  const bookRef = useRef<FlipBookHandle>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
-  const [dims, setDims] = useState<BookDimensions>({
-    width: 320,
-    height: 240,
+  const touchStartX = useRef<number | null>(null);
+  const [layout, setLayout] = useState<Layout>({
     isMobile: true,
+    pageWidth: 320,
+    spreadWidth: 320,
   });
   const [currentPage, setCurrentPage] = useState(0);
+  const [animDirection, setAnimDirection] = useState<"next" | "prev" | null>(
+    null,
+  );
 
   useEffect(() => {
-    const updateDimensions = () => {
+    const updateLayout = () => {
       requestAnimationFrame(() => {
-        setDims(getBookDimensions());
+        setLayout(getLayout());
       });
     };
 
-    updateDimensions();
-    setMounted(true);
+    updateLayout();
 
     const stage = stageRef.current;
     const resizeObserver =
       stage && typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(updateDimensions)
+        ? new ResizeObserver(updateLayout)
         : null;
 
     if (stage) {
       resizeObserver?.observe(stage);
     }
 
-    window.addEventListener("resize", updateDimensions);
-    window.visualViewport?.addEventListener("resize", updateDimensions);
+    window.addEventListener("resize", updateLayout);
+    window.visualViewport?.addEventListener("resize", updateLayout);
 
     return () => {
       resizeObserver?.disconnect();
-      window.removeEventListener("resize", updateDimensions);
-      window.visualViewport?.removeEventListener("resize", updateDimensions);
+      window.removeEventListener("resize", updateLayout);
+      window.visualViewport?.removeEventListener("resize", updateLayout);
     };
   }, []);
 
-  const handleFlip = useCallback(() => {
-    syncPageIndex(bookRef, setCurrentPage);
-  }, []);
+  useEffect(() => {
+    if (!animDirection) {
+      return;
+    }
 
-  const handleInit = useCallback(() => {
-    syncPageIndex(bookRef, setCurrentPage);
-  }, []);
+    const timer = window.setTimeout(() => {
+      setAnimDirection(null);
+    }, 450);
 
-  const goPrev = () => {
-    bookRef.current?.pageFlip().flipPrev();
-  };
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [animDirection, currentPage]);
 
-  const goNext = () => {
-    bookRef.current?.pageFlip().flipNext();
-  };
-
+  const maxLeftPage = getMaxLeftPage(layout.isMobile);
   const isFirstPage = currentPage <= 0;
-  const isLastPage = currentPage >= MENU_PAGES.length - 1;
-  const spreadWidth = dims.isMobile ? dims.width : dims.width * 2;
+  const isLastPage = currentPage >= maxLeftPage;
+
+  const goPrev = useCallback(() => {
+    const nextPage = layout.isMobile
+      ? Math.max(0, currentPage - 1)
+      : Math.max(0, currentPage - 2);
+
+    if (nextPage === currentPage) {
+      return;
+    }
+
+    setAnimDirection("prev");
+    setCurrentPage(nextPage);
+  }, [currentPage, layout.isMobile]);
+
+  const goNext = useCallback(() => {
+    const nextPage = layout.isMobile
+      ? Math.min(maxLeftPage, currentPage + 1)
+      : Math.min(maxLeftPage, currentPage + 2);
+
+    if (nextPage === currentPage) {
+      return;
+    }
+
+    setAnimDirection("next");
+    setCurrentPage(nextPage);
+  }, [currentPage, layout.isMobile, maxLeftPage]);
+
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    touchStartX.current = event.changedTouches[0]?.clientX ?? null;
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (!layout.isMobile || touchStartX.current === null) {
+      return;
+    }
+
+    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
+    const delta = endX - touchStartX.current;
+    touchStartX.current = null;
+
+    if (delta <= -SWIPE_THRESHOLD) {
+      goNext();
+      return;
+    }
+
+    if (delta >= SWIPE_THRESHOLD) {
+      goPrev();
+    }
+  };
+
+  const rightPage = layout.isMobile ? null : MENU_PAGES[currentPage + 1];
+  const spreadClassName = [
+    styles.spread,
+    animDirection === "next" ? styles.spreadNext : "",
+    animDirection === "prev" ? styles.spreadPrev : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <main className={styles.wrap}>
@@ -203,7 +201,7 @@ export default function MenuBook() {
             type="button"
             className={styles.navBtn}
             onClick={goPrev}
-            disabled={!mounted || isFirstPage}
+            disabled={isFirstPage}
             aria-label="前のページ"
           >
             ‹
@@ -211,50 +209,42 @@ export default function MenuBook() {
 
           <div className={styles.bookColumn}>
             <div
-              className={styles.flipBookWrap}
-              style={{ width: spreadWidth }}
+              className={styles.bookView}
+              style={{
+                width: layout.spreadWidth,
+                ["--page-max-width" as string]: `${layout.pageWidth}px`,
+                ["--page-max-height" as string]: `${layout.pageWidth}px`,
+              }}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
             >
-              {mounted ? (
-                <HTMLFlipBook
-                  key={`${dims.isMobile}-${dims.width}-${dims.height}`}
-                  ref={bookRef}
-                  className={styles.flipBook}
-                  style={{}}
-                  startPage={0}
-                  width={dims.width}
-                  height={dims.height}
-                  size="fixed"
-                  minWidth={200}
-                  maxWidth={420}
-                  minHeight={160}
-                  maxHeight={300}
-                  drawShadow
-                  flippingTime={650}
-                  usePortrait={dims.isMobile}
-                  startZIndex={0}
-                  autoSize={false}
-                  maxShadowOpacity={0.45}
-                  showCover={false}
-                  mobileScrollSupport
-                  swipeDistance={24}
-                  clickEventForward
-                  useMouseEvents
-                  showPageCorners
-                  disableFlipByClick={false}
-                  onFlip={handleFlip}
-                  onInit={handleInit}
-                >
-                  {MENU_PAGES.map((page) => (
-                    <BookPage key={page.src} src={page.src} alt={page.alt} />
-                  ))}
-                </HTMLFlipBook>
-              ) : (
-                <div
-                  className={styles.bookPlaceholder}
-                  style={{ width: spreadWidth }}
-                  aria-hidden
-                />
-              )}
+              <div className={spreadClassName} key={currentPage}>
+                <div className={styles.page}>
+                  <img
+                    src={MENU_PAGES[currentPage].src}
+                    alt={MENU_PAGES[currentPage].alt}
+                    className={styles.pageImage}
+                    draggable={false}
+                  />
+                </div>
+
+                {!layout.isMobile && (
+                  <div
+                    className={`${styles.page} ${styles.pageRight} ${
+                      rightPage ? "" : styles.pageEmpty
+                    }`}
+                  >
+                    {rightPage ? (
+                      <img
+                        src={rightPage.src}
+                        alt={rightPage.alt}
+                        className={styles.pageImage}
+                        draggable={false}
+                      />
+                    ) : null}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className={styles.counter}>
@@ -266,7 +256,7 @@ export default function MenuBook() {
             type="button"
             className={styles.navBtn}
             onClick={goNext}
-            disabled={!mounted || isLastPage}
+            disabled={isLastPage}
             aria-label="次のページ"
           >
             ›
