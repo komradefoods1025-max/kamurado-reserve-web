@@ -23,6 +23,8 @@ const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
 });
 
 const MOBILE_BREAKPOINT = 768;
+const MOBILE_PAGE_ASPECT = 4 / 3;
+const PC_SPREAD_ASPECT = 16 / 7;
 
 function getViewportHeight(): number {
   return window.visualViewport?.height ?? window.innerHeight;
@@ -73,7 +75,7 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(function BookPage(
 
 function getBookDimensions(): BookDimensions {
   if (typeof window === "undefined") {
-    return { width: 320, height: 320, isMobile: true };
+    return { width: 320, height: 240, isMobile: true };
   }
 
   const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
@@ -83,29 +85,48 @@ function getBookDimensions(): BookDimensions {
   const verticalPadding = 24;
   const navSpace = isMobile ? 84 : 100;
   const horizontalPadding = 24;
-  const maxPageSize = isMobile ? 320 : 340;
-  const minPageSize = 200;
+  const maxPageWidth = isMobile ? 320 : 340;
+  const minPageWidth = 200;
 
   const maxBookHeight = Math.max(
-    minPageSize,
+    160,
     viewportHeight - footerHeight - counterBlockHeight - verticalPadding,
   );
   const contentWidth = window.innerWidth - horizontalPadding - navSpace;
 
   if (isMobile) {
-    const pageSize = Math.floor(
-      Math.min(contentWidth, maxBookHeight, maxPageSize),
+    let pageWidth = Math.floor(Math.min(contentWidth, maxPageWidth));
+    let pageHeight = Math.floor(pageWidth / MOBILE_PAGE_ASPECT);
+
+    if (pageHeight > maxBookHeight) {
+      pageHeight = Math.floor(maxBookHeight);
+      pageWidth = Math.floor(pageHeight * MOBILE_PAGE_ASPECT);
+    }
+
+    pageWidth = Math.max(minPageWidth, pageWidth);
+    pageHeight = Math.max(
+      Math.floor(minPageWidth / MOBILE_PAGE_ASPECT),
+      pageHeight,
     );
-    const size = Math.max(minPageSize, pageSize);
-    return { width: size, height: size, isMobile: true };
+
+    return { width: pageWidth, height: pageHeight, isMobile: true };
   }
 
-  const pageWidth = Math.floor(
-    Math.min(contentWidth / 2, maxPageSize, maxBookHeight),
-  );
-  const size = Math.max(minPageSize, pageWidth);
+  let pageWidth = Math.floor(Math.min(contentWidth / 2, maxPageWidth));
+  let pageHeight = Math.floor((pageWidth * 2) / PC_SPREAD_ASPECT);
 
-  return { width: size, height: size, isMobile: false };
+  if (pageHeight > maxBookHeight) {
+    pageHeight = Math.floor(maxBookHeight);
+    pageWidth = Math.floor((pageHeight * PC_SPREAD_ASPECT) / 2);
+  }
+
+  pageWidth = Math.max(minPageWidth, pageWidth);
+  pageHeight = Math.max(
+    Math.floor((minPageWidth * 2) / PC_SPREAD_ASPECT),
+    pageHeight,
+  );
+
+  return { width: pageWidth, height: pageHeight, isMobile: false };
 }
 
 export default function MenuBook() {
@@ -114,7 +135,7 @@ export default function MenuBook() {
   const [mounted, setMounted] = useState(false);
   const [dims, setDims] = useState<BookDimensions>({
     width: 320,
-    height: 320,
+    height: 240,
     isMobile: true,
   });
   const [currentPage, setCurrentPage] = useState(0);
@@ -177,10 +198,7 @@ export default function MenuBook() {
       </header>
 
       <div className={styles.stage} ref={stageRef}>
-        <div
-          className={styles.bookArea}
-          style={{ ["--book-height" as string]: `${dims.height}px` }}
-        >
+        <div className={styles.bookArea}>
           <button
             type="button"
             className={styles.navBtn}
@@ -194,7 +212,7 @@ export default function MenuBook() {
           <div className={styles.bookColumn}>
             <div
               className={styles.flipBookWrap}
-              style={{ width: spreadWidth, height: dims.height }}
+              style={{ width: spreadWidth }}
             >
               {mounted ? (
                 <HTMLFlipBook
@@ -208,8 +226,8 @@ export default function MenuBook() {
                   size="fixed"
                   minWidth={200}
                   maxWidth={420}
-                  minHeight={200}
-                  maxHeight={420}
+                  minHeight={160}
+                  maxHeight={300}
                   drawShadow
                   flippingTime={650}
                   usePortrait={dims.isMobile}
@@ -233,7 +251,7 @@ export default function MenuBook() {
               ) : (
                 <div
                   className={styles.bookPlaceholder}
-                  style={{ width: spreadWidth, height: dims.height }}
+                  style={{ width: spreadWidth }}
                   aria-hidden
                 />
               )}
