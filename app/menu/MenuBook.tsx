@@ -35,9 +35,12 @@ type DragDirection = "next" | "prev" | null;
 type PageTurnState = {
   progress: number;
   direction: DragDirection;
-  active: boolean;
+  dragging: boolean;
+  settling: boolean;
   isTarget: boolean;
 };
+
+const SNAPBACK_MS = 380;
 
 function getViewportHeight(): number {
   return window.visualViewport?.height ?? window.innerHeight;
@@ -165,13 +168,15 @@ function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
     ? { ["--turn-progress" as string]: String(turn.progress) }
     : undefined;
 
-  const showTurningPage = turn.isTarget && turn.progress > 0 && turn.direction;
+  const showTurningPage =
+    turn.isTarget && (turn.progress > 0 || turn.settling) && turn.direction;
 
   return (
     <div
       className={pageClassName}
       style={pageStyle}
-      data-dragging={turn.active && turn.isTarget ? "true" : undefined}
+      data-dragging={turn.dragging ? "true" : undefined}
+      data-settling={turn.settling ? "true" : undefined}
       data-direction={turn.isTarget ? turn.direction ?? undefined : undefined}
       data-turning={showTurningPage ? "true" : undefined}
     >
@@ -212,6 +217,10 @@ export default function MenuBook() {
   const stageRef = useRef<HTMLDivElement>(null);
   const dragStartXRef = useRef(0);
   const activePointerIdRef = useRef<number | null>(null);
+  const pendingDragOffsetRef = useRef<number | null>(null);
+  const dragRafRef = useRef<number | null>(null);
+  const snapBackTimerRef = useRef<number | null>(null);
+  const snapBackDirectionRef = useRef<DragDirection>(null);
   const [layout, setLayout] = useState<Layout>({
     isMobile: true,
     pageWidth: 320,
@@ -221,6 +230,7 @@ export default function MenuBook() {
   const [animDirection, setAnimDirection] = useState<DragDirection>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
+  const [isSnapBack, setIsSnapBack] = useState(false);
 
   useEffect(() => {
     const updateLayout = () => {
@@ -258,12 +268,70 @@ export default function MenuBook() {
 
     const timer = window.setTimeout(() => {
       setAnimDirection(null);
-    }, 480);
+    }, 680);
 
     return () => {
       window.clearTimeout(timer);
     };
   }, [animDirection, currentPage]);
+
+  useEffect(() => {
+    return () => {
+      if (dragRafRef.current !== null) {
+        cancelAnimationFrame(dragRafRef.current);
+      }
+
+      if (snapBackTimerRef.current !== null) {
+        window.clearTimeout(snapBackTimerRef.current);
+      }
+    };
+  }, []);
+
+  const beginSnapBack = useCallback((direction: DragDirection) => {
+    if (!direction) {
+      setDragOffset(0);
+      return;
+    }
+
+    snapBackDirectionRef.current = direction;
+    setIsSnapBack(true);
+
+    if (snapBackTimerRef.current !== null) {
+      window.clearTimeout(snapBackTimerRef.current);
+    }
+
+    snapBackTimerRef.current = window.setTimeout(() => {
+      setIsSnapBack(false);
+      snapBackDirectionRef.current = null;
+      snapBackTimerRef.current = null;
+    }, SNAPBACK_MS + 40);
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setDragOffset(0);
+      });
+    });
+  }, []);
+
+  const flushDragOffset = useCallback(() => {
+    dragRafRef.current = null;
+
+    if (pendingDragOffsetRef.current !== null) {
+      setDragOffset(pendingDragOffsetRef.current);
+      pendingDragOffsetRef.current = null;
+    }
+  }, []);
+
+  const scheduleDragOffset = useCallback(
+    (offset: number) => {
+      pendingDragOffsetRef.current = offset;
+
+      if (dragRafRef.current === null) {
+        dragRafRef.current = requestAnimationFrame(flushDragOffset);
+      }
+    },
+    [flushDragOffset],
+  );
 
   const maxLeftPage = getMaxLeftPage(layout.isMobile);
   const isFirstPage = currentPage <= 0;
@@ -300,7 +368,19 @@ export default function MenuBook() {
   const finishDrag = useCallback(
     (offsetX: number) => {
       activePointerIdRef.current = null;
+
+      if (dragRafRef.current !== null) {
+        cancelAnimationFrame(dragRafRef.current);
+        dragRafRef.current = null;
+      }
+
+      if (pendingDragOffsetRef.current !== null) {
+        setDragOffset(pendingDragOffsetRef.current);
+        pendingDragOffsetRef.current = null;
+      }
+
       setIsDragging(false);
+      setIsSnapBack(false);
 
       if (offsetX <= -DRAG_THRESHOLD && canGoNext) {
         setDragOffset(0);
@@ -319,17 +399,24 @@ export default function MenuBook() {
         return;
       }
 
-      requestAnimationFrame(() => {
-        setDragOffset(0);
-      });
+      beginSnapBack(getDragDirection(offsetX));
     },
-    [canGoNext, canGoPrev, goNext, goPrev],
+    [beginSnapBack, canGoNext, canGoPrev, goNext, goPrev],
   );
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (animDirection || event.button > 0) {
       return;
     }
+
+    if (dragRafRef.current !== null) {
+      cancelAnimationFrame(dragRafRef.current);
+      dragRafRef.current = null;
+    }
+
+    pendingDragOffsetRef.current = null;
+    setIsSnapBack(false);
+    snapBackDirectionRef.current = null;
 
     event.currentTarget.setPointerCapture(event.pointerId);
     activePointerIdRef.current = event.pointerId;
@@ -349,7 +436,7 @@ export default function MenuBook() {
       canGoPrev,
       canGoNext,
     );
-    setDragOffset(offset);
+    scheduleDragOffset(offset);
   };
 
   const getReleaseOffset = (clientX: number) =>
@@ -382,23 +469,29 @@ export default function MenuBook() {
   const rightPage = layout.isMobile ? null : MENU_PAGES[currentPage + 1];
   const hasRightPage = Boolean(rightPage);
   const dragDirection = getDragDirection(dragOffset);
+  const activeDirection = isSnapBack
+    ? snapBackDirectionRef.current
+    : dragDirection;
   const dragProgress = getDragProgress(dragOffset);
-  const isDragActive = isDragging || dragOffset !== 0;
+  const isDragActive = isDragging || dragOffset !== 0 || isSnapBack;
 
   const buildTurnState = (
     variant: "left" | "right" | "single",
   ): PageTurnState => {
     const isTarget = isPageTurnTarget(
       variant,
-      dragDirection,
+      activeDirection,
       layout.isMobile,
       hasRightPage,
     );
+    const progress = isTarget ? dragProgress : 0;
+    const settling = isSnapBack && isTarget;
 
     return {
-      progress: isTarget ? dragProgress : 0,
-      direction: isTarget ? dragDirection : null,
-      active: isDragActive,
+      progress,
+      direction: isTarget ? activeDirection : null,
+      dragging: isDragging && isTarget,
+      settling,
       isTarget,
     };
   };
