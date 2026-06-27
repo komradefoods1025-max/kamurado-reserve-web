@@ -458,15 +458,15 @@
   align-items: center;
   justify-content: center;
   width: min(44vw, 220px);
-  min-height: 48px;
   padding: 12px 10px;
   border-radius: 999px;
   text-decoration: none;
-  font-weight: 700;
   font-size: 0.9rem;
 }
 
 .reserveBtn {
+  min-height: 48px;
+  font-weight: 700;
   background: linear-gradient(135deg, #e2c06d 0%, #c8963d 52%, #b7832f 100%);
   color: #24180f;
   border: 1px solid rgba(255, 228, 168, 0.38);
@@ -476,10 +476,26 @@
 }
 
 .telBtn {
+  flex-direction: column;
+  gap: 1px;
+  min-height: 62px;
   background: #fff;
   color: #1f1a17;
   border: 1px solid rgba(196, 162, 92, 0.58);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.telBtnLabel {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.telBtnNumber {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #5c5c5c;
+  letter-spacing: 0.04em;
 }
 
 @media (max-width: 767px) {
