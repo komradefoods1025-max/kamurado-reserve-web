@@ -39,7 +39,6 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
   width: 100%;
   min-height: 0;
   overflow: hidden;
@@ -53,6 +52,15 @@
   width: 100%;
   max-height: 100%;
   min-height: 0;
+}
+
+.bookColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .flipBookWrap {
@@ -82,18 +90,20 @@
   justify-content: center !important;
   width: 100%;
   height: 100%;
+  padding: 12px;
   background: #f8f1df;
   overflow: hidden;
   box-shadow: inset 0 0 0 1px rgba(110, 75, 42, 0.08);
 }
 
 .pageImage {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
   display: block;
-  background: transparent;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: center center;
 }
 
 .navBtn {
@@ -119,6 +129,7 @@
 .counter {
   flex-shrink: 0;
   margin: 0;
+  line-height: 1;
   font-size: 0.88rem;
   color: rgba(247, 242, 234, 0.88);
   letter-spacing: 0.08em;

@@ -142,7 +142,9 @@ export default function MenuBook() {
         ? new ResizeObserver(updateDimensions)
         : null;
 
-    resizeObserver?.observe(stage);
+    if (stage) {
+      resizeObserver?.observe(stage);
+    }
 
     window.addEventListener("resize", updateDimensions);
     window.visualViewport?.addEventListener("resize", updateDimensions);
@@ -193,51 +195,57 @@ export default function MenuBook() {
             ‹
           </button>
 
-          <div
-            className={styles.flipBookWrap}
-            style={{ width: spreadWidth, height: dims.height }}
-          >
-            {mounted ? (
-              <HTMLFlipBook
-                key={`${dims.isMobile}-${dims.width}-${dims.height}`}
-                ref={bookRef}
-                className={styles.flipBook}
-                style={{}}
-                startPage={0}
-                width={dims.width}
-                height={dims.height}
-                size="fixed"
-                minWidth={200}
-                maxWidth={420}
-                minHeight={280}
-                maxHeight={620}
-                drawShadow
-                flippingTime={650}
-                usePortrait={dims.isMobile}
-                startZIndex={0}
-                autoSize={false}
-                maxShadowOpacity={0.45}
-                showCover={false}
-                mobileScrollSupport
-                swipeDistance={24}
-                clickEventForward
-                useMouseEvents
-                showPageCorners
-                disableFlipByClick={false}
-                onFlip={handleFlip}
-                onInit={handleInit}
-              >
-                {MENU_PAGES.map((page) => (
-                  <BookPage key={page.src} src={page.src} alt={page.alt} />
-                ))}
-              </HTMLFlipBook>
-            ) : (
-              <div
-                className={styles.bookPlaceholder}
-                style={{ width: spreadWidth, height: dims.height }}
-                aria-hidden
-              />
-            )}
+          <div className={styles.bookColumn}>
+            <div
+              className={styles.flipBookWrap}
+              style={{ width: spreadWidth, height: dims.height }}
+            >
+              {mounted ? (
+                <HTMLFlipBook
+                  key={`${dims.isMobile}-${dims.width}-${dims.height}`}
+                  ref={bookRef}
+                  className={styles.flipBook}
+                  style={{}}
+                  startPage={0}
+                  width={dims.width}
+                  height={dims.height}
+                  size="fixed"
+                  minWidth={200}
+                  maxWidth={420}
+                  minHeight={280}
+                  maxHeight={620}
+                  drawShadow
+                  flippingTime={650}
+                  usePortrait={dims.isMobile}
+                  startZIndex={0}
+                  autoSize={false}
+                  maxShadowOpacity={0.45}
+                  showCover={false}
+                  mobileScrollSupport
+                  swipeDistance={24}
+                  clickEventForward
+                  useMouseEvents
+                  showPageCorners
+                  disableFlipByClick={false}
+                  onFlip={handleFlip}
+                  onInit={handleInit}
+                >
+                  {MENU_PAGES.map((page) => (
+                    <BookPage key={page.src} src={page.src} alt={page.alt} />
+                  ))}
+                </HTMLFlipBook>
+              ) : (
+                <div
+                  className={styles.bookPlaceholder}
+                  style={{ width: spreadWidth, height: dims.height }}
+                  aria-hidden
+                />
+              )}
+            </div>
+
+            <div className={styles.counter}>
+              {currentPage + 1} / {MENU_PAGES.length}
+            </div>
           </div>
 
           <button
@@ -249,10 +257,6 @@ export default function MenuBook() {
           >
             ›
           </button>
-        </div>
-
-        <div className={styles.counter}>
-          {currentPage + 1} / {MENU_PAGES.length}
         </div>
       </div>
 
