@@ -23,7 +23,7 @@ const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
 });
 
 const MOBILE_BREAKPOINT = 768;
-const PAGE_RATIO = 0.72;
+const MENU_IMAGE_RATIO = 1;
 
 function getViewportHeight(): number {
   return window.visualViewport?.height ?? window.innerHeight;
@@ -70,66 +70,85 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(function BookPage(
   );
 });
 
-function getBookDimensions(): BookDimensions {
+function getBookDimensions(stageHeight?: number): BookDimensions {
   if (typeof window === "undefined") {
-    return { width: 320, height: 427, isMobile: true };
+    return { width: 320, height: 320, isMobile: true };
   }
 
   const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
   const viewportHeight = getViewportHeight();
-  const headerHeight = isMobile ? 72 : 84;
+  const headerHeight = isMobile ? 56 : 84;
   const footerHeight = 96;
-  const counterHeight = 28;
-  const verticalPadding = 24;
-  const horizontalPadding = isMobile ? 88 : 120;
-  const maxPageWidth = isMobile ? 420 : 400;
+  const counterHeight = 24;
+  const verticalPadding = 16;
+  const navButtonSpace = isMobile ? 72 : 120;
+  const maxPageSize = isMobile ? 360 : 400;
 
-  const availableWidth = window.innerWidth - horizontalPadding;
-  const availableHeight =
+  const availableWidth = window.innerWidth - navButtonSpace - 24;
+  const fallbackHeight =
     viewportHeight - headerHeight - footerHeight - counterHeight - verticalPadding;
-
-  if (isMobile) {
-    const height = Math.max(280, Math.min(availableHeight, 560));
-    const width = Math.min(
-      maxPageWidth,
-      availableWidth,
-      Math.round(height * PAGE_RATIO),
-    );
-    return { width, height, isMobile: true };
-  }
-
-  const spreadMaxWidth = Math.min(availableWidth, maxPageWidth * 2);
-  const pageWidth = Math.min(Math.floor(spreadMaxWidth / 2), maxPageWidth);
-  const height = Math.max(
-    280,
-    Math.min(availableHeight, Math.round(pageWidth / PAGE_RATIO)),
+  const availableHeight = Math.max(
+    220,
+    Math.min(fallbackHeight, stageHeight ?? fallbackHeight),
   );
 
-  return { width: pageWidth, height, isMobile: false };
+  if (isMobile) {
+    const pageSize = Math.floor(
+      Math.min(availableWidth, availableHeight, maxPageSize),
+    );
+    const size = Math.max(220, pageSize);
+    return { width: size, height: Math.round(size / MENU_IMAGE_RATIO), isMobile: true };
+  }
+
+  const spreadMaxWidth = Math.min(availableWidth, maxPageSize * 2);
+  const pageWidth = Math.min(Math.floor(spreadMaxWidth / 2), maxPageSize);
+  const pageHeight = Math.min(
+    availableHeight,
+    Math.round(pageWidth / MENU_IMAGE_RATIO),
+  );
+
+  return { width: pageWidth, height: Math.max(220, pageHeight), isMobile: false };
 }
 
 export default function MenuBook() {
   const bookRef = useRef<FlipBookHandle>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [dims, setDims] = useState<BookDimensions>({
     width: 320,
-    height: 427,
+    height: 320,
     isMobile: true,
   });
   const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
     const updateDimensions = () => {
-      setDims(getBookDimensions());
+      requestAnimationFrame(() => {
+        const stageHeight = stageRef.current?.clientHeight;
+        const bookAreaHeight =
+          stageHeight && stageHeight > 0
+            ? Math.max(220, stageHeight - 34)
+            : undefined;
+        setDims(getBookDimensions(bookAreaHeight));
+      });
     };
 
     updateDimensions();
     setMounted(true);
 
+    const stage = stageRef.current;
+    const resizeObserver =
+      stage && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(updateDimensions)
+        : null;
+
+    resizeObserver?.observe(stage);
+
     window.addEventListener("resize", updateDimensions);
     window.visualViewport?.addEventListener("resize", updateDimensions);
 
     return () => {
+      resizeObserver?.disconnect();
       window.removeEventListener("resize", updateDimensions);
       window.visualViewport?.removeEventListener("resize", updateDimensions);
     };
@@ -162,7 +181,7 @@ export default function MenuBook() {
         <p>左右スワイプまたはボタンでページをめくれます</p>
       </header>
 
-      <div className={styles.stage}>
+      <div className={styles.stage} ref={stageRef}>
         <div className={styles.bookArea}>
           <button
             type="button"
