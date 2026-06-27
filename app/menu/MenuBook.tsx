@@ -77,16 +77,15 @@ function getBookDimensions(stageHeight?: number): BookDimensions {
 
   const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
   const viewportHeight = getViewportHeight();
-  const headerHeight = isMobile ? 56 : 84;
   const footerHeight = 96;
-  const counterHeight = 24;
-  const verticalPadding = 16;
-  const navButtonSpace = isMobile ? 72 : 120;
-  const maxPageSize = isMobile ? 360 : 400;
+  const counterHeight = 28;
+  const verticalPadding = 48;
+  const horizontalPadding = 24;
+  const maxPageSize = isMobile ? 340 : 380;
 
-  const availableWidth = window.innerWidth - navButtonSpace - 24;
+  const availableWidth = window.innerWidth - horizontalPadding;
   const fallbackHeight =
-    viewportHeight - headerHeight - footerHeight - counterHeight - verticalPadding;
+    viewportHeight - footerHeight - counterHeight - verticalPadding;
   const availableHeight = Math.max(
     220,
     Math.min(fallbackHeight, stageHeight ?? fallbackHeight),
@@ -127,7 +126,7 @@ export default function MenuBook() {
         const stageHeight = stageRef.current?.clientHeight;
         const bookAreaHeight =
           stageHeight && stageHeight > 0
-            ? Math.max(220, stageHeight - 34)
+            ? Math.max(220, stageHeight - 46)
             : undefined;
         setDims(getBookDimensions(bookAreaHeight));
       });
