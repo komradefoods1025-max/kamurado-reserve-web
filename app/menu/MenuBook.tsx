@@ -14,6 +14,7 @@ const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
 
 const MOBILE_BREAKPOINT = 768;
 const SWIPE_THRESHOLD = 48;
+const PHONE_NUMBER = "0484415517";
 
 type Layout = {
   isMobile: boolean;
@@ -70,6 +71,40 @@ function getLayout(): Layout {
   };
 }
 
+type MenuPageProps = {
+  page: (typeof MENU_PAGES)[number];
+  variant: "left" | "right" | "single";
+  empty?: boolean;
+};
+
+function MenuPage({ page, variant, empty = false }: MenuPageProps) {
+  const pageClassName = [
+    styles.page,
+    variant === "left" ? styles.pageLeft : "",
+    variant === "right" ? styles.pageRight : "",
+    variant === "single" ? styles.pageSingle : "",
+    empty ? styles.pageEmpty : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <div className={pageClassName}>
+      {!empty ? (
+        <>
+          <img
+            src={page.src}
+            alt={page.alt}
+            className={styles.pageImage}
+            draggable={false}
+          />
+          <span className={styles.pageCurl} aria-hidden />
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 export default function MenuBook() {
   const stageRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
@@ -119,7 +154,7 @@ export default function MenuBook() {
 
     const timer = window.setTimeout(() => {
       setAnimDirection(null);
-    }, 450);
+    }, 480);
 
     return () => {
       window.clearTimeout(timer);
@@ -180,6 +215,11 @@ export default function MenuBook() {
   };
 
   const rightPage = layout.isMobile ? null : MENU_PAGES[currentPage + 1];
+  const bookViewClassName = [
+    styles.bookView,
+    layout.isMobile ? styles.bookViewSingle : styles.bookViewSpread,
+  ].join(" ");
+
   const spreadClassName = [
     styles.spread,
     animDirection === "next" ? styles.spreadNext : "",
@@ -209,40 +249,23 @@ export default function MenuBook() {
 
           <div className={styles.bookColumn}>
             <div
-              className={styles.bookView}
-              style={{
-                width: layout.spreadWidth,
-                ["--page-max-width" as string]: `${layout.pageWidth}px`,
-                ["--page-max-height" as string]: `${layout.pageWidth}px`,
-              }}
+              className={bookViewClassName}
+              style={{ width: layout.spreadWidth }}
               onTouchStart={handleTouchStart}
               onTouchEnd={handleTouchEnd}
             >
               <div className={spreadClassName} key={currentPage}>
-                <div className={styles.page}>
-                  <img
-                    src={MENU_PAGES[currentPage].src}
-                    alt={MENU_PAGES[currentPage].alt}
-                    className={styles.pageImage}
-                    draggable={false}
-                  />
-                </div>
+                <MenuPage
+                  page={MENU_PAGES[currentPage]}
+                  variant={layout.isMobile ? "single" : "left"}
+                />
 
                 {!layout.isMobile && (
-                  <div
-                    className={`${styles.page} ${styles.pageRight} ${
-                      rightPage ? "" : styles.pageEmpty
-                    }`}
-                  >
-                    {rightPage ? (
-                      <img
-                        src={rightPage.src}
-                        alt={rightPage.alt}
-                        className={styles.pageImage}
-                        draggable={false}
-                      />
-                    ) : null}
-                  </div>
+                  <MenuPage
+                    page={rightPage ?? MENU_PAGES[currentPage]}
+                    variant="right"
+                    empty={!rightPage}
+                  />
                 )}
               </div>
             </div>
@@ -268,7 +291,7 @@ export default function MenuBook() {
         <Link href="/" className={styles.reserveBtn}>
           ランチ予約へ
         </Link>
-        <a href="tel:0484415517" className={styles.telBtn}>
+        <a href={`tel:${PHONE_NUMBER}`} className={styles.telBtn}>
           電話する
         </a>
       </div>
