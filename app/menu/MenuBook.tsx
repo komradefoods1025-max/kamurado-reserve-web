@@ -23,7 +23,6 @@ const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
 });
 
 const MOBILE_BREAKPOINT = 768;
-const MENU_IMAGE_RATIO = 1;
 
 function getViewportHeight(): number {
   return window.visualViewport?.height ?? window.innerHeight;
@@ -72,7 +71,7 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(function BookPage(
   );
 });
 
-function getBookDimensions(stageHeight?: number): BookDimensions {
+function getBookDimensions(): BookDimensions {
   if (typeof window === "undefined") {
     return { width: 320, height: 320, isMobile: true };
   }
@@ -80,35 +79,33 @@ function getBookDimensions(stageHeight?: number): BookDimensions {
   const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
   const viewportHeight = getViewportHeight();
   const footerHeight = 96;
-  const counterBlockHeight = 40;
-  const verticalPadding = 40;
+  const counterBlockHeight = 32;
+  const verticalPadding = 24;
+  const navSpace = isMobile ? 84 : 100;
   const horizontalPadding = 24;
-  const maxPageSize = isMobile ? 340 : 360;
+  const maxPageSize = isMobile ? 320 : 340;
+  const minPageSize = 200;
 
-  const availableWidth = window.innerWidth - horizontalPadding;
-  const fallbackHeight =
-    viewportHeight - footerHeight - counterBlockHeight - verticalPadding;
-  const availableHeight = Math.max(
-    220,
-    Math.min(fallbackHeight, stageHeight ?? fallbackHeight),
+  const maxBookHeight = Math.max(
+    minPageSize,
+    viewportHeight - footerHeight - counterBlockHeight - verticalPadding,
   );
+  const contentWidth = window.innerWidth - horizontalPadding - navSpace;
 
   if (isMobile) {
     const pageSize = Math.floor(
-      Math.min(availableWidth, availableHeight, maxPageSize),
+      Math.min(contentWidth, maxBookHeight, maxPageSize),
     );
-    const size = Math.max(220, pageSize);
-    return { width: size, height: Math.round(size / MENU_IMAGE_RATIO), isMobile: true };
+    const size = Math.max(minPageSize, pageSize);
+    return { width: size, height: size, isMobile: true };
   }
 
-  const spreadMaxWidth = Math.min(availableWidth, maxPageSize * 2);
-  const pageWidth = Math.min(Math.floor(spreadMaxWidth / 2), maxPageSize);
-  const pageHeight = Math.min(
-    availableHeight,
-    Math.round(pageWidth / MENU_IMAGE_RATIO),
+  const pageWidth = Math.floor(
+    Math.min(contentWidth / 2, maxPageSize, maxBookHeight),
   );
+  const size = Math.max(minPageSize, pageWidth);
 
-  return { width: pageWidth, height: Math.max(220, pageHeight), isMobile: false };
+  return { width: size, height: size, isMobile: false };
 }
 
 export default function MenuBook() {
@@ -125,12 +122,7 @@ export default function MenuBook() {
   useEffect(() => {
     const updateDimensions = () => {
       requestAnimationFrame(() => {
-        const stageHeight = stageRef.current?.clientHeight;
-        const bookAreaHeight =
-          stageHeight && stageHeight > 0
-            ? Math.max(220, stageHeight - 40)
-            : undefined;
-        setDims(getBookDimensions(bookAreaHeight));
+        setDims(getBookDimensions());
       });
     };
 
@@ -216,8 +208,8 @@ export default function MenuBook() {
                   size="fixed"
                   minWidth={200}
                   maxWidth={420}
-                  minHeight={280}
-                  maxHeight={620}
+                  minHeight={200}
+                  maxHeight={420}
                   drawShadow
                   flippingTime={650}
                   usePortrait={dims.isMobile}
