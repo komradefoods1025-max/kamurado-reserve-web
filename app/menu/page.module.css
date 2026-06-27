@@ -477,7 +477,9 @@
 
 .telBtn {
   flex-direction: column;
-  gap: 1px;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
   min-height: 62px;
   background: #fff;
   color: #1f1a17;
@@ -485,17 +487,17 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
-.telBtnLabel {
+.telTitle {
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.2;
 }
 
-.telBtnNumber {
-  font-size: 0.8125rem;
-  font-weight: 500;
+.telNumber {
+  font-size: 13px;
+  color: #666;
+  letter-spacing: 0.08em;
   line-height: 1.2;
-  color: #5c5c5c;
-  letter-spacing: 0.04em;
 }
 
 @media (max-width: 767px) {
