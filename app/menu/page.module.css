@@ -1,26 +1,141 @@
-.main {
+.wrap {
   min-height: 100vh;
   min-height: 100dvh;
-  background: #f5f5f5;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(184, 139, 67, 0.12), transparent 34%),
+    linear-gradient(180deg, #1f1a17 0%, #2f241c 42%, #15110f 100%);
+  color: #f7f2ea;
+  padding: 20px 12px 96px;
+  text-align: center;
 }
 
-.container {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 24px 16px;
+.header h1 {
+  margin: 8px 0 4px;
+  font-size: clamp(1.25rem, 4.8vw, 1.6rem);
+  letter-spacing: 0.12em;
+  font-weight: 600;
+}
+
+.header p {
+  margin: 0 0 16px;
+  font-size: 0.82rem;
+  color: rgba(247, 242, 234, 0.78);
+}
+
+.bookArea {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.flipBookWrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+
+.flipBook {
+  margin: 0 auto;
+}
+
+.bookPlaceholder {
+  border-radius: 8px;
+  background: rgba(248, 241, 223, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .page {
-  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #f8f1df;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(110, 75, 42, 0.08);
 }
 
-.image {
+.pageImage {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
   display: block;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  background: #f8f1df;
+}
+
+.navBtn {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 58px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 2.2rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
+.navBtn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.counter {
+  margin-top: 14px;
+  font-size: 0.88rem;
+  color: rgba(247, 242, 234, 0.88);
+  letter-spacing: 0.08em;
+}
+
+.actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  padding: 12px;
+  background: rgba(20, 16, 13, 0.94);
+  backdrop-filter: blur(10px);
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.reserveBtn,
+.telBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(44vw, 220px);
+  min-height: 48px;
+  padding: 12px 10px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.reserveBtn {
+  background: #d4a44a;
+  color: #1f1a17;
+}
+
+.telBtn {
+  background: #fff;
+  color: #1f1a17;
+}
+
+@media (max-width: 767px) {
+  .wrap {
+    padding-top: 14px;
+  }
+
+  .navBtn {
+    width: 32px;
+    height: 52px;
+    font-size: 1.9rem;
+  }
 }
