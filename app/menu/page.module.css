@@ -104,7 +104,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  padding: 4px;
+  aspect-ratio: 1 / 1;
   background: #f8f1df;
 }
 
@@ -118,11 +119,11 @@
 
 .pageImage {
   display: block;
-  max-width: min(100%, var(--page-max-width));
-  max-height: var(--page-max-height);
-  width: auto;
-  height: auto;
-  border-radius: 8px;
+  width: 96%;
+  height: 96%;
+  max-width: 96%;
+  max-height: 96%;
+  border-radius: 6px;
   object-fit: contain;
   object-position: center center;
 }
@@ -207,10 +208,6 @@
 
   .bookColumn {
     gap: 10px;
-  }
-
-  .page {
-    padding: 6px;
   }
 
   .navBtn {
