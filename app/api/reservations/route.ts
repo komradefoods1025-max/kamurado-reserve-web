@@ -3,7 +3,24 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const SAVE_URL = process.env.RESERVATION_SAVE_URL || "";
+function getReservationSaveUrl() {
+  const url = (
+    process.env.RESERVATION_SAVE_URL ||
+    process.env.NEXT_PUBLIC_RESERVATION_SAVE_URL ||
+    process.env.NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT ||
+    ""
+  ).trim();
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[reservations] save URL configured:", url ? "yes" : "no");
+  }
+
+  return url;
+}
+
+function missingReservationSaveUrlMessage() {
+  return "RESERVATION_SAVE_URL（または NEXT_PUBLIC_RESERVATION_SAVE_URL / NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT）が未設定です";
+}
 
 type RawItem = {
   id?: string;
@@ -110,19 +127,31 @@ function buildGasFailureResponse(
 }
 
 async function postToGas(payload: unknown): Promise<GasPostResult> {
-  if (!SAVE_URL) {
+  const saveUrl = getReservationSaveUrl();
+
+  if (!saveUrl) {
+    console.error("[reservations] missing save URL env", {
+      hasReservationSaveUrl: Boolean(process.env.RESERVATION_SAVE_URL),
+      hasNextPublicReservationSaveUrl: Boolean(
+        process.env.NEXT_PUBLIC_RESERVATION_SAVE_URL,
+      ),
+      hasNextPublicWebReservationEndpoint: Boolean(
+        process.env.NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT,
+      ),
+    });
+
     return {
       ok: false,
       status: 500,
       rawText: "",
       data: {
         ok: false,
-        message: "RESERVATION_SAVE_URL が未設定です",
+        message: missingReservationSaveUrlMessage(),
       },
     };
   }
 
-  const upstream = await fetch(SAVE_URL, {
+  const upstream = await fetch(saveUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
