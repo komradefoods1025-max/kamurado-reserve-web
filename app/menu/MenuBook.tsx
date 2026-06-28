@@ -13,7 +13,9 @@ import {
   MENU_BOOK_PAGES,
   formatMenuPrice,
   getMenuBookPage,
+  getMenuBookItemById,
   isOrderableMenuBookPage,
+  type MenuBookItem,
   type MenuBookPage,
 } from "../../lib/menuBookPages";
 import {
@@ -207,7 +209,7 @@ function resolveSwipeDirection(
 }
 
 type MenuPageProps = {
-  page: MenuBookPage;
+  item: MenuBookItem;
   pageIndex: number;
   variant: "left" | "right" | "single";
   empty?: boolean;
@@ -216,7 +218,7 @@ type MenuPageProps = {
 };
 
 function MenuPage({
-  page,
+  item,
   pageIndex,
   variant,
   empty = false,
@@ -238,26 +240,28 @@ function MenuPage({
   }
 
   return (
-    <div className={pageClassName}>
+    <div
+      className={pageClassName}
+      data-menu-item-id={item.id}
+      data-menu-item-image={item.image}
+    >
       <div className={styles.pageScene}>
         <span className={styles.pagePaperTexture} aria-hidden />
         <span className={styles.pageThickness} aria-hidden />
         <img
-          src={page.src}
-          alt={page.alt}
+          src={item.image}
+          alt={item.alt}
           className={styles.pageImage}
           draggable={false}
         />
-        {typeof page.price === "number" ? (
-          <span
-            className={styles.pagePriceBadge}
-            data-price-badge={page.id}
-            aria-hidden="true"
-          >
-            {formatMenuPrice(page.price)}
-          </span>
-        ) : null}
-        {showTapHint && isOrderableMenuBookPage(page) ? (
+        <span
+          className={styles.pagePriceBadge}
+          data-price-badge={item.id}
+          aria-hidden="true"
+        >
+          {formatMenuPrice(item.price)}
+        </span>
+        {showTapHint ? (
           <div
             className={styles.tapHintBubble}
             data-fading={tapHintFading ? "true" : undefined}
@@ -284,8 +288,8 @@ function MenuSpread({
   showTapHint = false,
   tapHintFading = false,
 }: MenuSpreadProps) {
-  const leftPage = getMenuBookPage(leftPageIndex);
-  const rightPage = layout.isMobile
+  const leftItem = getMenuBookPage(leftPageIndex);
+  const rightItem = layout.isMobile
     ? null
     : (MENU_BOOK_PAGES[leftPageIndex + 1] ?? null);
 
@@ -294,7 +298,7 @@ function MenuSpread({
   return (
     <div className={styles.spread}>
       <MenuPage
-        page={leftPage}
+        item={leftItem}
         pageIndex={leftPageIndex}
         variant={layout.isMobile ? "single" : "left"}
         showTapHint={leftTapHint}
@@ -302,10 +306,10 @@ function MenuSpread({
       />
       {!layout.isMobile ? (
         <MenuPage
-          page={rightPage ?? leftPage}
+          item={rightItem ?? leftItem}
           pageIndex={leftPageIndex + 1}
           variant="right"
-          empty={!rightPage}
+          empty={!rightItem}
         />
       ) : null}
     </div>
@@ -526,8 +530,23 @@ export default function MenuBook() {
   const canGoPrev = !isFirstPage;
   const canGoNext = !isLastPage;
 
-  const resolveTappedPage = useCallback(
-    (clientX: number): MenuBookPage => {
+  const resolveTappedItem = useCallback(
+    (clientX: number, clientY: number): MenuBookItem => {
+      if (typeof document !== "undefined") {
+        const hit = document.elementFromPoint(clientX, clientY);
+        const pageElement = hit?.closest(
+          "[data-menu-item-id]",
+        ) as HTMLElement | null;
+        const itemId = pageElement?.dataset.menuItemId;
+
+        if (itemId) {
+          const item = getMenuBookItemById(itemId);
+          if (item) {
+            return item;
+          }
+        }
+      }
+
       if (layout.isMobile) {
         return getMenuBookPage(currentPage);
       }
@@ -660,7 +679,7 @@ export default function MenuBook() {
   }, []);
 
   const launchCartFly = useCallback(
-    (page: MenuBookPage) => {
+    (item: MenuBookItem) => {
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
           const bookView = bookViewRef.current;
@@ -671,7 +690,7 @@ export default function MenuBook() {
           }
 
           const badge = bookView.querySelector(
-            `[data-price-badge="${page.id}"]`,
+            `[data-price-badge="${item.id}"]`,
           ) as HTMLElement | null;
           const bookRect = bookView.getBoundingClientRect();
           const badgeRect = badge?.getBoundingClientRect();
@@ -713,23 +732,23 @@ export default function MenuBook() {
 
   const changePageQuantity = useCallback(
     (
-      page: MenuBookPage,
+      item: MenuBookItem,
       delta: number,
       sound: "cartAdd" | "click" | "none" = "none",
     ) => {
-      if (!isOrderableMenuBookPage(page)) {
+      if (!isOrderableMenuBookPage(item)) {
         return;
       }
 
       const updated =
         delta > 0
-          ? addMenuBookItemToDraft(page)
-          : adjustMenuBookItemQuantity(page, delta);
+          ? addMenuBookItemToDraft(item)
+          : adjustMenuBookItemQuantity(item, delta);
 
       if (updated) {
         applyDraftUpdate(updated);
         if (delta > 0 && sound === "cartAdd") {
-          launchCartFly(page);
+          launchCartFly(item);
           playMenuSound("cartAdd");
           showAddedToast();
         } else if (delta !== 0 && sound === "click") {
@@ -740,21 +759,21 @@ export default function MenuBook() {
     [applyDraftUpdate, launchCartFly, playMenuSound, showAddedToast],
   );
 
-  const addPageToCart = useCallback(
-    (page: MenuBookPage) => {
-      changePageQuantity(page, 1, "cartAdd");
+  const addItemToCart = useCallback(
+    (item: MenuBookItem) => {
+      changePageQuantity(item, 1, "cartAdd");
     },
     [changePageQuantity],
   );
 
   const changeCartItemQuantity = useCallback(
     (itemId: string, delta: number) => {
-      const page = MENU_BOOK_PAGES.find((entry) => entry.id === itemId);
-      if (!page) {
+      const item = getMenuBookItemById(itemId);
+      if (!item) {
         return;
       }
 
-      changePageQuantity(page, delta, "click");
+      changePageQuantity(item, delta, "click");
     },
     [changePageQuantity],
   );
@@ -815,7 +834,7 @@ export default function MenuBook() {
   );
 
   const finishPointer = useCallback(
-    (offsetX: number, clientX: number) => {
+    (offsetX: number, clientX: number, clientY: number) => {
       activePointerIdRef.current = null;
 
       const direction = resolveSwipeDirection(offsetX, dragVelocityRef.current);
@@ -833,14 +852,14 @@ export default function MenuBook() {
       }
 
       if (Math.abs(offsetX) < TAP_THRESHOLD) {
-        addPageToCart(resolveTappedPage(clientX));
+        addItemToCart(resolveTappedItem(clientX, clientY));
       }
     },
     [
-      addPageToCart,
+      addItemToCart,
       canGoNext,
       canGoPrev,
-      resolveTappedPage,
+      resolveTappedItem,
       startTransition,
     ],
   );
@@ -892,7 +911,7 @@ export default function MenuBook() {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
 
-    finishPointer(event.clientX - dragStartXRef.current, event.clientX);
+    finishPointer(event.clientX - dragStartXRef.current, event.clientX, event.clientY);
   };
 
   const handlePageNavClick = (direction: PageDirection) => {

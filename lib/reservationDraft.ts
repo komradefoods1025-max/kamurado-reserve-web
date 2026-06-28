@@ -195,7 +195,7 @@ export function adjustMenuBookItemQuantity(
         name: page.name,
         price: page.price,
         quantity: delta,
-        imageUrl: page.src,
+        imageUrl: page.image,
         description: "",
         itemType: page.itemType,
         riceSize,
