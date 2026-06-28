@@ -680,6 +680,14 @@
 
 .footerCartItem {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+}
+
+.footerCartRow {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -738,6 +746,60 @@
   font-weight: 600;
   color: rgba(216, 177, 91, 0.92);
   letter-spacing: 0.06em;
+}
+
+.footerCartRiceRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.footerCartRiceLabel {
+  flex-shrink: 0;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: rgba(216, 177, 91, 0.62);
+  letter-spacing: 0.06em;
+}
+
+.footerCartRiceBtn {
+  flex-shrink: 0;
+  min-width: 52px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(72, 58, 38, 0.55);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 236, 198, 0.04), transparent 55%),
+    linear-gradient(180deg, rgba(14, 11, 9, 0.98) 0%, rgba(6, 5, 4, 0.99) 100%);
+  color: rgba(255, 248, 238, 0.78);
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    transform 0.14s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.14s ease,
+    color 0.14s ease,
+    border-color 0.14s ease;
+}
+
+.footerCartRiceBtn[data-selected="true"] {
+  border-color: rgba(196, 162, 92, 0.82);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 236, 198, 0.18), transparent 58%),
+    linear-gradient(180deg, rgba(196, 162, 92, 0.92) 0%, rgba(154, 122, 58, 0.96) 100%);
+  color: rgba(24, 16, 10, 0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 236, 198, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.24);
+}
+
+.footerCartRiceBtn:active {
+  transform: scale(0.96);
 }
 
 .footerCartTotal {

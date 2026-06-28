@@ -16,6 +16,8 @@ export type CartItem = {
   quantity: number;
   imageUrl?: string;
   description?: string;
+  itemType?: "bento" | "drink" | "extra";
+  riceSize?: string;
   selectedOptionLabel?: string;
   selectedOptions?: string[];
   note?: string;

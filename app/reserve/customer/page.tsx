@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { formatCartItemLabel } from "../../../lib/reservationDraft";
 
 type CartItem = {
   id: string;
@@ -12,6 +13,8 @@ type CartItem = {
   quantity: number;
   imageUrl?: string;
   description?: string;
+  itemType?: "bento" | "drink" | "extra";
+  riceSize?: string;
   selectedOptionLabel?: string;
   selectedOptions?: string[];
   note?: string;
@@ -486,19 +489,7 @@ export default function ReserveCustomerPage() {
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="font-medium">{item.name}</p>
-
-                        {item.selectedOptionLabel ? (
-                          <p className="mt-1 text-xs text-stone-500">
-                            オプション：{item.selectedOptionLabel}
-                          </p>
-                        ) : null}
-
-                        {item.selectedOptions && item.selectedOptions.length > 0 ? (
-                          <p className="mt-1 text-xs text-stone-500">
-                            選択：{item.selectedOptions.join(" / ")}
-                          </p>
-                        ) : null}
+                        <p className="font-medium">{formatCartItemLabel(item)}</p>
 
                         <p className="mt-1 text-xs text-stone-500">
                           ¥{money.format(item.price)} × {item.quantity}

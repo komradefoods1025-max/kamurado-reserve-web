@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+  formatCartItemLabel,
+} from "../../../lib/reservationDraft";
 
 type CartItem = {
   id: string;
@@ -11,6 +14,7 @@ type CartItem = {
   imageUrl?: string;
   description?: string;
   itemType?: "bento" | "drink" | "extra";
+  riceSize?: string;
   selectedOptionLabel?: string;
   selectedOptions?: string[];
   note?: string;
@@ -260,7 +264,7 @@ export default function ReserveCartPage() {
                               wordBreak: "break-word",
                             }}
                           >
-                            {item.name}
+                            {formatCartItemLabel(item)}
                           </h2>
 
                           <div
