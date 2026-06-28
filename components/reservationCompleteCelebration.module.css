@@ -1,0 +1,120 @@
+.celebration {
+  position: relative;
+  overflow: hidden;
+}
+
+.particles {
+  position: absolute;
+  inset: -12px -8px auto;
+  height: 180px;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  left: var(--particle-x);
+  top: var(--particle-y);
+  width: var(--particle-size);
+  height: var(--particle-size);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 30%,
+    rgba(255, 236, 198, 0.95),
+    rgba(196, 162, 92, 0.72) 55%,
+    rgba(154, 116, 40, 0.18) 100%
+  );
+  opacity: 0;
+  animation: particleDrift var(--particle-duration) ease-out var(--particle-delay)
+    forwards;
+  box-shadow: 0 0 8px rgba(216, 177, 91, 0.22);
+}
+
+.checkmarkWrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.checkmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid rgba(196, 162, 92, 0.45);
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 251, 235, 0.98), rgba(255, 247, 224, 0.92));
+  color: rgb(120 53 15);
+  font-size: 1.75rem;
+  line-height: 1;
+  opacity: 0;
+  transform: scale(0.82);
+  animation: checkmarkIn 0.72s cubic-bezier(0.22, 1, 0.36, 1) 0.12s forwards;
+  box-shadow:
+    0 8px 24px rgba(180, 83, 9, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.title {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: clamp(1.35rem, 4vw, 1.65rem);
+  font-weight: 600;
+  line-height: 1.45;
+  color: rgb(41 37 36);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: titleReveal 1.05s cubic-bezier(0.22, 1, 0.36, 1) 0.38s forwards;
+}
+
+@keyframes checkmarkIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes titleReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes particleDrift {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.6);
+  }
+
+  18% {
+    opacity: var(--particle-peak);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--particle-dx), var(--particle-dy), 0) scale(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkmark,
+  .title,
+  .particle {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
