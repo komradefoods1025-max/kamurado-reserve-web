@@ -23,6 +23,7 @@ export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
 export const VOICE_PLAYBACK_RATE = 1.15;
 
 export const GO_TO_DATETIME_MIN_NAV_DELAY_MS = 900;
+export const GO_TO_DATETIME_PLAYBACK_DELAY_SEC = 0.1;
 export const ORDER_RECEIVED_NAV_DELAY_MS = GO_TO_DATETIME_MIN_NAV_DELAY_MS;
 export const RESERVE_DATETIME_PATH = "/reserve/datetime";
 export const BOOK_CLOSE_ANIMATION_MS = 900;
@@ -59,6 +60,7 @@ export const PREMIUM_SOUNDS: Record<
     startOffset?: number;
     playDuration?: number;
     playbackRate?: number;
+    playbackDelaySec?: number;
   }
 > = {
   cartAdd: {
@@ -76,6 +78,7 @@ export const PREMIUM_SOUNDS: Record<
     src: versionedSoundSrc("/sounds/go-to-datetime.mp3", GO_TO_DATETIME_SOUND_VERSION),
     volume: 0.5,
     playbackRate: VOICE_PLAYBACK_RATE,
+    playbackDelaySec: GO_TO_DATETIME_PLAYBACK_DELAY_SEC,
   },
   reservationThanks: {
     src: versionedSoundSrc("/sounds/reservation-thanks.mp3"),
@@ -107,6 +110,7 @@ type SoundSegmentConfig = {
   startOffset?: number;
   playDuration?: number;
   playbackRate?: number;
+  playbackDelaySec?: number;
 };
 
 export type PlayPremiumSoundOptions = {
@@ -312,22 +316,32 @@ function playWithWebAudio(
     config,
     buffer,
     bufferPlayDuration / playbackRate,
-    0,
+    config.playbackDelaySec ?? 0,
   );
 }
 
 function playWithFallback(config: SoundSegmentConfig): void {
   const audio = ensureFallbackAudio(config.src);
+  const delayMs = Math.round((config.playbackDelaySec ?? 0) * 1000);
 
-  try {
-    audio.pause();
-    audio.currentTime = config.startOffset ?? 0;
-    audio.volume = config.volume;
-    audio.playbackRate = config.playbackRate ?? 1;
-    void audio.play().catch(() => {});
-  } catch {
-    // Ignore environments that cannot play audio.
+  const startPlayback = () => {
+    try {
+      audio.pause();
+      audio.currentTime = config.startOffset ?? 0;
+      audio.volume = config.volume;
+      audio.playbackRate = config.playbackRate ?? 1;
+      void audio.play().catch(() => {});
+    } catch {
+      // Ignore environments that cannot play audio.
+    }
+  };
+
+  if (delayMs > 0) {
+    window.setTimeout(startPlayback, delayMs);
+    return;
   }
+
+  startPlayback();
 }
 
 function pauseHtmlAudio(audio: HTMLAudioElement): void {
@@ -581,7 +595,8 @@ async function playPremiumSoundAndWait(
         source.connect(gain);
         gain.connect(context.destination);
 
-        const startAt = context.currentTime;
+        const playbackDelaySec = config.playbackDelaySec ?? 0;
+        const startAt = context.currentTime + playbackDelaySec;
         const peak = config.volume;
         const fadeOutStart = Math.max(
           PREMIUM_SOUND_FADE_IN_SEC,
@@ -606,7 +621,10 @@ async function playPremiumSoundAndWait(
         };
 
         source.onended = finish;
-        window.setTimeout(finish, Math.ceil(wallClockDuration * 1000) + 120);
+        window.setTimeout(
+          finish,
+          Math.ceil((wallClockDuration + playbackDelaySec) * 1000) + 120,
+        );
 
         source.start(startAt, startOffset, bufferDuration);
         registerActiveSource(source);
@@ -615,6 +633,7 @@ async function playPremiumSoundAndWait(
 
     return new Promise<void>((resolve) => {
       const audio = ensureFallbackAudio(config.src);
+      const delayMs = Math.round((config.playbackDelaySec ?? 0) * 1000);
 
       let settled = false;
       const finish = () => {
@@ -628,16 +647,25 @@ async function playPremiumSoundAndWait(
       audio.onended = finish;
       audio.onerror = finish;
 
-      try {
-        audio.pause();
-        audio.currentTime = config.startOffset ?? 0;
-        audio.volume = config.volume;
-        audio.playbackRate = config.playbackRate ?? 1;
-        void audio.play().catch(finish);
-        window.setTimeout(finish, 5000);
-      } catch {
-        finish();
+      const startPlayback = () => {
+        try {
+          audio.pause();
+          audio.currentTime = config.startOffset ?? 0;
+          audio.volume = config.volume;
+          audio.playbackRate = config.playbackRate ?? 1;
+          void audio.play().catch(finish);
+          window.setTimeout(finish, 5000);
+        } catch {
+          finish();
+        }
+      };
+
+      if (delayMs > 0) {
+        window.setTimeout(startPlayback, delayMs);
+        return;
       }
+
+      startPlayback();
     });
   })();
 
