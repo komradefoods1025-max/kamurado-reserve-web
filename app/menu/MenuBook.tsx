@@ -323,23 +323,27 @@ export default function MenuBook() {
   const canGoPrev = !isFirstPage;
   const canGoNext = !isLastPage;
 
-  const resolveTappedPageIndex = useCallback(
-    (clientX: number): number => {
+  const resolveTappedPage = useCallback(
+    (clientX: number): MenuBookPage => {
+      if (layout.isMobile) {
+        return getMenuBookPage(currentPage);
+      }
+
       const element = bookViewRef.current;
-      if (!element || layout.isMobile) {
-        return currentPage;
+      if (!element) {
+        return getMenuBookPage(currentPage);
       }
 
       const rect = element.getBoundingClientRect();
       const relativeX = clientX - rect.left;
 
       if (relativeX <= rect.width / 2) {
-        return currentPage;
+        return getMenuBookPage(currentPage);
       }
 
       return currentPage + 1 < MENU_BOOK_PAGES.length
-        ? currentPage + 1
-        : currentPage;
+        ? getMenuBookPage(currentPage + 1)
+        : getMenuBookPage(currentPage);
     },
     [currentPage, layout.isMobile],
   );
@@ -362,8 +366,7 @@ export default function MenuBook() {
   }, [showToastMessage]);
 
   const changePageQuantity = useCallback(
-    (pageIndex: number, delta: number) => {
-      const page = getMenuBookPage(pageIndex);
+    (page: MenuBookPage, delta: number) => {
       if (!isOrderableMenuBookPage(page)) {
         return;
       }
@@ -384,20 +387,20 @@ export default function MenuBook() {
   );
 
   const addPageToCart = useCallback(
-    (pageIndex: number) => {
-      changePageQuantity(pageIndex, 1);
+    (page: MenuBookPage) => {
+      changePageQuantity(page, 1);
     },
     [changePageQuantity],
   );
 
   const changeCartItemQuantity = useCallback(
     (itemId: string, delta: number) => {
-      const pageIndex = MENU_BOOK_PAGES.findIndex((page) => page.id === itemId);
-      if (pageIndex < 0) {
+      const page = MENU_BOOK_PAGES.find((entry) => entry.id === itemId);
+      if (!page) {
         return;
       }
 
-      changePageQuantity(pageIndex, delta);
+      changePageQuantity(page, delta);
     },
     [changePageQuantity],
   );
@@ -474,14 +477,14 @@ export default function MenuBook() {
       }
 
       if (Math.abs(offsetX) < TAP_THRESHOLD) {
-        addPageToCart(resolveTappedPageIndex(clientX));
+        addPageToCart(resolveTappedPage(clientX));
       }
     },
     [
       addPageToCart,
       canGoNext,
       canGoPrev,
-      resolveTappedPageIndex,
+      resolveTappedPage,
       startTransition,
     ],
   );
