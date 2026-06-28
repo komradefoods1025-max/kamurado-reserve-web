@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
-  formatCartItemLabel,
   getCartItemRiceSize,
   isBentoCartItem,
 } from "../../../lib/reservationDraft";
@@ -211,17 +210,15 @@ export default function ReserveCartPage() {
                           </div>
 
                           <h2 className={styles.itemName}>
-                            <span className={styles.itemNameFull}>
-                              {formatCartItemLabel(item)}
-                            </span>
-                            <span className={styles.itemNameCompact}>
-                              {item.name} ×{quantity}
-                            </span>
+                            {item.name} ×{quantity}
                           </h2>
 
                           {isBentoCartItem(item) ? (
                             <p className={styles.itemRice}>
-                              🍚 ご飯：{getCartItemRiceSize(item)}
+                              <span className={styles.riceEmoji} aria-hidden="true">
+                                🍚{" "}
+                              </span>
+                              ご飯：{getCartItemRiceSize(item)}
                             </p>
                           ) : null}
 
