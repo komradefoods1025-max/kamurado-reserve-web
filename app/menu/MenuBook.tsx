@@ -21,18 +21,11 @@ const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
 
 const MOBILE_BREAKPOINT = 768;
 const PHONE_NUMBER = "0484415517";
-
-function PhoneIcon() {
-  return (
-    <span className={styles.btnIcon} aria-hidden="true">
-      ☎
-    </span>
-  );
-}
 const MAX_DRAG = 148;
 const TURN_THRESHOLD = 0.35;
 const VELOCITY_THRESHOLD = 0.42;
 const SNAPBACK_MS = 380;
+const COMPLETE_TURN_MS = 320;
 
 type Layout = {
   isMobile: boolean;
@@ -55,6 +48,44 @@ const DEFAULT_LAYOUT: Layout = {
   pageWidth: 320,
   spreadWidth: 320,
 };
+
+function CalendarIcon() {
+  return (
+    <svg className={styles.btnSvg} viewBox="0 0 24 24" aria-hidden="true">
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="16"
+        rx="2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path d="M3 9h18" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M8 3v4M16 3v4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg className={styles.btnSvg} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M6.6 4h2.8l1.4 4.6-1.9 1.1a11 11 0 0 0 5.5 5.5l1.1-1.9 4.6 1.4v2.8a2 2 0 0 1-2.1 2C10.1 20.4 3.6 13.9 4.1 6.7 4.2 5.3 5.2 4 6.6 4z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 function getMaxLeftPage(isMobile: boolean): number {
   if (isMobile) {
@@ -160,6 +191,9 @@ function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
       data-turning={showTurningPage ? "true" : undefined}
     >
       <div className={styles.pageScene}>
+        <span className={styles.pagePaperTexture} aria-hidden />
+        <span className={styles.pageThickness} aria-hidden />
+        <span className={styles.pageCornerLift} aria-hidden />
         <span className={styles.pageDropShadow} aria-hidden />
         <span className={styles.pageFallShadow} aria-hidden />
         <img
@@ -196,7 +230,9 @@ export default function MenuBook() {
   const pendingDragOffsetRef = useRef<number | null>(null);
   const dragRafRef = useRef<number | null>(null);
   const snapBackTimerRef = useRef<number | null>(null);
+  const completeTurnTimerRef = useRef<number | null>(null);
   const snapBackDirectionRef = useRef<DragDirection>(null);
+  const completeTurnDirectionRef = useRef<DragDirection>(null);
   const dragVelocityRef = useRef(0);
   const lastDragSampleRef = useRef({ offset: 0, time: 0 });
 
@@ -205,6 +241,7 @@ export default function MenuBook() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [isSnapBack, setIsSnapBack] = useState(false);
+  const [isCompletingTurn, setIsCompletingTurn] = useState(false);
 
   useEffect(() => {
     const updateLayout = () => {
@@ -215,10 +252,10 @@ export default function MenuBook() {
       const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
       const viewportHeight =
         window.visualViewport?.height ?? window.innerHeight;
-      const footerHeight = 96;
-      const counterHeight = 32;
-      const verticalPadding = 24;
-      const navSpace = isMobile ? 84 : 100;
+      const footerHeight = 112;
+      const counterHeight = 36;
+      const verticalPadding = 28;
+      const navSpace = isMobile ? 84 : 108;
       const horizontalPadding = 24;
       const maxPageWidth = isMobile ? 360 : 340;
 
@@ -264,6 +301,10 @@ export default function MenuBook() {
       if (snapBackTimerRef.current !== null) {
         window.clearTimeout(snapBackTimerRef.current);
       }
+
+      if (completeTurnTimerRef.current !== null) {
+        window.clearTimeout(completeTurnTimerRef.current);
+      }
     };
   }, []);
 
@@ -283,8 +324,7 @@ export default function MenuBook() {
       const elapsed = now - last.time;
 
       if (elapsed > 0) {
-        dragVelocityRef.current =
-          (offset - last.offset) / elapsed;
+        dragVelocityRef.current = (offset - last.offset) / elapsed;
       }
 
       lastDragSampleRef.current = { offset, time: now };
@@ -344,6 +384,37 @@ export default function MenuBook() {
     });
   }, []);
 
+  const beginCompleteTurn = useCallback(
+    (direction: DragDirection) => {
+      if (!direction) {
+        return;
+      }
+
+      completeTurnDirectionRef.current = direction;
+      setIsCompletingTurn(true);
+      setDragOffset(direction === "next" ? -MAX_DRAG : MAX_DRAG);
+
+      if (completeTurnTimerRef.current !== null) {
+        window.clearTimeout(completeTurnTimerRef.current);
+      }
+
+      completeTurnTimerRef.current = window.setTimeout(() => {
+        completeTurnDirectionRef.current = null;
+        setIsCompletingTurn(false);
+        setDragOffset(0);
+
+        if (direction === "next") {
+          goNext();
+        } else {
+          goPrev();
+        }
+
+        completeTurnTimerRef.current = null;
+      }, COMPLETE_TURN_MS);
+    },
+    [goNext, goPrev],
+  );
+
   const finishDrag = useCallback(
     (offsetX: number) => {
       activePointerIdRef.current = null;
@@ -367,26 +438,17 @@ export default function MenuBook() {
       const shouldTurn =
         direction === "next"
           ? canGoNext &&
-            (progress >= TURN_THRESHOLD ||
-              velocity <= -VELOCITY_THRESHOLD)
+            (progress >= TURN_THRESHOLD || velocity <= -VELOCITY_THRESHOLD)
           : direction === "prev"
             ? canGoPrev &&
-              (progress >= TURN_THRESHOLD ||
-                velocity >= VELOCITY_THRESHOLD)
+              (progress >= TURN_THRESHOLD || velocity >= VELOCITY_THRESHOLD)
             : false;
 
       dragVelocityRef.current = 0;
       lastDragSampleRef.current = { offset: 0, time: 0 };
 
-      if (shouldTurn && direction === "next") {
-        setDragOffset(0);
-        goNext();
-        return;
-      }
-
-      if (shouldTurn && direction === "prev") {
-        setDragOffset(0);
-        goPrev();
+      if (shouldTurn && direction) {
+        beginCompleteTurn(direction);
         return;
       }
 
@@ -397,11 +459,11 @@ export default function MenuBook() {
 
       beginSnapBack(direction);
     },
-    [beginSnapBack, canGoNext, canGoPrev, goNext, goPrev],
+    [beginCompleteTurn, beginSnapBack, canGoNext, canGoPrev],
   );
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.button > 0) {
+    if (event.button > 0 || isCompletingTurn) {
       return;
     }
 
@@ -424,7 +486,10 @@ export default function MenuBook() {
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (activePointerIdRef.current !== event.pointerId) {
+    if (
+      activePointerIdRef.current !== event.pointerId ||
+      isCompletingTurn
+    ) {
       return;
     }
 
@@ -454,9 +519,11 @@ export default function MenuBook() {
   const rightPage = layout.isMobile ? null : MENU_PAGES[currentPage + 1];
   const hasRightPage = Boolean(rightPage);
   const dragDirection = getDragDirection(dragOffset);
-  const activeDirection = isSnapBack
-    ? snapBackDirectionRef.current
-    : dragDirection;
+  const activeDirection = isCompletingTurn
+    ? completeTurnDirectionRef.current
+    : isSnapBack
+      ? snapBackDirectionRef.current
+      : dragDirection;
   const dragProgress = getDragProgress(dragOffset);
 
   const buildTurnState = (
@@ -473,7 +540,7 @@ export default function MenuBook() {
       progress: isTarget ? dragProgress : 0,
       direction: isTarget ? activeDirection : null,
       dragging: isDragging && isTarget,
-      settling: isSnapBack && isTarget,
+      settling: (isSnapBack || isCompletingTurn) && isTarget,
       isTarget,
     };
   };
@@ -499,7 +566,7 @@ export default function MenuBook() {
             type="button"
             className={styles.navBtn}
             onClick={goPrev}
-            disabled={isFirstPage}
+            disabled={isFirstPage || isCompletingTurn}
             aria-label="前のページ"
           >
             ‹
@@ -507,29 +574,43 @@ export default function MenuBook() {
 
           <div className={styles.bookColumn}>
             <div
-              className={bookViewClassName}
-              style={{ width: layout.spreadWidth }}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={endPointer}
-              onPointerCancel={endPointer}
+              className={styles.bookShell}
+              style={{
+                width: layout.isMobile
+                  ? layout.spreadWidth + 24
+                  : layout.spreadWidth + 24,
+              }}
             >
-              <div className={styles.spread}>
-                <MenuPage
-                  page={MENU_PAGES[currentPage]}
-                  variant={layout.isMobile ? "single" : "left"}
-                  turn={buildTurnState(layout.isMobile ? "single" : "left")}
-                />
-
-                {!layout.isMobile && (
+              <span className={styles.bookCoverEdge} aria-hidden />
+              <div
+                className={bookViewClassName}
+                style={{ width: layout.spreadWidth }}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={endPointer}
+                onPointerCancel={endPointer}
+              >
+                <div className={styles.spread}>
                   <MenuPage
-                    page={rightPage ?? MENU_PAGES[currentPage]}
-                    variant="right"
-                    empty={!rightPage}
-                    turn={buildTurnState("right")}
+                    page={MENU_PAGES[currentPage]}
+                    variant={layout.isMobile ? "single" : "left"}
+                    turn={buildTurnState(layout.isMobile ? "single" : "left")}
                   />
-                )}
+
+                  {!layout.isMobile && (
+                    <MenuPage
+                      page={rightPage ?? MENU_PAGES[currentPage]}
+                      variant="right"
+                      empty={!rightPage}
+                      turn={buildTurnState("right")}
+                    />
+                  )}
+                </div>
               </div>
+              {!layout.isMobile ? (
+                <span className={styles.bookSpineGlow} aria-hidden />
+              ) : null}
+              <span className={styles.bookFloorShadow} aria-hidden />
             </div>
 
             <div className={styles.counter}>
@@ -541,7 +622,7 @@ export default function MenuBook() {
             type="button"
             className={styles.navBtn}
             onClick={goNext}
-            disabled={isLastPage}
+            disabled={isLastPage || isCompletingTurn}
             aria-label="次のページ"
           >
             ›
@@ -551,9 +632,7 @@ export default function MenuBook() {
 
       <div className={styles.actions}>
         <Link href="/" className={styles.reserveBtn}>
-          <span className={styles.btnIcon} aria-hidden="true">
-            ▣
-          </span>
+          <CalendarIcon />
           <span>ランチ予約へ</span>
         </Link>
         <a href={`tel:${PHONE_NUMBER}`} className={styles.telBtn}>
