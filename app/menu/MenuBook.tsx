@@ -11,7 +11,9 @@ import {
 } from "react";
 import {
   MENU_BOOK_PAGES,
+  formatMenuPrice,
   getMenuBookPage,
+  isOrderableMenuBookPage,
   type MenuBookPage,
 } from "../../lib/menuBookPages";
 import {
@@ -294,12 +296,11 @@ function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
           className={styles.pageImage}
           draggable={false}
         />
-        <div className={styles.pageOrderMeta} aria-hidden="true">
-          <span className={styles.pageItemName}>{page.name}</span>
-          <span className={styles.pageItemPrice}>
-            {page.price.toLocaleString("ja-JP")}円
+        {typeof page.price === "number" ? (
+          <span className={styles.pagePriceBadge} aria-hidden="true">
+            {formatMenuPrice(page.price)}
           </span>
-        </div>
+        ) : null}
         {showCurl && turn.direction ? (
           <CurlStrips
             page={page}
@@ -475,8 +476,8 @@ export default function MenuBook() {
     [currentPage, layout.isMobile],
   );
 
-  const showAddedToast = useCallback((message: string) => {
-    setToast(message);
+  const showAddedToast = useCallback(() => {
+    setToast("✓ カートへ追加しました");
 
     if (toastTimerRef.current !== null) {
       window.clearTimeout(toastTimerRef.current);
@@ -485,15 +486,19 @@ export default function MenuBook() {
     toastTimerRef.current = window.setTimeout(() => {
       setToast(null);
       toastTimerRef.current = null;
-    }, 2400);
+    }, 1000);
   }, []);
 
   const addPageToCart = useCallback(
     (pageIndex: number) => {
       const page = getMenuBookPage(pageIndex);
+      if (!isOrderableMenuBookPage(page)) {
+        return;
+      }
+
       addMenuBookItemToDraft(page);
       setCartCount(getCartCount());
-      showAddedToast(`${page.name}をカートに追加しました`);
+      showAddedToast();
     },
     [showAddedToast],
   );
