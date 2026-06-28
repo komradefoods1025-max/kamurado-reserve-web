@@ -196,9 +196,9 @@ export default function ReserveCartPage() {
               className="rounded-3xl border border-stone-200 bg-white p-8"
               style={{ textAlign: "center" }}
             >
-              <h2 style={{ marginBottom: 12 }}>カートは空です</h2>
+              <h2 style={{ marginBottom: 12 }}>カートに商品が入っていません</h2>
               <p style={{ marginBottom: 20 }}>
-                まだ商品が入っていません。メニュー画面から商品を追加してください。
+                カートに商品が入っていません。メニューから商品を選んでください。
               </p>
 
               <Link
