@@ -15,6 +15,7 @@ export type PremiumSoundTrigger =
   | "page-flip";
 
 export const SOUND_ASSET_VERSION = 3;
+export const CART_THANKS_SOUND_VERSION = 4;
 export const GO_TO_DATETIME_SOUND_VERSION = 5;
 
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
@@ -67,7 +68,7 @@ export const PREMIUM_SOUNDS: Record<
     playDuration: 0.42,
   },
   cartThanks: {
-    src: versionedSoundSrc("/sounds/cart-thanks.mp3"),
+    src: versionedSoundSrc("/sounds/cart-thanks.mp3", CART_THANKS_SOUND_VERSION),
     volume: 0.5,
     playbackRate: VOICE_PLAYBACK_RATE,
   },
