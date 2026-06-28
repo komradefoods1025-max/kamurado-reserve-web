@@ -14,8 +14,8 @@ export type PremiumSoundTrigger =
   | "reservation-submit-success"
   | "page-flip";
 
-export const SOUND_ASSET_VERSION = 2;
-export const GO_TO_DATETIME_SOUND_VERSION = 2;
+export const SOUND_ASSET_VERSION = 3;
+export const GO_TO_DATETIME_SOUND_VERSION = 3;
 
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
 export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
@@ -73,12 +73,12 @@ export const PREMIUM_SOUNDS: Record<
   },
   goToDatetime: {
     src: versionedSoundSrc("/sounds/go-to-datetime.mp3", GO_TO_DATETIME_SOUND_VERSION),
-    volume: 0.52,
+    volume: 0.5,
     playbackRate: VOICE_PLAYBACK_RATE,
   },
   reservationThanks: {
     src: versionedSoundSrc("/sounds/reservation-thanks.mp3"),
-    volume: 0.52,
+    volume: 0.5,
     playbackRate: VOICE_PLAYBACK_RATE,
   },
   bookClose: {
