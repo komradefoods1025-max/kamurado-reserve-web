@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import StartReservationButton from "../../../components/StartReservationButton";
 import ReserveStepNav from "../../../components/ReserveStepNav";
 import reserveStyles from "../../../components/reserve.module.css";
 
@@ -88,12 +89,12 @@ export default function ReserveMenuPage() {
               >
                 メニューに戻る
               </Link>
-              <Link
+              <StartReservationButton
                 href="/menu"
-                className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-stone-300 bg-white px-6 py-3 text-sm font-semibold text-stone-700 sm:text-base"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-stone-300 bg-white px-6 py-3 text-sm font-semibold text-stone-700 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
               >
                 ご予約をはじめる
-              </Link>
+              </StartReservationButton>
             </div>
           </div>
         </section>

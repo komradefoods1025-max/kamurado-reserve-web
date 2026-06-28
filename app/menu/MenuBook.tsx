@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -24,6 +23,7 @@ import {
   PAGE_FLIP_ANIMATION_MS,
   playPageFlipSound,
   playPremiumSound,
+  playOrderReceivedNavigationSound,
   unlockPremiumAudio,
 } from "../../lib/premiumSounds";
 import {
@@ -370,6 +370,7 @@ export default function MenuBook() {
   const toastTimerRef = useRef<number | null>(null);
   const tapHintTimerRef = useRef<number | null>(null);
   const flyIdRef = useRef(0);
+  const isReserveNavigatingRef = useRef(false);
   const skipPagePulseRef = useRef(true);
 
   const [layout, setLayout] = useState<Layout>(DEFAULT_LAYOUT);
@@ -388,6 +389,7 @@ export default function MenuBook() {
   const [pagePulse, setPagePulse] = useState(false);
   const [cartSummaryPulse, setCartSummaryPulse] = useState(false);
   const [footerBounce, setFooterBounce] = useState(false);
+  const [isReserveNavigating, setIsReserveNavigating] = useState(false);
   const [flyItems, setFlyItems] = useState<CartFlyParticle[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
@@ -888,17 +890,24 @@ export default function MenuBook() {
   const reserveHref = "/reserve/cart";
 
   const handleReserveClick = (
-    event: React.MouseEvent<HTMLAnchorElement>,
+    event: React.MouseEvent<HTMLButtonElement>,
   ) => {
+    event.preventDefault();
+
+    if (isReserveNavigatingRef.current) {
+      return;
+    }
+
     if (cartSummary.count <= 0) {
-      event.preventDefault();
       showToastMessage("カートに商品が入っていません");
       return;
     }
 
-    event.preventDefault();
-    unlockMenuAudio();
-    void playPremiumSound("orderReceived", soundEnabled);
+    isReserveNavigatingRef.current = true;
+    setIsReserveNavigating(true);
+
+    void playOrderReceivedNavigationSound(soundEnabled);
+
     window.setTimeout(() => {
       router.push(reserveHref);
     }, ORDER_RECEIVED_NAV_DELAY_MS);
@@ -1175,14 +1184,16 @@ export default function MenuBook() {
                 : `電話する ${PHONE_DISPLAY}`}
             </span>
           </a>
-          <Link
-            href={reserveHref}
+          <button
+            type="button"
             className={styles.footerBtnReserve}
             onClick={handleReserveClick}
+            disabled={isReserveNavigating}
+            aria-disabled={isReserveNavigating}
           >
             <CartIcon />
             <span>ランチ予約へ</span>
-          </Link>
+          </button>
         </div>
       </div>
     </main>

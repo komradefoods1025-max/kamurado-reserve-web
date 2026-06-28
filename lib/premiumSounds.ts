@@ -86,6 +86,8 @@ let unlocked = false;
 const bufferCache = new Map<string, AudioBuffer>();
 const fallbackAudios = new Map<string, HTMLAudioElement>();
 const preloadElements: HTMLAudioElement[] = [];
+const activeBufferSources = new Set<AudioBufferSourceNode>();
+let pageFlipLandTimer: number | null = null;
 
 function getOrCreateContext(): AudioContext | null {
   if (typeof window === "undefined") {
@@ -212,6 +214,7 @@ function scheduleSegmentPlayback(
   gain.gain.linearRampToValueAtTime(0, startAt + wallClockDuration);
 
   source.start(startAt, startOffset, bufferDuration);
+  registerActiveSource(source);
   return true;
 }
 
@@ -245,6 +248,53 @@ function playWithFallback(config: SoundSegmentConfig): void {
     void audio.play().catch(() => {});
   } catch {
     // Ignore environments that cannot play audio.
+  }
+}
+
+function registerActiveSource(source: AudioBufferSourceNode): void {
+  activeBufferSources.add(source);
+  source.onended = () => {
+    activeBufferSources.delete(source);
+  };
+}
+
+function pauseHtmlAudio(audio: HTMLAudioElement): void {
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+  } catch {
+    // Ignore environments that cannot pause audio.
+  }
+}
+
+export function stopAllPremiumSounds(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  for (const source of activeBufferSources) {
+    try {
+      source.stop();
+    } catch {
+      // Ignore sources that already finished.
+    }
+  }
+  activeBufferSources.clear();
+
+  for (const src of getAllSoundSources()) {
+    const fallback = fallbackAudios.get(src);
+    if (fallback) {
+      pauseHtmlAudio(fallback);
+    }
+  }
+
+  for (const element of preloadElements) {
+    pauseHtmlAudio(element);
+  }
+
+  if (pageFlipLandTimer !== null) {
+    window.clearTimeout(pageFlipLandTimer);
+    pageFlipLandTimer = null;
   }
 }
 
@@ -337,7 +387,11 @@ export async function playPageFlipSound(enabled = true): Promise<void> {
   }
 
   playWithFallback(PAGE_FLIP_SOUND.rub);
-  window.setTimeout(() => {
+  if (pageFlipLandTimer !== null) {
+    window.clearTimeout(pageFlipLandTimer);
+  }
+  pageFlipLandTimer = window.setTimeout(() => {
+    pageFlipLandTimer = null;
     playWithFallback(PAGE_FLIP_SOUND.land);
   }, rubSec * 1000);
 }
@@ -367,4 +421,21 @@ export async function playPremiumSound(
   }
 
   playWithFallback(config);
+}
+
+export async function playOrderReceivedNavigationSound(
+  enabled = true,
+): Promise<void> {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  await unlockPremiumAudio();
+  stopAllPremiumSounds();
+
+  if (!enabled || !unlocked) {
+    return;
+  }
+
+  await playPremiumSound("orderReceived", enabled);
 }

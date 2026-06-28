@@ -1,4 +1,5 @@
 import Link from "next/link";
+import StartReservationButton from "../components/StartReservationButton";
 import styles from "./page.module.css";
 
 const FLOW_STEPS = [
@@ -149,9 +150,9 @@ export default function HomePage() {
             </div>
 
             <div className="mt-8 grid gap-3 md:grid-cols-3">
-              <Link
+              <StartReservationButton
                 href="/menu"
-                className="inline-flex min-h-[68px] items-center justify-center rounded-[22px] px-6 py-4 text-center text-[22px] font-bold transition hover:opacity-95"
+                className="inline-flex min-h-[68px] items-center justify-center rounded-[22px] px-6 py-4 text-center text-[22px] font-bold transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                 style={{
                   background: "linear-gradient(135deg, #8b5d34, #a06d3f)",
                   color: "#ffffff",
@@ -159,7 +160,7 @@ export default function HomePage() {
                 }}
               >
                 ご予約をはじめる
-              </Link>
+              </StartReservationButton>
 
               <Link
                 href="/reserve/check"
