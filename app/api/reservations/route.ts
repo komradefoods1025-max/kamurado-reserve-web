@@ -1,26 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  getReservationSaveUrl,
+  getReservationSaveUrlDebugInfo,
+  missingReservationSaveUrlMessage,
+} from "../../../lib/reservationEndpoint";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function getReservationSaveUrl() {
-  const url = (
-    process.env.RESERVATION_SAVE_URL ||
-    process.env.NEXT_PUBLIC_RESERVATION_SAVE_URL ||
-    process.env.NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT ||
-    ""
-  ).trim();
-
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[reservations] save URL configured:", url ? "yes" : "no");
-  }
-
-  return url;
-}
-
-function missingReservationSaveUrlMessage() {
-  return "RESERVATION_SAVE_URL（または NEXT_PUBLIC_RESERVATION_SAVE_URL / NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT）が未設定です";
-}
 
 type RawItem = {
   id?: string;
@@ -129,16 +115,15 @@ function buildGasFailureResponse(
 async function postToGas(payload: unknown): Promise<GasPostResult> {
   const saveUrl = getReservationSaveUrl();
 
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[reservations] save URL configured:", saveUrl ? "yes" : "no");
+  }
+
   if (!saveUrl) {
-    console.error("[reservations] missing save URL env", {
-      hasReservationSaveUrl: Boolean(process.env.RESERVATION_SAVE_URL),
-      hasNextPublicReservationSaveUrl: Boolean(
-        process.env.NEXT_PUBLIC_RESERVATION_SAVE_URL,
-      ),
-      hasNextPublicWebReservationEndpoint: Boolean(
-        process.env.NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT,
-      ),
-    });
+    console.error(
+      "[reservations] missing save URL env",
+      getReservationSaveUrlDebugInfo(),
+    );
 
     return {
       ok: false,
