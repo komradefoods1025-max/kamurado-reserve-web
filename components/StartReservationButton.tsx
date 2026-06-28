@@ -8,10 +8,6 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  ORDER_RECEIVED_NAV_DELAY_MS,
-  playOrderReceivedNavigationSound,
-} from "../lib/premiumSounds";
 
 type StartReservationButtonProps = {
   href?: string;
@@ -39,12 +35,7 @@ export default function StartReservationButton({
 
     isNavigatingRef.current = true;
     setIsNavigating(true);
-
-    void playOrderReceivedNavigationSound();
-
-    window.setTimeout(() => {
-      router.push(href);
-    }, ORDER_RECEIVED_NAV_DELAY_MS);
+    router.push(href);
   };
 
   return (
