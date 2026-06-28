@@ -202,7 +202,7 @@ export default function ReserveCartPage() {
               </p>
 
               <Link
-                href="/reserve/menu"
+                href="/menu"
                 className="inline-flex items-center justify-center bg-amber-900 text-white"
                 style={{
                   padding: "14px 22px",
@@ -412,7 +412,7 @@ export default function ReserveCartPage() {
                 }}
               >
                 <Link
-                  href="/reserve/menu"
+                  href="/menu"
                   className="inline-flex items-center justify-center border"
                   style={{
                     padding: "14px 20px",

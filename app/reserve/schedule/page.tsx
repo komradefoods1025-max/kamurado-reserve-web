@@ -368,7 +368,7 @@ export default function ReserveSchedulePage() {
 
           <div className="mt-6">
             <Link
-              href="/reserve/menu"
+              href="/menu"
               className="inline-flex rounded-2xl bg-amber-900 px-5 py-3 text-sm font-medium text-white"
             >
               メニュー選択へ戻る
