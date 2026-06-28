@@ -24,6 +24,7 @@ import {
   type ReservationDraft,
 } from "../../lib/reservationDraft";
 import styles from "./page.module.css";
+import WebGLPageCurl from "./WebGLPageCurl";
 
 const MOBILE_BREAKPOINT = 768;
 const PHONE_NUMBER = "0484415517";
@@ -32,10 +33,10 @@ const TURN_THRESHOLD = 0.35;
 const VELOCITY_THRESHOLD = 0.42;
 const SNAPBACK_MS = 620;
 const COMPLETE_TURN_MS = 640;
-const MESH_COLS_MOBILE = 6;
-const MESH_ROWS_MOBILE = 8;
-const MESH_COLS_DESKTOP = 8;
-const MESH_ROWS_DESKTOP = 10;
+const MESH_SEGMENTS_X_MOBILE = 5;
+const MESH_SEGMENTS_Y_MOBILE = 6;
+const MESH_SEGMENTS_X_DESKTOP = 6;
+const MESH_SEGMENTS_Y_DESKTOP = 5;
 const TAP_THRESHOLD = 12;
 const TURN_EASE = (t: number) => 1 - Math.pow(1 - t, 3);
 
@@ -165,168 +166,6 @@ function isPageTurnTarget(
   return variant === "left";
 }
 
-function smoothstep(value: number): number {
-  const t = Math.max(0, Math.min(1, value));
-  return t * t * (3 - 2 * t);
-}
-
-function getPatchCurlAmount(
-  col: number,
-  row: number,
-  cols: number,
-  rows: number,
-  progress: number,
-  direction: "next" | "prev",
-): number {
-  const x = cols <= 1 ? 0.5 : col / (cols - 1);
-  const y = rows <= 1 ? 0.5 : row / (rows - 1);
-  const reach = 2 * progress;
-
-  if (progress <= 0) {
-    return 0;
-  }
-
-  if (direction === "next") {
-    const cornerDist = (1 - x) + y;
-    if (cornerDist > reach) {
-      return 0;
-    }
-    return (reach - cornerDist) / Math.max(0.001, reach);
-  }
-
-  const cornerDist = x + y;
-  if (cornerDist > reach) {
-    return 0;
-  }
-  return (reach - cornerDist) / Math.max(0.001, reach);
-}
-
-function getPatchTransform(
-  local: number,
-  col: number,
-  row: number,
-  cols: number,
-  rows: number,
-  direction: "next" | "prev",
-): string {
-  if (local <= 0) {
-    return "none";
-  }
-
-  const eased = smoothstep(local);
-  const arch = Math.sin(eased * Math.PI);
-  const x = cols <= 1 ? 0.5 : col / (cols - 1);
-  const y = rows <= 1 ? 0.5 : row / (rows - 1);
-  const liftBias =
-    direction === "next" ? (1 - x) * 0.65 + y * 0.35 : x * 0.65 + y * 0.35;
-  const rotateY =
-    direction === "next"
-      ? -Math.sin(eased * Math.PI * 0.5) * (92 + liftBias * 14)
-      : Math.sin(eased * Math.PI * 0.5) * (92 + liftBias * 14);
-  const rotateX =
-    direction === "next"
-      ? Math.sin(eased * Math.PI * 0.5) *
-          (10 + (1 - x) * 20) *
-          (0.35 + y * 0.65)
-      : -Math.sin(eased * Math.PI * 0.5) *
-          (10 + x * 20) *
-          (0.35 + y * 0.65);
-  const translateZ = arch * 26;
-  const translateX =
-    direction === "next" ? -eased * 13 - arch * 6 : eased * 13 + arch * 6;
-  const translateY = -eased * (1 - y) * 9;
-
-  return `perspective(1400px) rotateY(${rotateY.toFixed(2)}deg) rotateX(${rotateX.toFixed(2)}deg) translate3d(${translateX.toFixed(2)}px, ${translateY.toFixed(2)}px, ${translateZ.toFixed(2)}px)`;
-}
-
-type CurlMeshProps = {
-  page: MenuBookPage;
-  direction: "next" | "prev";
-  progress: number;
-  meshCols: number;
-  meshRows: number;
-};
-
-function CurlMesh({
-  page,
-  direction,
-  progress,
-  meshCols,
-  meshRows,
-}: CurlMeshProps) {
-  const patches = [];
-
-  for (let row = 0; row < meshRows; row += 1) {
-    for (let col = 0; col < meshCols; col += 1) {
-      const local = getPatchCurlAmount(
-        col,
-        row,
-        meshCols,
-        meshRows,
-        progress,
-        direction,
-      );
-      const bgPosX = meshCols <= 1 ? 0 : (col / (meshCols - 1)) * 100;
-      const bgPosY = meshRows <= 1 ? 50 : (row / (meshRows - 1)) * 100;
-      const patchStyle: CSSProperties = {
-        left: `${(col / meshCols) * 100}%`,
-        top: `${(row / meshRows) * 100}%`,
-        width: `${100 / meshCols}%`,
-        height: `${100 / meshRows}%`,
-        zIndex: Math.round(col + row + local * 10),
-        transform: getPatchTransform(
-          local,
-          col,
-          row,
-          meshCols,
-          meshRows,
-          direction,
-        ),
-        transformOrigin:
-          direction === "next" ? "left center" : "right center",
-        opacity: local > 0 ? 1 : 0,
-        pointerEvents: "none",
-        ["--strip-local" as string]: String(local),
-      };
-
-      patches.push(
-        <div
-          key={`${col}-${row}`}
-          className={styles.curlPatch}
-          style={patchStyle}
-        >
-          <div
-            className={styles.curlPatchFace}
-            style={{
-              backgroundImage: `url(${page.src})`,
-              backgroundSize: `${meshCols * 100}% ${meshRows * 100}%`,
-              backgroundPosition: `${bgPosX}% ${bgPosY}%`,
-            }}
-          >
-            <span className={styles.curlStripShade} aria-hidden />
-            <span className={styles.curlStripEdge} aria-hidden />
-            <span className={styles.curlPatchThickness} aria-hidden />
-          </div>
-        </div>,
-      );
-    }
-  }
-
-  return (
-    <div
-      className={styles.curlLayer}
-      data-direction={direction}
-      style={{ ["--turn-progress" as string]: String(progress) }}
-      aria-hidden
-    >
-      <span className={styles.curlRootShadow} />
-      <span className={styles.curlHighlight} />
-      <span className={styles.curlFloorShadow} />
-      {patches}
-    </div>
-  );
-}
-
 type MenuPageProps = {
   page: MenuBookPage;
   variant: "left" | "right" | "single";
@@ -335,8 +174,8 @@ type MenuPageProps = {
   quantity: number;
   onIncrement: () => void;
   onDecrement: () => void;
-  meshCols: number;
-  meshRows: number;
+  segmentsX: number;
+  segmentsY: number;
 };
 
 function MenuPage({
@@ -347,8 +186,8 @@ function MenuPage({
   quantity,
   onIncrement,
   onDecrement,
-  meshCols,
-  meshRows,
+  segmentsX,
+  segmentsY,
 }: MenuPageProps) {
   const pageClassName = [
     styles.page,
@@ -391,6 +230,7 @@ function MenuPage({
           src={page.src}
           alt={page.alt}
           className={styles.pageImage}
+          style={showCurl ? { visibility: "hidden" } : undefined}
           draggable={false}
         />
         {typeof page.price === "number" ? (
@@ -429,12 +269,12 @@ function MenuPage({
           </div>
         ) : null}
         {showCurl && turn.direction ? (
-          <CurlMesh
+          <WebGLPageCurl
             page={page}
             direction={turn.direction}
             progress={turn.progress}
-            meshCols={meshCols}
-            meshRows={meshRows}
+            segmentsX={segmentsX}
+            segmentsY={segmentsY}
           />
         ) : null}
       </div>
@@ -898,8 +738,12 @@ export default function MenuBook() {
       ? snapBackDirectionRef.current
       : dragDirection;
   const dragProgress = getDragProgress(dragOffset);
-  const meshCols = layout.isMobile ? MESH_COLS_MOBILE : MESH_COLS_DESKTOP;
-  const meshRows = layout.isMobile ? MESH_ROWS_MOBILE : MESH_ROWS_DESKTOP;
+  const meshSegmentsX = layout.isMobile
+    ? MESH_SEGMENTS_X_MOBILE
+    : MESH_SEGMENTS_X_DESKTOP;
+  const meshSegmentsY = layout.isMobile
+    ? MESH_SEGMENTS_Y_MOBILE
+    : MESH_SEGMENTS_Y_DESKTOP;
 
   const buildTurnState = (
     variant: "left" | "right" | "single",
@@ -981,8 +825,8 @@ export default function MenuBook() {
                 }
                 onIncrement={() => changePageQuantity(currentPage, 1)}
                 onDecrement={() => changePageQuantity(currentPage, -1)}
-                meshCols={meshCols}
-                meshRows={meshRows}
+                segmentsX={meshSegmentsX}
+                segmentsY={meshSegmentsY}
               />
 
               {!layout.isMobile && (
@@ -998,8 +842,8 @@ export default function MenuBook() {
                   onDecrement={() =>
                     changePageQuantity(currentPage + 1, -1)
                   }
-                  meshCols={meshCols}
-                  meshRows={meshRows}
+                  segmentsX={meshSegmentsX}
+                  segmentsY={meshSegmentsY}
                 />
               )}
             </div>
