@@ -754,6 +754,12 @@
   font-weight: 600;
   color: rgba(232, 204, 140, 0.88);
   letter-spacing: 0.1em;
+  white-space: normal;
+  text-align: center;
+}
+
+.keepTogether {
+  white-space: nowrap;
 }
 
 .swipeHintAnim {
@@ -1329,6 +1335,8 @@
   .guideLine {
     font-size: 1rem;
     letter-spacing: 0.08em;
+    max-width: 16.5em;
+    line-height: 1.5;
   }
 
   .bookRow {
