@@ -4,7 +4,7 @@ export type PremiumSoundId =
   | "bookClose"
   | "cartAdd"
   | "cartThanks"
-  | "orderReceived"
+  | "goToDatetime"
   | "reservationThanks";
 
 export type PremiumSoundTrigger =
@@ -15,12 +15,15 @@ export type PremiumSoundTrigger =
   | "page-flip";
 
 export const SOUND_ASSET_VERSION = 2;
+export const GO_TO_DATETIME_SOUND_VERSION = 1;
 
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
 export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
 export const VOICE_PLAYBACK_RATE = 1.17;
 
-export const ORDER_RECEIVED_NAV_DELAY_MS = 300;
+export const GO_TO_DATETIME_MIN_NAV_DELAY_MS = 900;
+export const ORDER_RECEIVED_NAV_DELAY_MS = GO_TO_DATETIME_MIN_NAV_DELAY_MS;
+export const RESERVE_DATETIME_PATH = "/reserve/datetime";
 export const BOOK_CLOSE_ANIMATION_MS = 900;
 export const RESERVATION_THANKS_DISPLAY_DELAY_MS = BOOK_CLOSE_ANIMATION_MS;
 
@@ -29,8 +32,8 @@ export const PAGE_FLIP_LIFT_MS = 100;
 export const PAGE_FLIP_RUB_MS = 200;
 export const PAGE_FLIP_LAND_MS = 150;
 
-function versionedSoundSrc(path: string): string {
-  return `${path}?v=${SOUND_ASSET_VERSION}`;
+function versionedSoundSrc(path: string, version = SOUND_ASSET_VERSION): string {
+  return `${path}?v=${version}`;
 }
 
 export const PAGE_FLIP_SOUND = {
@@ -68,8 +71,8 @@ export const PREMIUM_SOUNDS: Record<
     volume: 0.45,
     playbackRate: VOICE_PLAYBACK_RATE,
   },
-  orderReceived: {
-    src: versionedSoundSrc("/sounds/order-received.mp3"),
+  goToDatetime: {
+    src: versionedSoundSrc("/sounds/go-to-datetime.mp3", GO_TO_DATETIME_SOUND_VERSION),
     volume: 0.5,
     playbackRate: VOICE_PLAYBACK_RATE,
   },
@@ -92,7 +95,7 @@ const ALLOWED_SOUND_TRIGGERS: Record<
 > = {
   cartAdd: new Set(["cart-item-tap"]),
   cartThanks: new Set(["cart-item-tap"]),
-  orderReceived: new Set(["reserve-button"]),
+  goToDatetime: new Set(["reserve-button"]),
   reservationThanks: new Set(["reservation-submit-success"]),
   bookClose: new Set(["reservation-submit-success"]),
 };
@@ -506,22 +509,156 @@ export async function playPremiumSound(
   playWithFallback(config);
 }
 
-export async function playOrderReceivedNavigationSound(
-  enabled = true,
+function waitMs(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+async function playPremiumSoundAndWait(
+  soundId: PremiumSoundId,
+  options: PlayPremiumSoundOptions,
 ): Promise<void> {
+  const { enabled = true, trigger } = options;
+  const minWait = waitMs(GO_TO_DATETIME_MIN_NAV_DELAY_MS);
+
   if (typeof window === "undefined") {
+    return;
+  }
+
+  if (!enabled) {
+    await minWait;
     return;
   }
 
   await unlockPremiumAudio();
   stopAllPremiumSounds();
 
-  if (!enabled || !unlocked) {
+  if (!unlocked || !isTriggerAllowed(soundId, trigger)) {
+    await minWait;
     return;
   }
 
-  await playPremiumSound("orderReceived", {
-    enabled,
-    trigger: "reserve-button",
-  });
+  installLifecycleHandlers();
+
+  const config = PREMIUM_SOUNDS[soundId];
+  const context = getOrCreateContext();
+
+  if (context && context.state === "suspended") {
+    try {
+      await context.resume();
+    } catch {
+      // Fall back below.
+    }
+  }
+
+  const playbackDone = (async (): Promise<void> => {
+    const buffer = await decodeSound(config.src);
+
+    if (buffer && context) {
+      return new Promise<void>((resolve) => {
+        const playbackRate = config.playbackRate ?? 1;
+        const startOffset = config.startOffset ?? 0;
+        const availableDuration = Math.max(buffer.duration - startOffset, 0);
+        const bufferDuration = Math.min(
+          config.playDuration ?? availableDuration,
+          availableDuration,
+        );
+        const wallClockDuration = bufferDuration / playbackRate;
+
+        if (bufferDuration <= 0 || wallClockDuration <= 0) {
+          resolve();
+          return;
+        }
+
+        const source = context.createBufferSource();
+        source.buffer = buffer;
+        source.playbackRate.value = playbackRate;
+
+        const gain = context.createGain();
+        source.connect(gain);
+        gain.connect(context.destination);
+
+        const startAt = context.currentTime;
+        const peak = config.volume;
+        const fadeOutStart = Math.max(
+          PREMIUM_SOUND_FADE_IN_SEC,
+          wallClockDuration - PREMIUM_SOUND_FADE_OUT_SEC,
+        );
+
+        gain.gain.setValueAtTime(0, startAt);
+        gain.gain.linearRampToValueAtTime(
+          peak,
+          startAt + PREMIUM_SOUND_FADE_IN_SEC,
+        );
+        gain.gain.setValueAtTime(peak, startAt + fadeOutStart);
+        gain.gain.linearRampToValueAtTime(0, startAt + wallClockDuration);
+
+        let settled = false;
+        const finish = () => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          resolve();
+        };
+
+        source.onended = finish;
+        window.setTimeout(finish, Math.ceil(wallClockDuration * 1000) + 120);
+
+        source.start(startAt, startOffset, bufferDuration);
+        registerActiveSource(source);
+      });
+    }
+
+    return new Promise<void>((resolve) => {
+      const audio = ensureFallbackAudio(config.src);
+
+      let settled = false;
+      const finish = () => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        resolve();
+      };
+
+      audio.onended = finish;
+      audio.onerror = finish;
+
+      try {
+        audio.pause();
+        audio.currentTime = config.startOffset ?? 0;
+        audio.volume = config.volume;
+        audio.playbackRate = config.playbackRate ?? 1;
+        void audio.play().catch(finish);
+        window.setTimeout(finish, 5000);
+      } catch {
+        finish();
+      }
+    });
+  })();
+
+  try {
+    await Promise.all([minWait, playbackDone]);
+  } catch {
+    await minWait;
+  }
+}
+
+export async function playGoToDatetimeNavigationSound(
+  enabled = true,
+): Promise<void> {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    await playPremiumSoundAndWait("goToDatetime", {
+      enabled,
+      trigger: "reserve-button",
+    });
+  } catch {
+    await waitMs(GO_TO_DATETIME_MIN_NAV_DELAY_MS);
+  }
 }
