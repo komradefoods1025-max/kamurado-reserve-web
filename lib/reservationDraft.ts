@@ -9,10 +9,60 @@ export type CartItem = {
   imageUrl?: string;
   description?: string;
   itemType?: "bento" | "drink" | "extra";
+  riceSize?: string;
   selectedOptionLabel?: string;
   selectedOptions?: string[];
   note?: string;
 };
+
+export const RICE_SIZE_OPTIONS = ["普通", "大盛り", "小盛り"] as const;
+export type RiceSize = (typeof RICE_SIZE_OPTIONS)[number];
+export const DEFAULT_RICE_SIZE: RiceSize = "普通";
+
+export function isBentoCartItem(item: CartItem): boolean {
+  return item.itemType !== "drink" && item.itemType !== "extra";
+}
+
+export function getCartItemRiceSize(item: CartItem): RiceSize {
+  const value = item.riceSize || item.selectedOptionLabel || DEFAULT_RICE_SIZE;
+  if (RICE_SIZE_OPTIONS.includes(value as RiceSize)) {
+    return value as RiceSize;
+  }
+
+  return DEFAULT_RICE_SIZE;
+}
+
+export function formatCartItemLabel(item: CartItem): string {
+  const quantity = Number(item.quantity || 0);
+
+  if (isBentoCartItem(item)) {
+    return `${item.name} ×${quantity}（ご飯：${getCartItemRiceSize(item)}）`;
+  }
+
+  return `${item.name} ×${quantity}`;
+}
+
+function normalizeCartItem(item: CartItem): CartItem {
+  if (!isBentoCartItem(item)) {
+    return item;
+  }
+
+  const riceSize = getCartItemRiceSize(item);
+
+  return {
+    ...item,
+    itemType: item.itemType || "bento",
+    riceSize,
+    selectedOptionLabel: riceSize,
+    selectedOptions: [riceSize],
+  };
+}
+
+function normalizeDraftItems(items: CartItem[]): CartItem[] {
+  return items
+    .filter((item) => Number(item.quantity || 0) > 0)
+    .map(normalizeCartItem);
+}
 
 export type ReservationDraft = {
   items: CartItem[];
@@ -49,7 +99,7 @@ function safeParseDraft(raw: string | null): ReservationDraft | null {
     }
 
     return {
-      items: Array.isArray(parsed.items) ? parsed.items : [],
+      items: normalizeDraftItems(Array.isArray(parsed.items) ? parsed.items : []),
       pickupDate: parsed.pickupDate || "",
       pickupTime: parsed.pickupTime || "",
       customerName: parsed.customerName || "",
@@ -137,6 +187,9 @@ export function adjustMenuBookItemQuantity(
         name: page.name,
       };
     } else {
+      const riceSize =
+        page.itemType === "bento" ? DEFAULT_RICE_SIZE : undefined;
+
       nextItems.push({
         id: page.id,
         name: page.name,
@@ -145,8 +198,9 @@ export function adjustMenuBookItemQuantity(
         imageUrl: page.src,
         description: "",
         itemType: page.itemType,
-        selectedOptionLabel: "",
-        selectedOptions: [],
+        riceSize,
+        selectedOptionLabel: riceSize || "",
+        selectedOptions: riceSize ? [riceSize] : [],
         note: "",
       });
     }
@@ -164,6 +218,32 @@ export function adjustMenuBookItemQuantity(
       };
     }
   }
+
+  return writeDraft({ ...draft, items: nextItems });
+}
+
+export function updateCartItemRiceSize(
+  itemId: string,
+  riceSize: RiceSize,
+): ReservationDraft | null {
+  if (!RICE_SIZE_OPTIONS.includes(riceSize)) {
+    return null;
+  }
+
+  const draft = readDraft();
+  const index = draft.items.findIndex((item) => item.id === itemId);
+
+  if (index < 0 || !isBentoCartItem(draft.items[index])) {
+    return null;
+  }
+
+  const nextItems = [...draft.items];
+  nextItems[index] = {
+    ...nextItems[index],
+    riceSize,
+    selectedOptionLabel: riceSize,
+    selectedOptions: [riceSize],
+  };
 
   return writeDraft({ ...draft, items: nextItems });
 }

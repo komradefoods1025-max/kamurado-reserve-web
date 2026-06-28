@@ -13,6 +13,7 @@ type CartItem = {
   imageUrl?: string;
   description?: string;
   itemType?: "bento" | "drink" | "extra";
+  riceSize?: string;
   selectedOptionLabel?: string;
   selectedOptions?: string[];
   note?: string;
@@ -226,8 +227,9 @@ export default function ReserveMenuPage() {
         imageUrl: item.imageUrl || "",
         description: item.description || "",
         itemType: item.itemType || "bento",
-        selectedOptionLabel: "",
-        selectedOptions: [],
+        riceSize: item.itemType === "extra" ? undefined : "普通",
+        selectedOptionLabel: item.itemType === "extra" ? "" : "普通",
+        selectedOptions: item.itemType === "extra" ? [] : ["普通"],
         note: "",
       });
     }

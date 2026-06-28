@@ -12,6 +12,7 @@ type CartItem = {
   imageUrl?: string;
   description?: string;
   itemType?: "bento" | "drink" | "extra";
+  riceSize?: string;
   selectedOptionLabel?: string;
   selectedOptions?: string[];
   note?: string;
@@ -136,6 +137,12 @@ function normalizeCartItem(item: unknown): CartItem | null {
       typeof raw.selectedOptionLabel === "string"
         ? raw.selectedOptionLabel
         : "",
+    riceSize:
+      typeof raw.riceSize === "string"
+        ? raw.riceSize
+        : typeof raw.selectedOptionLabel === "string"
+          ? raw.selectedOptionLabel
+          : "",
     selectedOptions: Array.isArray(raw.selectedOptions)
       ? raw.selectedOptions.map((v) => String(v))
       : [],

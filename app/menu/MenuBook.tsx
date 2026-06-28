@@ -18,10 +18,15 @@ import {
 import {
   addMenuBookItemToDraft,
   adjustMenuBookItemQuantity,
+  getCartItemRiceSize,
   getCartSummary,
+  isBentoCartItem,
   readDraft,
+  RICE_SIZE_OPTIONS,
   type CartItem,
   type ReservationDraft,
+  type RiceSize,
+  updateCartItemRiceSize,
 } from "../../lib/reservationDraft";
 import styles from "./page.module.css";
 
@@ -130,19 +135,9 @@ type MenuPageProps = {
   page: MenuBookPage;
   variant: "left" | "right" | "single";
   empty?: boolean;
-  quantity: number;
-  onIncrement: () => void;
-  onDecrement: () => void;
 };
 
-function MenuPage({
-  page,
-  variant,
-  empty = false,
-  quantity,
-  onIncrement,
-  onDecrement,
-}: MenuPageProps) {
+function MenuPage({ page, variant, empty = false }: MenuPageProps) {
   const pageClassName = [
     styles.page,
     variant === "left" ? styles.pageLeft : "",
@@ -173,36 +168,6 @@ function MenuPage({
             {formatMenuPrice(page.price)}
           </span>
         ) : null}
-        {page.orderable && typeof page.id === "string" ? (
-          <div
-            className={styles.pageQtyControls}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              className={styles.pageQtyBtn}
-              aria-label={`${page.alt}の数量を減らす`}
-              onClick={(event) => {
-                event.stopPropagation();
-                onDecrement();
-              }}
-            >
-              −
-            </button>
-            <span className={styles.pageQtyValue}>{quantity}</span>
-            <button
-              type="button"
-              className={styles.pageQtyBtn}
-              aria-label={`${page.alt}の数量を増やす`}
-              onClick={(event) => {
-                event.stopPropagation();
-                onIncrement();
-              }}
-            >
-              ＋
-            </button>
-          </div>
-        ) : null}
       </div>
     </div>
   );
@@ -211,16 +176,9 @@ function MenuPage({
 type MenuSpreadProps = {
   leftPageIndex: number;
   layout: Layout;
-  itemQuantities: Record<string, number>;
-  onChangeQuantity: (pageIndex: number, delta: number) => void;
 };
 
-function MenuSpread({
-  leftPageIndex,
-  layout,
-  itemQuantities,
-  onChangeQuantity,
-}: MenuSpreadProps) {
+function MenuSpread({ leftPageIndex, layout }: MenuSpreadProps) {
   const leftPage = getMenuBookPage(leftPageIndex);
   const rightPage = layout.isMobile
     ? null
@@ -231,18 +189,12 @@ function MenuSpread({
       <MenuPage
         page={leftPage}
         variant={layout.isMobile ? "single" : "left"}
-        quantity={leftPage.id ? (itemQuantities[leftPage.id] ?? 0) : 0}
-        onIncrement={() => onChangeQuantity(leftPageIndex, 1)}
-        onDecrement={() => onChangeQuantity(leftPageIndex, -1)}
       />
       {!layout.isMobile ? (
         <MenuPage
           page={rightPage ?? leftPage}
           variant="right"
           empty={!rightPage}
-          quantity={rightPage?.id ? (itemQuantities[rightPage.id] ?? 0) : 0}
-          onIncrement={() => onChangeQuantity(leftPageIndex + 1, 1)}
-          onDecrement={() => onChangeQuantity(leftPageIndex + 1, -1)}
         />
       ) : null}
     </div>
@@ -259,8 +211,6 @@ function TransitionLayer({
   direction,
   leftPageIndex,
   layout,
-  itemQuantities,
-  onChangeQuantity,
 }: TransitionLayerProps) {
   return (
     <div
@@ -270,12 +220,7 @@ function TransitionLayer({
     >
       <span className={styles.pageTransitionShadow} aria-hidden />
       <span className={styles.pageTransitionEdge} aria-hidden />
-      <MenuSpread
-        leftPageIndex={leftPageIndex}
-        layout={layout}
-        itemQuantities={itemQuantities}
-        onChangeQuantity={onChangeQuantity}
-      />
+      <MenuSpread leftPageIndex={leftPageIndex} layout={layout} />
     </div>
   );
 }
@@ -299,9 +244,6 @@ export default function MenuBook() {
   );
   const [cartSummary, setCartSummary] = useState({ count: 0, amount: 0 });
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [itemQuantities, setItemQuantities] = useState<Record<string, number>>(
-    {},
-  );
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -357,11 +299,6 @@ export default function MenuBook() {
     setCartItems(
       draft.items.filter((item) => Number(item.quantity || 0) > 0),
     );
-    const nextQuantities: Record<string, number> = {};
-    draft.items.forEach((item) => {
-      nextQuantities[item.id] = Number(item.quantity || 0);
-    });
-    setItemQuantities(nextQuantities);
   }, []);
 
   useEffect(() => {
@@ -463,6 +400,16 @@ export default function MenuBook() {
       changePageQuantity(pageIndex, delta);
     },
     [changePageQuantity],
+  );
+
+  const changeCartItemRiceSize = useCallback(
+    (itemId: string, riceSize: RiceSize) => {
+      const updated = updateCartItemRiceSize(itemId, riceSize);
+      if (updated) {
+        applyDraftUpdate(updated);
+      }
+    },
+    [applyDraftUpdate],
   );
 
   const startTransition = useCallback(
@@ -608,8 +555,6 @@ export default function MenuBook() {
 
   const spreadProps = {
     layout,
-    itemQuantities,
-    onChangeQuantity: changePageQuantity,
   };
 
   return (
@@ -742,30 +687,56 @@ export default function MenuBook() {
               <ul className={styles.footerCartList}>
                 {cartItems.map((item) => (
                   <li key={item.id} className={styles.footerCartItem}>
-                    <span className={styles.footerCartName}>
-                      {item.name} ×{Number(item.quantity || 0)}
-                    </span>
-                    <div className={styles.footerCartQty}>
-                      <button
-                        type="button"
-                        className={styles.footerCartQtyBtn}
-                        aria-label={`${item.name}の数量を減らす`}
-                        onClick={() => changeCartItemQuantity(item.id, -1)}
-                      >
-                        −
-                      </button>
-                      <span className={styles.footerCartQtyValue}>
-                        {Number(item.quantity || 0)}
+                    <div className={styles.footerCartRow}>
+                      <span className={styles.footerCartName}>
+                        {item.name} ×{Number(item.quantity || 0)}
                       </span>
-                      <button
-                        type="button"
-                        className={styles.footerCartQtyBtn}
-                        aria-label={`${item.name}の数量を増やす`}
-                        onClick={() => changeCartItemQuantity(item.id, 1)}
-                      >
-                        ＋
-                      </button>
+                      <div className={styles.footerCartQty}>
+                        <button
+                          type="button"
+                          className={styles.footerCartQtyBtn}
+                          aria-label={`${item.name}の数量を減らす`}
+                          onClick={() => changeCartItemQuantity(item.id, -1)}
+                        >
+                          −
+                        </button>
+                        <span className={styles.footerCartQtyValue}>
+                          {Number(item.quantity || 0)}
+                        </span>
+                        <button
+                          type="button"
+                          className={styles.footerCartQtyBtn}
+                          aria-label={`${item.name}の数量を増やす`}
+                          onClick={() => changeCartItemQuantity(item.id, 1)}
+                        >
+                          ＋
+                        </button>
+                      </div>
                     </div>
+                    {isBentoCartItem(item) ? (
+                      <div className={styles.footerCartRiceRow}>
+                        <span className={styles.footerCartRiceLabel}>ご飯：</span>
+                        {RICE_SIZE_OPTIONS.map((riceSize) => (
+                          <button
+                            key={riceSize}
+                            type="button"
+                            className={styles.footerCartRiceBtn}
+                            data-selected={
+                              getCartItemRiceSize(item) === riceSize
+                                ? "true"
+                                : undefined
+                            }
+                            aria-label={`${item.name}のご飯量を${riceSize}に変更`}
+                            aria-pressed={getCartItemRiceSize(item) === riceSize}
+                            onClick={() =>
+                              changeCartItemRiceSize(item.id, riceSize)
+                            }
+                          >
+                            {riceSize}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ul>
