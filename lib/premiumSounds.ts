@@ -5,20 +5,22 @@ export type PremiumSoundId = "cartAdd" | "reservationComplete";
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
 export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
 
-export const PAGE_FLIP_ANIMATION_MS = 850;
+export const PAGE_FLIP_ANIMATION_MS = 450;
+export const PAGE_FLIP_LIFT_MS = 100;
+export const PAGE_FLIP_RUB_MS = 200;
 export const PAGE_FLIP_LAND_MS = 150;
 
 export const PAGE_FLIP_SOUND = {
   rub: {
     src: "/sounds/page-flip.mp3",
     volume: 0.55,
-    startOffset: 0.04,
+    startOffset: 0.02,
   },
   land: {
     src: "/sounds/page-flip-land.mp3",
     volume: 0.45,
-    startOffset: 0.62,
-    playDuration: 0.16,
+    startOffset: 0.66,
+    playDuration: 0.15,
   },
 } as const;
 
@@ -274,9 +276,8 @@ export async function playPageFlipSound(enabled = true): Promise<void> {
     }
   }
 
-  const animationSec = PAGE_FLIP_ANIMATION_MS / 1000;
   const landSec = PAGE_FLIP_LAND_MS / 1000;
-  const rubSec = animationSec - landSec;
+  const rubSec = (PAGE_FLIP_LIFT_MS + PAGE_FLIP_RUB_MS) / 1000;
 
   const rubBuffer = await decodeSound(PAGE_FLIP_SOUND.rub.src);
   const landBuffer = await decodeSound(PAGE_FLIP_SOUND.land.src);
