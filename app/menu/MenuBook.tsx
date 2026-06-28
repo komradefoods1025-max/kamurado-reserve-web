@@ -40,10 +40,19 @@ const VELOCITY_THRESHOLD = 0.42;
 const TAP_THRESHOLD = 12;
 const TAP_HINT_STORAGE_KEY = "kamurado-menu-tap-hint-seen";
 const SOUND_ENABLED_STORAGE_KEY = "kamurado-menu-sound-enabled";
-const PAGE_FLIP_SOUND_SRC = "/sounds/page-flip.mp3";
-const PAGE_FLIP_VOLUME = 0.08;
 const CART_FLY_MS = 500;
 const PAGE_PULSE_MS = 150;
+
+type MenuSoundId = "pageFlip" | "cartAdd" | "click";
+
+const MENU_SOUNDS: Record<
+  MenuSoundId,
+  { src: string; volume: number }
+> = {
+  pageFlip: { src: "/sounds/page-flip.mp3", volume: 0.09 },
+  cartAdd: { src: "/sounds/cart-add.mp3", volume: 0.1 },
+  click: { src: "/sounds/click.mp3", volume: 0.06 },
+};
 
 type Layout = {
   isMobile: boolean;
@@ -144,7 +153,17 @@ function SoundToggleIcon({ enabled }: { enabled: boolean }) {
 }
 
 function BrandLogo() {
-  return null;
+  return (
+    <header className={styles.brandHeader}>
+      <div className={styles.brandLogo}>
+        <p className={styles.brandSubline}>鉄板焼きダイニング</p>
+        <p className={styles.brandTitle}>
+          <span>かむらど</span>
+          <span className={styles.brandSeal} aria-hidden="true" />
+        </p>
+      </div>
+    </header>
+  );
 }
 
 function getMaxLeftPage(isMobile: boolean): number {
@@ -344,7 +363,11 @@ export default function MenuBook() {
   const tapHintTimerRef = useRef<number | null>(null);
   const flyIdRef = useRef(0);
   const skipPagePulseRef = useRef(true);
-  const pageFlipAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRefs = useRef<Record<MenuSoundId, HTMLAudioElement | null>>({
+    pageFlip: null,
+    cartAdd: null,
+    click: null,
+  });
   const audioUnlockedRef = useRef(false);
 
   const [layout, setLayout] = useState<Layout>(DEFAULT_LAYOUT);
@@ -545,57 +568,76 @@ export default function MenuBook() {
     showToastMessage("✓ カートへ追加しました");
   }, [showToastMessage]);
 
-  const ensurePageFlipAudio = useCallback(() => {
+  const ensureMenuAudio = useCallback((soundId: MenuSoundId) => {
     if (typeof window === "undefined") {
       return null;
     }
 
-    if (!pageFlipAudioRef.current) {
-      const audio = new Audio(PAGE_FLIP_SOUND_SRC);
+    if (!audioRefs.current[soundId]) {
+      const config = MENU_SOUNDS[soundId];
+      const audio = new Audio(config.src);
       audio.preload = "none";
-      audio.volume = PAGE_FLIP_VOLUME;
-      pageFlipAudioRef.current = audio;
+      audio.volume = config.volume;
+      audioRefs.current[soundId] = audio;
     }
 
-    return pageFlipAudioRef.current;
+    return audioRefs.current[soundId];
   }, []);
 
-  const unlockPageFlipAudio = useCallback(() => {
+  const unlockMenuAudio = useCallback(() => {
     if (audioUnlockedRef.current) {
-      return;
-    }
-
-    const audio = ensurePageFlipAudio();
-    if (!audio) {
       return;
     }
 
     audioUnlockedRef.current = true;
 
-    try {
-      audio.load();
-    } catch {
-      // Ignore environments that cannot load audio.
-    }
-  }, [ensurePageFlipAudio]);
+    (Object.keys(MENU_SOUNDS) as MenuSoundId[]).forEach((soundId) => {
+      const audio = ensureMenuAudio(soundId);
+      if (!audio) {
+        return;
+      }
 
-  const playPageFlipSound = useCallback(() => {
-    if (!soundEnabled || !audioUnlockedRef.current) {
-      return;
-    }
+      try {
+        audio.load();
+        const targetVolume = MENU_SOUNDS[soundId].volume;
+        audio.volume = 0;
+        void audio
+          .play()
+          .then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+            audio.volume = targetVolume;
+          })
+          .catch(() => {
+            audio.volume = targetVolume;
+          });
+      } catch {
+        // Ignore environments that cannot load audio.
+      }
+    });
+  }, [ensureMenuAudio]);
 
-    const audio = pageFlipAudioRef.current;
-    if (!audio) {
-      return;
-    }
+  const playMenuSound = useCallback(
+    (soundId: MenuSoundId) => {
+      if (!soundEnabled || !audioUnlockedRef.current) {
+        return;
+      }
 
-    try {
-      audio.currentTime = 0;
-      void audio.play().catch(() => {});
-    } catch {
-      // Ignore environments that cannot play audio.
-    }
-  }, [soundEnabled]);
+      const audio = audioRefs.current[soundId];
+      if (!audio) {
+        return;
+      }
+
+      try {
+        audio.volume = MENU_SOUNDS[soundId].volume;
+        audio.currentTime = 0;
+        void audio.play().catch(() => {});
+      } catch {
+        // Ignore environments that cannot play audio.
+      }
+    },
+    [soundEnabled],
+  );
 
   const toggleSoundEnabled = useCallback(() => {
     setSoundEnabled((current) => {
@@ -670,7 +712,11 @@ export default function MenuBook() {
   );
 
   const changePageQuantity = useCallback(
-    (page: MenuBookPage, delta: number) => {
+    (
+      page: MenuBookPage,
+      delta: number,
+      sound: "cartAdd" | "click" | "none" = "none",
+    ) => {
       if (!isOrderableMenuBookPage(page)) {
         return;
       }
@@ -682,18 +728,21 @@ export default function MenuBook() {
 
       if (updated) {
         applyDraftUpdate(updated);
-        if (delta > 0) {
+        if (delta > 0 && sound === "cartAdd") {
           launchCartFly(page);
+          playMenuSound("cartAdd");
           showAddedToast();
+        } else if (delta !== 0 && sound === "click") {
+          playMenuSound("click");
         }
       }
     },
-    [applyDraftUpdate, launchCartFly, showAddedToast],
+    [applyDraftUpdate, launchCartFly, playMenuSound, showAddedToast],
   );
 
   const addPageToCart = useCallback(
     (page: MenuBookPage) => {
-      changePageQuantity(page, 1);
+      changePageQuantity(page, 1, "cartAdd");
     },
     [changePageQuantity],
   );
@@ -705,7 +754,7 @@ export default function MenuBook() {
         return;
       }
 
-      changePageQuantity(page, delta);
+      changePageQuantity(page, delta, "click");
     },
     [changePageQuantity],
   );
@@ -715,9 +764,10 @@ export default function MenuBook() {
       const updated = updateCartItemRiceSize(itemId, riceSize);
       if (updated) {
         applyDraftUpdate(updated);
+        playMenuSound("click");
       }
     },
-    [applyDraftUpdate],
+    [applyDraftUpdate, playMenuSound],
   );
 
   const startTransition = useCallback(
@@ -747,7 +797,7 @@ export default function MenuBook() {
       setTransitionDirection(direction);
       setTransitionTargetPage(targetPage);
       setIsTransitioning(true);
-      playPageFlipSound();
+      playMenuSound("pageFlip");
 
       if (transitionTimerRef.current !== null) {
         window.clearTimeout(transitionTimerRef.current);
@@ -761,7 +811,7 @@ export default function MenuBook() {
         transitionTimerRef.current = null;
       }, PAGE_TRANSITION_MS);
     },
-    [canGoNext, canGoPrev, currentPage, isTransitioning, layout.isMobile, playPageFlipSound],
+    [canGoNext, canGoPrev, currentPage, isTransitioning, layout.isMobile, playMenuSound],
   );
 
   const finishPointer = useCallback(
@@ -800,7 +850,7 @@ export default function MenuBook() {
       return;
     }
 
-    unlockPageFlipAudio();
+    unlockMenuAudio();
     event.currentTarget.setPointerCapture(event.pointerId);
     activePointerIdRef.current = event.pointerId;
     dragStartXRef.current = event.clientX;
@@ -846,7 +896,7 @@ export default function MenuBook() {
   };
 
   const handlePageNavClick = (direction: PageDirection) => {
-    unlockPageFlipAudio();
+    unlockMenuAudio();
     startTransition(direction);
   };
 
@@ -1015,7 +1065,7 @@ export default function MenuBook() {
                 }
                 aria-pressed={soundEnabled}
                 onClick={() => {
-                  unlockPageFlipAudio();
+                  unlockMenuAudio();
                   toggleSoundEnabled();
                 }}
               >
@@ -1127,7 +1177,7 @@ export default function MenuBook() {
           )}
         </div>
         <div className={styles.footerActions}>
-          <a href={`tel:${PHONE_NUMBER}`} className={styles.footerBtn}>
+          <a href={`tel:${PHONE_NUMBER}`} className={styles.footerBtnPhone}>
             <PhoneIcon />
             <span>
               {layout.isMobile
@@ -1137,7 +1187,7 @@ export default function MenuBook() {
           </a>
           <Link
             href={reserveHref}
-            className={styles.footerBtn}
+            className={styles.footerBtnReserve}
             onClick={handleReserveClick}
           >
             <CartIcon />
