@@ -1,4 +1,5 @@
 import type { MenuBookPage } from "./menuBookPages";
+import { isOrderableMenuBookPage } from "./menuBookPages";
 
 export type CartItem = {
   id: string;
@@ -111,7 +112,11 @@ export function writeDraft(draft: ReservationDraft): ReservationDraft {
   return nextDraft;
 }
 
-export function addMenuBookItemToDraft(page: MenuBookPage): ReservationDraft {
+export function addMenuBookItemToDraft(page: MenuBookPage): ReservationDraft | null {
+  if (!isOrderableMenuBookPage(page)) {
+    return null;
+  }
+
   const draft = readDraft();
   const nextItems = [...draft.items];
   const index = nextItems.findIndex((item) => item.id === page.id);

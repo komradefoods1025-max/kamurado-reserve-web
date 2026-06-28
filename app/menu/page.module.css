@@ -572,38 +572,22 @@
   -webkit-user-drag: none;
 }
 
-.pageOrderMeta {
+.pagePriceBadge {
   position: absolute;
-  left: 5%;
-  right: 5%;
-  bottom: 3.5%;
+  top: 4.5%;
+  right: 4.5%;
   z-index: 7;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 7px 10px;
-  border-radius: 6px;
-  background: rgba(18, 12, 8, 0.74);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
   pointer-events: none;
-}
-
-.pageItemName {
   font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
-  font-size: clamp(0.58rem, 2.6vw, 0.76rem);
-  line-height: 1.35;
-  color: rgba(255, 248, 238, 0.94);
-  letter-spacing: 0.06em;
-}
-
-.pageItemPrice {
-  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
-  font-size: clamp(0.72rem, 3vw, 0.92rem);
-  line-height: 1.2;
+  font-size: clamp(18px, 4.2vw, 22px);
   font-weight: 600;
-  color: #e2c06d;
-  letter-spacing: 0.1em;
+  line-height: 1;
+  color: #d8b15b;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
 }
 
 .cartToast {
@@ -883,8 +867,11 @@
     letter-spacing: 0.2em;
   }
 
-  .pageOrderMeta {
-    padding: 6px 8px;
+  .pagePriceBadge {
+    top: 3.5%;
+    right: 3.5%;
+    font-size: clamp(16px, 4vw, 20px);
+    padding: 5px 10px;
   }
 
   .cartToast {
