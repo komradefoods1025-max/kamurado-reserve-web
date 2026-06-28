@@ -30,6 +30,7 @@ import { turnAnimationEase } from "./pageTurnMath";
 
 const MOBILE_BREAKPOINT = 768;
 const PHONE_NUMBER = "0484415517";
+const PHONE_DISPLAY = "048-441-5517";
 const MAX_DRAG = 148;
 const TURN_THRESHOLD = 0.35;
 const VELOCITY_THRESHOLD = 0.42;
@@ -321,8 +322,8 @@ export default function MenuBook() {
       const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
       const viewportHeight =
         window.visualViewport?.height ?? window.innerHeight;
-      const footerHeight = isMobile ? 210 : 168;
-      const metaHeight = isMobile ? 52 : 72;
+      const footerHeight = isMobile ? 210 : 236;
+      const metaHeight = 52;
       const verticalPadding = isMobile ? 16 : 24;
       const bookShellExtra = 56;
       const horizontalPadding = 28;
@@ -872,7 +873,7 @@ export default function MenuBook() {
             <span className={styles.bookFloorShadow} aria-hidden />
           </div>
 
-          <div className={styles.pageMeta} data-mobile-only>
+          <div className={styles.pageMeta}>
             <div className={styles.counter}>
               {currentPage + 1} / {MENU_BOOK_PAGES.length}
             </div>
@@ -882,99 +883,71 @@ export default function MenuBook() {
       </div>
 
       <div
-        className={
-          layout.isMobile ? styles.footerDockMobile : styles.footerDock
-        }
+        className={styles.footerDock}
+        style={{ maxWidth: layout.spreadWidth + 56 }}
       >
-        {layout.isMobile ? (
-          <>
-            <div className={styles.footerCartPanel}>
-              {cartItems.length === 0 ? (
-                <p className={styles.footerCartEmpty}>
-                  カートに商品が入っていません
-                </p>
-              ) : (
-                <>
-                  <ul className={styles.footerCartList}>
-                    {cartItems.map((item) => (
-                      <li key={item.id} className={styles.footerCartItem}>
-                        <span className={styles.footerCartName}>
-                          {item.name} ×{Number(item.quantity || 0)}
-                        </span>
-                        <div className={styles.footerCartQty}>
-                          <button
-                            type="button"
-                            className={styles.footerCartQtyBtn}
-                            aria-label={`${item.name}の数量を減らす`}
-                            onClick={() => changeCartItemQuantity(item.id, -1)}
-                          >
-                            −
-                          </button>
-                          <span className={styles.footerCartQtyValue}>
-                            {Number(item.quantity || 0)}
-                          </span>
-                          <button
-                            type="button"
-                            className={styles.footerCartQtyBtn}
-                            aria-label={`${item.name}の数量を増やす`}
-                            onClick={() => changeCartItemQuantity(item.id, 1)}
-                          >
-                            ＋
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className={styles.footerCartTotal}>
-                    現在のカート：{cartSummary.count}点 / ¥
-                    {cartSummary.amount.toLocaleString("ja-JP")}
-                  </p>
-                </>
-              )}
-            </div>
-            <div className={styles.footerActions}>
-              <a href={`tel:${PHONE_NUMBER}`} className={styles.footerBtn}>
-                <PhoneIcon />
-                <span>電話する</span>
-              </a>
-              <Link
-                href={reserveHref}
-                className={styles.footerBtn}
-                onClick={handleReserveClick}
-              >
-                <CartIcon />
-                <span>ランチ予約へ</span>
-              </Link>
-            </div>
-          </>
-        ) : (
-          <>
-            <a href={`tel:${PHONE_NUMBER}`} className={styles.footerBtn}>
-              <PhoneIcon />
-              <span>電話する</span>
-            </a>
-
-            <div className={styles.footerCenter}>
-              <div className={styles.counter}>
-                {currentPage + 1} / {MENU_BOOK_PAGES.length}
-              </div>
-              <p className={styles.swipeHint}>スワイプでページをめくれます</p>
-              <p className={styles.cartSummary}>
+        <div className={styles.footerCartPanel}>
+          {cartItems.length === 0 ? (
+            <p className={styles.footerCartEmpty}>
+              カートに商品が入っていません
+            </p>
+          ) : (
+            <>
+              <ul className={styles.footerCartList}>
+                {cartItems.map((item) => (
+                  <li key={item.id} className={styles.footerCartItem}>
+                    <span className={styles.footerCartName}>
+                      {item.name} ×{Number(item.quantity || 0)}
+                    </span>
+                    <div className={styles.footerCartQty}>
+                      <button
+                        type="button"
+                        className={styles.footerCartQtyBtn}
+                        aria-label={`${item.name}の数量を減らす`}
+                        onClick={() => changeCartItemQuantity(item.id, -1)}
+                      >
+                        −
+                      </button>
+                      <span className={styles.footerCartQtyValue}>
+                        {Number(item.quantity || 0)}
+                      </span>
+                      <button
+                        type="button"
+                        className={styles.footerCartQtyBtn}
+                        aria-label={`${item.name}の数量を増やす`}
+                        onClick={() => changeCartItemQuantity(item.id, 1)}
+                      >
+                        ＋
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <p className={styles.footerCartTotal}>
                 現在のカート：{cartSummary.count}点 / ¥
                 {cartSummary.amount.toLocaleString("ja-JP")}
               </p>
-            </div>
-
-            <Link
-              href={reserveHref}
-              className={styles.footerBtn}
-              onClick={handleReserveClick}
-            >
-              <CartIcon />
-              <span>ランチ予約へ</span>
-            </Link>
-          </>
-        )}
+            </>
+          )}
+        </div>
+        <div className={styles.footerActions}>
+          <a href={`tel:${PHONE_NUMBER}`} className={styles.footerBtn}>
+            <PhoneIcon />
+            <span>
+              {layout.isMobile
+                ? "電話する"
+                : `電話する ${PHONE_DISPLAY}`}
+            </span>
+          </a>
+          <Link
+            href={reserveHref}
+            className={styles.footerBtn}
+            onClick={handleReserveClick}
+          >
+            <CartIcon />
+            <span>ランチ予約へ</span>
+          </Link>
+        </div>
       </div>
     </main>
   );
