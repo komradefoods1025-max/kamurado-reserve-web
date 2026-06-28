@@ -1,9 +1,26 @@
 "use client";
 
-export type PremiumSoundId = "pageFlip" | "cartAdd" | "reservationComplete";
+export type PremiumSoundId = "cartAdd" | "reservationComplete";
 
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
 export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
+
+export const PAGE_FLIP_ANIMATION_MS = 850;
+export const PAGE_FLIP_LAND_MS = 150;
+
+export const PAGE_FLIP_SOUND = {
+  rub: {
+    src: "/sounds/page-flip.mp3",
+    volume: 0.55,
+    startOffset: 0.04,
+  },
+  land: {
+    src: "/sounds/page-flip-land.mp3",
+    volume: 0.45,
+    startOffset: 0.62,
+    playDuration: 0.16,
+  },
+} as const;
 
 export const PREMIUM_SOUNDS: Record<
   PremiumSoundId,
@@ -14,7 +31,6 @@ export const PREMIUM_SOUNDS: Record<
     playDuration?: number;
   }
 > = {
-  pageFlip: { src: "/sounds/page-flip.mp3", volume: 0.45 },
   cartAdd: {
     src: "/sounds/cart-add.mp3",
     volume: 0.35,
@@ -27,6 +43,13 @@ export const PREMIUM_SOUNDS: Record<
     startOffset: 0,
     playDuration: 1.1,
   },
+};
+
+type SoundSegmentConfig = {
+  src: string;
+  volume: number;
+  startOffset?: number;
+  playDuration?: number;
 };
 
 let audioContext: AudioContext | null = null;
@@ -114,10 +137,11 @@ async function decodeSound(src: string): Promise<AudioBuffer | null> {
   }
 }
 
-function playWithWebAudio(
-  soundId: PremiumSoundId,
-  config: (typeof PREMIUM_SOUNDS)[PremiumSoundId],
+function scheduleSegmentPlayback(
+  config: SoundSegmentConfig,
   buffer: AudioBuffer,
+  playDuration: number,
+  scheduleDelaySec: number,
 ): boolean {
   const context = getOrCreateContext();
   if (!context) {
@@ -126,12 +150,13 @@ function playWithWebAudio(
 
   const startOffset = config.startOffset ?? 0;
   const availableDuration = Math.max(buffer.duration - startOffset, 0);
-  const playDuration = Math.min(
-    config.playDuration ?? availableDuration,
+  const segmentDuration = Math.min(
+    config.playDuration ?? playDuration,
+    playDuration,
     availableDuration,
   );
 
-  if (playDuration <= 0) {
+  if (segmentDuration <= 0) {
     return false;
   }
 
@@ -142,25 +167,39 @@ function playWithWebAudio(
   source.connect(gain);
   gain.connect(context.destination);
 
-  const now = context.currentTime;
+  const startAt = context.currentTime + scheduleDelaySec;
   const peak = config.volume;
   const fadeOutStart = Math.max(
     PREMIUM_SOUND_FADE_IN_SEC,
-    playDuration - PREMIUM_SOUND_FADE_OUT_SEC,
+    segmentDuration - PREMIUM_SOUND_FADE_OUT_SEC,
   );
 
-  gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(peak, now + PREMIUM_SOUND_FADE_IN_SEC);
-  gain.gain.setValueAtTime(peak, now + fadeOutStart);
-  gain.gain.linearRampToValueAtTime(0, now + playDuration);
+  gain.gain.setValueAtTime(0, startAt);
+  gain.gain.linearRampToValueAtTime(peak, startAt + PREMIUM_SOUND_FADE_IN_SEC);
+  gain.gain.setValueAtTime(peak, startAt + fadeOutStart);
+  gain.gain.linearRampToValueAtTime(0, startAt + segmentDuration);
 
-  source.start(now, startOffset, playDuration);
+  source.start(startAt, startOffset, segmentDuration);
   return true;
 }
 
-function playWithFallback(
-  config: (typeof PREMIUM_SOUNDS)[PremiumSoundId],
-): void {
+function playWithWebAudio(
+  config: SoundSegmentConfig,
+  buffer: AudioBuffer,
+): boolean {
+  const availableDuration = Math.max(
+    buffer.duration - (config.startOffset ?? 0),
+    0,
+  );
+  const playDuration = Math.min(
+    config.playDuration ?? availableDuration,
+    availableDuration,
+  );
+
+  return scheduleSegmentPlayback(config, buffer, playDuration, 0);
+}
+
+function playWithFallback(config: SoundSegmentConfig): void {
   const audio = ensureFallbackAudio(config.src);
 
   try {
@@ -170,6 +209,14 @@ function playWithFallback(
   } catch {
     // Ignore environments that cannot play audio.
   }
+}
+
+function getAllSoundSources(): string[] {
+  return [
+    PAGE_FLIP_SOUND.rub.src,
+    PAGE_FLIP_SOUND.land.src,
+    ...Object.values(PREMIUM_SOUNDS).map((config) => config.src),
+  ];
 }
 
 export function isPremiumAudioUnlocked(): boolean {
@@ -193,25 +240,70 @@ export async function unlockPremiumAudio(): Promise<void> {
   }
 
   await Promise.all(
-    (Object.keys(PREMIUM_SOUNDS) as PremiumSoundId[]).map(async (soundId) => {
-      const config = PREMIUM_SOUNDS[soundId];
-      ensurePreloadElement(config.src);
+    getAllSoundSources().map(async (src) => {
+      ensurePreloadElement(src);
 
-      const audio = ensureFallbackAudio(config.src);
+      const audio = ensureFallbackAudio(src);
       try {
         audio.load();
         audio.volume = 0;
         await audio.play();
         audio.pause();
-        audio.currentTime = config.startOffset ?? 0;
-        audio.volume = config.volume;
+        audio.currentTime = 0;
+        audio.volume = 1;
       } catch {
-        audio.volume = config.volume;
+        // Ignore unlock failures for individual clips.
       }
 
-      await decodeSound(config.src);
+      await decodeSound(src);
     }),
   );
+}
+
+export async function playPageFlipSound(enabled = true): Promise<void> {
+  if (!enabled || !unlocked || typeof window === "undefined") {
+    return;
+  }
+
+  const context = getOrCreateContext();
+  if (context && context.state === "suspended") {
+    try {
+      await context.resume();
+    } catch {
+      // Fall back below.
+    }
+  }
+
+  const animationSec = PAGE_FLIP_ANIMATION_MS / 1000;
+  const landSec = PAGE_FLIP_LAND_MS / 1000;
+  const rubSec = animationSec - landSec;
+
+  const rubBuffer = await decodeSound(PAGE_FLIP_SOUND.rub.src);
+  const landBuffer = await decodeSound(PAGE_FLIP_SOUND.land.src);
+
+  if (rubBuffer && landBuffer && context) {
+    const rubPlayed = scheduleSegmentPlayback(
+      PAGE_FLIP_SOUND.rub,
+      rubBuffer,
+      rubSec,
+      0,
+    );
+    const landPlayed = scheduleSegmentPlayback(
+      PAGE_FLIP_SOUND.land,
+      landBuffer,
+      PAGE_FLIP_SOUND.land.playDuration ?? landSec,
+      rubSec,
+    );
+
+    if (rubPlayed && landPlayed) {
+      return;
+    }
+  }
+
+  playWithFallback(PAGE_FLIP_SOUND.rub);
+  window.setTimeout(() => {
+    playWithFallback(PAGE_FLIP_SOUND.land);
+  }, rubSec * 1000);
 }
 
 export async function playPremiumSound(
@@ -234,7 +326,7 @@ export async function playPremiumSound(
   }
 
   const buffer = await decodeSound(config.src);
-  if (buffer && context && playWithWebAudio(soundId, config, buffer)) {
+  if (buffer && context && playWithWebAudio(config, buffer)) {
     return;
   }
 

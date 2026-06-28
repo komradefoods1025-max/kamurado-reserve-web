@@ -19,6 +19,8 @@ import {
   type MenuBookPage,
 } from "../../lib/menuBookPages";
 import {
+  PAGE_FLIP_ANIMATION_MS,
+  playPageFlipSound,
   playPremiumSound,
   unlockPremiumAudio,
 } from "../../lib/premiumSounds";
@@ -40,7 +42,7 @@ import styles from "./page.module.css";
 const MOBILE_BREAKPOINT = 768;
 const PHONE_NUMBER = "0484415517";
 const PHONE_DISPLAY = "048-441-5517";
-const PAGE_TRANSITION_MS = 420;
+const PAGE_TRANSITION_MS = PAGE_FLIP_ANIMATION_MS;
 const SWIPE_THRESHOLD = 52;
 const VELOCITY_THRESHOLD = 0.42;
 const TAP_THRESHOLD = 12;
@@ -578,12 +580,9 @@ export default function MenuBook() {
     void unlockPremiumAudio();
   }, []);
 
-  const playMenuSound = useCallback(
-    (soundId: "pageFlip" | "cartAdd") => {
-      void playPremiumSound(soundId, soundEnabled);
-    },
-    [soundEnabled],
-  );
+  const triggerCartAddSound = useCallback(() => {
+    void playPremiumSound("cartAdd", soundEnabled);
+  }, [soundEnabled]);
 
   const toggleSoundEnabled = useCallback(() => {
     setSoundEnabled((current) => {
@@ -676,12 +675,12 @@ export default function MenuBook() {
         applyDraftUpdate(updated);
         if (delta > 0 && playCartAddSound) {
           launchCartFly(item);
-          playMenuSound("cartAdd");
+          triggerCartAddSound();
           showAddedToast();
         }
       }
     },
-    [applyDraftUpdate, launchCartFly, playMenuSound, showAddedToast],
+    [applyDraftUpdate, launchCartFly, triggerCartAddSound, showAddedToast],
   );
 
   const addItemToCart = useCallback(
@@ -740,7 +739,7 @@ export default function MenuBook() {
       setTransitionDirection(direction);
       setTransitionTargetPage(targetPage);
       setIsTransitioning(true);
-      playMenuSound("pageFlip");
+      void playPageFlipSound(soundEnabled);
 
       if (transitionTimerRef.current !== null) {
         window.clearTimeout(transitionTimerRef.current);
@@ -754,7 +753,14 @@ export default function MenuBook() {
         transitionTimerRef.current = null;
       }, PAGE_TRANSITION_MS);
     },
-    [canGoNext, canGoPrev, currentPage, isTransitioning, layout.isMobile, playMenuSound],
+    [
+      canGoNext,
+      canGoPrev,
+      currentPage,
+      isTransitioning,
+      layout.isMobile,
+      soundEnabled,
+    ],
   );
 
   const finishPointer = useCallback(
