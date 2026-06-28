@@ -590,6 +590,48 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
 }
 
+.pageQtyControls {
+  position: absolute;
+  right: 4.5%;
+  bottom: 4.5%;
+  z-index: 8;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.48);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+}
+
+.pageQtyBtn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid rgba(216, 177, 91, 0.42);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #d8b15b;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pageQtyBtn:active {
+  transform: translateY(1px);
+}
+
+.pageQtyValue {
+  min-width: 1.2em;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 248, 238, 0.92);
+  letter-spacing: 0.04em;
+}
+
 .cartToast {
   position: fixed;
   left: 50%;
@@ -887,6 +929,23 @@
     right: 3.5%;
     font-size: clamp(16px, 4vw, 20px);
     padding: 5px 10px;
+  }
+
+  .pageQtyControls {
+    right: 3.5%;
+    bottom: 3.5%;
+    gap: 4px;
+    padding: 3px 6px;
+  }
+
+  .pageQtyBtn {
+    width: 22px;
+    height: 22px;
+    font-size: 0.88rem;
+  }
+
+  .pageQtyValue {
+    font-size: 0.72rem;
   }
 
   .cartToast {

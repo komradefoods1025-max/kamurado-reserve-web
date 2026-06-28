@@ -113,7 +113,14 @@ export function writeDraft(draft: ReservationDraft): ReservationDraft {
 }
 
 export function addMenuBookItemToDraft(page: MenuBookPage): ReservationDraft | null {
-  if (!isOrderableMenuBookPage(page)) {
+  return adjustMenuBookItemQuantity(page, 1);
+}
+
+export function adjustMenuBookItemQuantity(
+  page: MenuBookPage,
+  delta: number,
+): ReservationDraft | null {
+  if (!isOrderableMenuBookPage(page) || delta === 0) {
     return null;
   }
 
@@ -121,29 +128,52 @@ export function addMenuBookItemToDraft(page: MenuBookPage): ReservationDraft | n
   const nextItems = [...draft.items];
   const index = nextItems.findIndex((item) => item.id === page.id);
 
-  if (index >= 0) {
-    nextItems[index] = {
-      ...nextItems[index],
-      quantity: Number(nextItems[index].quantity || 0) + 1,
-      price: page.price,
-      name: page.name,
-    };
-  } else {
-    nextItems.push({
-      id: page.id,
-      name: page.name,
-      price: page.price,
-      quantity: 1,
-      imageUrl: page.src,
-      description: "",
-      itemType: page.itemType,
-      selectedOptionLabel: "",
-      selectedOptions: [],
-      note: "",
-    });
+  if (delta > 0) {
+    if (index >= 0) {
+      nextItems[index] = {
+        ...nextItems[index],
+        quantity: Number(nextItems[index].quantity || 0) + delta,
+        price: page.price,
+        name: page.name,
+      };
+    } else {
+      nextItems.push({
+        id: page.id,
+        name: page.name,
+        price: page.price,
+        quantity: delta,
+        imageUrl: page.src,
+        description: "",
+        itemType: page.itemType,
+        selectedOptionLabel: "",
+        selectedOptions: [],
+        note: "",
+      });
+    }
+  } else if (index >= 0) {
+    const nextQuantity = Number(nextItems[index].quantity || 0) + delta;
+
+    if (nextQuantity <= 0) {
+      nextItems.splice(index, 1);
+    } else {
+      nextItems[index] = {
+        ...nextItems[index],
+        quantity: nextQuantity,
+        price: page.price,
+        name: page.name,
+      };
+    }
   }
 
   return writeDraft({ ...draft, items: nextItems });
+}
+
+export function getItemQuantity(
+  itemId: string,
+  draft: ReservationDraft = readDraft(),
+): number {
+  const item = draft.items.find((entry) => entry.id === itemId);
+  return item ? Number(item.quantity || 0) : 0;
 }
 
 export function getCartCount(draft: ReservationDraft = readDraft()): number {

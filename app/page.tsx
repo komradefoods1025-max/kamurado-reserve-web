@@ -40,9 +40,9 @@ export default function HomePage() {
         background: "linear-gradient(180deg, #f5ede2 0%, #efe3d1 100%)",
       }}
     >
-      <div className="mx-auto max-w-5xl">
+      <div className={`mx-auto max-w-5xl ${styles.pageInner}`}>
         <section
-          className="overflow-hidden rounded-[32px]"
+          className={`overflow-hidden rounded-[32px] ${styles.sectionShell}`}
           style={{
             border: "1px solid #e2cfaf",
             background:
@@ -88,10 +88,7 @@ export default function HomePage() {
 
             <div className={`grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-center ${styles.heroGrid}`}>
               <div className={styles.heroCopy}>
-                <h1
-                  className="mb-4 text-[42px] font-bold leading-[1.18] text-[#221a14] sm:text-[58px]"
-                  style={{ wordBreak: "keep-all" }}
-                >
+                <h1 className={styles.heroTitle}>
                   かむらど
                   <br />
                   お弁当ご予約ページ

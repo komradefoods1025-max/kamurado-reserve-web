@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
@@ -18,8 +19,10 @@ import {
 } from "../../lib/menuBookPages";
 import {
   addMenuBookItemToDraft,
+  adjustMenuBookItemQuantity,
   getCartSummary,
   readDraft,
+  type ReservationDraft,
 } from "../../lib/reservationDraft";
 import styles from "./page.module.css";
 
@@ -246,9 +249,20 @@ type MenuPageProps = {
   variant: "left" | "right" | "single";
   empty?: boolean;
   turn: PageTurnState;
+  quantity: number;
+  onIncrement: () => void;
+  onDecrement: () => void;
 };
 
-function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
+function MenuPage({
+  page,
+  variant,
+  empty = false,
+  turn,
+  quantity,
+  onIncrement,
+  onDecrement,
+}: MenuPageProps) {
   const pageClassName = [
     styles.page,
     variant === "left" ? styles.pageLeft : "",
@@ -301,6 +315,36 @@ function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
             {formatMenuPrice(page.price)}
           </span>
         ) : null}
+        {page.orderable && typeof page.id === "string" ? (
+          <div
+            className={styles.pageQtyControls}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className={styles.pageQtyBtn}
+              aria-label={`${page.alt}の数量を減らす`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDecrement();
+              }}
+            >
+              −
+            </button>
+            <span className={styles.pageQtyValue}>{quantity}</span>
+            <button
+              type="button"
+              className={styles.pageQtyBtn}
+              aria-label={`${page.alt}の数量を増やす`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onIncrement();
+              }}
+            >
+              ＋
+            </button>
+          </div>
+        ) : null}
         {showCurl && turn.direction ? (
           <CurlStrips
             page={page}
@@ -334,6 +378,9 @@ export default function MenuBook() {
   const [isSnapBack, setIsSnapBack] = useState(false);
   const [isCompletingTurn, setIsCompletingTurn] = useState(false);
   const [cartSummary, setCartSummary] = useState({ count: 0, amount: 0 });
+  const [itemQuantities, setItemQuantities] = useState<Record<string, number>>(
+    {},
+  );
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -396,9 +443,18 @@ export default function MenuBook() {
     };
   }, []);
 
-  useEffect(() => {
-    setCartSummary(getCartSummary(readDraft()));
+  const applyDraftUpdate = useCallback((draft: ReservationDraft) => {
+    setCartSummary(getCartSummary(draft));
+    const nextQuantities: Record<string, number> = {};
+    draft.items.forEach((item) => {
+      nextQuantities[item.id] = Number(item.quantity || 0);
+    });
+    setItemQuantities(nextQuantities);
   }, []);
+
+  useEffect(() => {
+    applyDraftUpdate(readDraft());
+  }, [applyDraftUpdate]);
 
   useEffect(() => {
     return () => {
@@ -476,8 +532,8 @@ export default function MenuBook() {
     [currentPage, layout.isMobile],
   );
 
-  const showAddedToast = useCallback(() => {
-    setToast("✓ カートへ追加しました");
+  const showToastMessage = useCallback((message: string, duration = 1000) => {
+    setToast(message);
 
     if (toastTimerRef.current !== null) {
       window.clearTimeout(toastTimerRef.current);
@@ -486,23 +542,40 @@ export default function MenuBook() {
     toastTimerRef.current = window.setTimeout(() => {
       setToast(null);
       toastTimerRef.current = null;
-    }, 1000);
+    }, duration);
   }, []);
 
-  const addPageToCart = useCallback(
-    (pageIndex: number) => {
+  const showAddedToast = useCallback(() => {
+    showToastMessage("✓ カートへ追加しました");
+  }, [showToastMessage]);
+
+  const changePageQuantity = useCallback(
+    (pageIndex: number, delta: number) => {
       const page = getMenuBookPage(pageIndex);
       if (!isOrderableMenuBookPage(page)) {
         return;
       }
 
-      const updated = addMenuBookItemToDraft(page);
+      const updated =
+        delta > 0
+          ? addMenuBookItemToDraft(page)
+          : adjustMenuBookItemQuantity(page, delta);
+
       if (updated) {
-        setCartSummary(getCartSummary(updated));
+        applyDraftUpdate(updated);
+        if (delta > 0) {
+          showAddedToast();
+        }
       }
-      showAddedToast();
     },
-    [showAddedToast],
+    [applyDraftUpdate, showAddedToast],
+  );
+
+  const addPageToCart = useCallback(
+    (pageIndex: number) => {
+      changePageQuantity(pageIndex, 1);
+    },
+    [changePageQuantity],
   );
 
   const goPrev = useCallback(() => {
@@ -742,7 +815,16 @@ export default function MenuBook() {
     .filter(Boolean)
     .join(" ");
 
-  const reserveHref = cartSummary.count > 0 ? "/reserve/cart" : "/reserve/menu";
+  const reserveHref = "/reserve/cart";
+
+  const handleReserveClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+  ) => {
+    if (cartSummary.count <= 0) {
+      event.preventDefault();
+      showToastMessage("カートに商品が入っていません");
+    }
+  };
 
   return (
     <main className={styles.wrap}>
@@ -787,6 +869,14 @@ export default function MenuBook() {
                     page={getMenuBookPage(currentPage)}
                     variant={layout.isMobile ? "single" : "left"}
                     turn={buildTurnState(layout.isMobile ? "single" : "left")}
+                    quantity={
+                      getMenuBookPage(currentPage).id
+                        ? (itemQuantities[getMenuBookPage(currentPage).id!] ??
+                          0)
+                        : 0
+                    }
+                    onIncrement={() => changePageQuantity(currentPage, 1)}
+                    onDecrement={() => changePageQuantity(currentPage, -1)}
                   />
 
                   {!layout.isMobile && (
@@ -795,6 +885,17 @@ export default function MenuBook() {
                       variant="right"
                       empty={!rightPage}
                       turn={buildTurnState("right")}
+                      quantity={
+                        rightPage?.id
+                          ? (itemQuantities[rightPage.id] ?? 0)
+                          : 0
+                      }
+                      onIncrement={() =>
+                        changePageQuantity(currentPage + 1, 1)
+                      }
+                      onDecrement={() =>
+                        changePageQuantity(currentPage + 1, -1)
+                      }
                     />
                   )}
                 </div>
@@ -853,7 +954,11 @@ export default function MenuBook() {
       </div>
 
       <div className={styles.actions}>
-        <Link href={reserveHref} className={styles.reserveBtn}>
+        <Link
+          href={reserveHref}
+          className={styles.reserveBtn}
+          onClick={handleReserveClick}
+        >
           <CalendarIcon />
           <span>ランチ予約へ</span>
         </Link>
