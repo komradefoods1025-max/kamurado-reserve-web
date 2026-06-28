@@ -25,20 +25,20 @@ import {
 } from "../../lib/reservationDraft";
 import styles from "./page.module.css";
 import WebGLPageCurl from "./WebGLPageCurl";
+import { turnAnimationEase } from "./pageTurnMath";
 
 const MOBILE_BREAKPOINT = 768;
 const PHONE_NUMBER = "0484415517";
 const MAX_DRAG = 148;
 const TURN_THRESHOLD = 0.35;
 const VELOCITY_THRESHOLD = 0.42;
-const SNAPBACK_MS = 620;
-const COMPLETE_TURN_MS = 640;
-const MESH_SEGMENTS_X_MOBILE = 5;
-const MESH_SEGMENTS_Y_MOBILE = 6;
-const MESH_SEGMENTS_X_DESKTOP = 6;
-const MESH_SEGMENTS_Y_DESKTOP = 5;
+const SNAPBACK_MS = 760;
+const COMPLETE_TURN_MS = 820;
+const MESH_SEGMENTS_X_MOBILE = 12;
+const MESH_SEGMENTS_Y_MOBILE = 10;
+const MESH_SEGMENTS_X_DESKTOP = 16;
+const MESH_SEGMENTS_Y_DESKTOP = 12;
 const TAP_THRESHOLD = 12;
-const TURN_EASE = (t: number) => 1 - Math.pow(1 - t, 3);
 
 type Layout = {
   isMobile: boolean;
@@ -233,12 +233,12 @@ function MenuPage({
           style={showCurl ? { visibility: "hidden" } : undefined}
           draggable={false}
         />
-        {typeof page.price === "number" ? (
+        {typeof page.price === "number" && !showCurl ? (
           <span className={styles.pagePriceBadge} aria-hidden="true">
             {formatMenuPrice(page.price)}
           </span>
         ) : null}
-        {page.orderable && typeof page.id === "string" ? (
+        {page.orderable && typeof page.id === "string" && !showCurl ? (
           <div
             className={styles.pageQtyControls}
             onPointerDown={(event) => event.stopPropagation()}
@@ -541,7 +541,7 @@ export default function MenuBook() {
     const tick = (now: number) => {
       const elapsed = now - startTime;
       const t = Math.min(1, elapsed / SNAPBACK_MS);
-      const eased = TURN_EASE(t);
+      const eased = turnAnimationEase(t);
       setDragOffset(startOffset * (1 - eased));
 
       if (t < 1) {
@@ -579,7 +579,7 @@ export default function MenuBook() {
       const tick = (now: number) => {
         const elapsed = now - startTime;
         const t = Math.min(1, elapsed / COMPLETE_TURN_MS);
-        const eased = TURN_EASE(t);
+        const eased = turnAnimationEase(t);
         setDragOffset(startOffset + (targetOffset - startOffset) * eased);
 
         if (t < 1) {

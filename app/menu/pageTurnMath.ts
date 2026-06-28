@@ -1,32 +1,49 @@
 export type TurnDirection = "next" | "prev";
 
-const BEZIER_X1 = 0.22;
-const BEZIER_Y1 = 1;
-const BEZIER_X2 = 0.36;
-const BEZIER_Y2 = 1;
-
-function cubicBezierComponent(t: number, p0: number, p1: number, p2: number, p3: number): number {
-  const u = 1 - t;
-  return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
+function smoothstep(value: number): number {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * (3 - 2 * t);
 }
 
-function cubicBezierEase(t: number): number {
+/** EaseInOut with a subtle settle bounce at the end (700–900ms animations). */
+export function turnAnimationEase(t: number): number {
   const clamped = Math.max(0, Math.min(1, t));
-  let low = 0;
-  let high = 1;
+  const base =
+    clamped < 0.5
+      ? 4 * clamped * clamped * clamped
+      : 1 - Math.pow(-2 * clamped + 2, 3) / 2;
 
-  for (let i = 0; i < 12; i += 1) {
-    const mid = (low + high) * 0.5;
-    const x = cubicBezierComponent(mid, 0, BEZIER_X1, BEZIER_X2, 1);
-    if (x < clamped) {
-      low = mid;
-    } else {
-      high = mid;
-    }
+  if (clamped > 0.86) {
+    const tail = (clamped - 0.86) / 0.14;
+    const bounce = Math.sin(tail * Math.PI) * 0.038 * (1 - clamped);
+    return Math.min(1, base + bounce);
   }
 
-  const param = (low + high) * 0.5;
-  return cubicBezierComponent(param, 0, BEZIER_Y1, BEZIER_Y2, 1);
+  return base;
+}
+
+function cornerDistance(
+  u: number,
+  v: number,
+  direction: TurnDirection,
+): number {
+  if (direction === "next") {
+    const dx = 1 - u;
+    const dy = 1 - v;
+    return Math.sqrt(dx * dx + dy * dy) / Math.SQRT2;
+  }
+
+  const dx = u;
+  const dy = 1 - v;
+  return Math.sqrt(dx * dx + dy * dy) / Math.SQRT2;
+}
+
+function cornerProximity(
+  u: number,
+  v: number,
+  direction: TurnDirection,
+): number {
+  return 1 - cornerDistance(u, v, direction);
 }
 
 export function computeCurlAmount(
@@ -35,24 +52,19 @@ export function computeCurlAmount(
   progress: number,
   direction: TurnDirection,
 ): number {
-  const reach = 2 * Math.max(0, Math.min(1, progress));
-  if (reach <= 0) {
+  const p = Math.max(0, Math.min(1, progress));
+  if (p <= 0) {
     return 0;
   }
 
-  if (direction === "next") {
-    const cornerDist = (1 - u) + v;
-    if (cornerDist > reach) {
-      return 0;
-    }
-    return cubicBezierEase((reach - cornerDist) / reach);
-  }
-
-  const cornerDist = u + v;
-  if (cornerDist > reach) {
+  const dist = cornerDistance(u, v, direction);
+  const peelRadius = p * 1.02;
+  if (dist > peelRadius) {
     return 0;
   }
-  return cubicBezierEase((reach - cornerDist) / reach);
+
+  const raw = 1 - dist / Math.max(peelRadius, 0.0001);
+  return smoothstep(raw);
 }
 
 export function deformPageVertex(
@@ -70,27 +82,32 @@ export function deformPageVertex(
     return [x0, y0, 0];
   }
 
-  const eased = curl;
-  const arch = Math.sin(eased * Math.PI);
-  const radius = width * (0.26 + arch * 0.1);
-  const edgeBias = direction === "next" ? 1 - u : u;
+  const c = smoothstep(curl);
+  const arch = Math.sin(c * Math.PI);
+  const tip = cornerProximity(u, v, direction);
+  const spineT = direction === "next" ? u : 1 - u;
+  const radius = width * (0.3 + arch * 0.11 + tip * 0.04);
   const theta =
-    eased * Math.PI * 0.5 * (0.82 + edgeBias * 0.18 + v * 0.08);
+    c * Math.PI * 0.52 * spineT * (0.5 + tip * 0.5) * (0.78 + (1 - v) * 0.22);
 
   if (direction === "next") {
     const hingeX = -width * 0.5;
-    const span = x0 - hingeX;
-    const wrapped = radius * Math.sin(theta) * (span / Math.max(width, 1));
-    const depth = radius * (1 - Math.cos(theta)) + arch * width * 0.05;
-    const lift = arch * height * 0.035 * (1 - v);
+    const span = Math.max(0, x0 - hingeX);
+    const spanNorm = span / Math.max(width, 1);
+    const wrapped = radius * Math.sin(theta) * spanNorm * 2;
+    const depth =
+      radius * (1 - Math.cos(theta)) * spanNorm * 2 + arch * width * 0.045 * tip;
+    const lift = arch * height * 0.065 * (1 - v) * (0.35 + tip * 0.65);
     return [hingeX + wrapped, y0 + lift, depth];
   }
 
   const hingeX = width * 0.5;
-  const span = hingeX - x0;
-  const wrapped = radius * Math.sin(theta) * (span / Math.max(width, 1));
-  const depth = radius * (1 - Math.cos(theta)) + arch * width * 0.05;
-  const lift = arch * height * 0.035 * (1 - v);
+  const span = Math.max(0, hingeX - x0);
+  const spanNorm = span / Math.max(width, 1);
+  const wrapped = radius * Math.sin(theta) * spanNorm * 2;
+  const depth =
+    radius * (1 - Math.cos(theta)) * spanNorm * 2 + arch * width * 0.045 * tip;
+  const lift = arch * height * 0.065 * (1 - v) * (0.35 + tip * 0.65);
   return [hingeX - wrapped, y0 + lift, depth];
 }
 
@@ -117,4 +134,9 @@ export function updatePageGeometryPositions(
       index += 3;
     }
   }
+}
+
+export function getTurnShadowOpacity(progress: number): number {
+  const p = Math.max(0, Math.min(1, progress));
+  return smoothstep(p) * 0.42;
 }
