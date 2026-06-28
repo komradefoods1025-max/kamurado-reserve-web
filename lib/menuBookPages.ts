@@ -64,11 +64,11 @@ export const MENU_BOOK_PAGES: MenuBookPage[] = [
   {
     pageNumber: 6,
     src: "/menu/06.jpg",
-    alt: "チキン南蛮弁当",
+    alt: "チキンカツおろしポン酢弁当",
     orderable: true,
-    id: "nanban_bento",
-    name: "チキン南蛮弁当",
-    price: 850,
+    id: "chicken_katsu_oroshi_ponzu_bento",
+    name: "チキンカツおろしポン酢弁当",
+    price: 750,
     itemType: "bento",
   },
   {
