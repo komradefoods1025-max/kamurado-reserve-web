@@ -31,10 +31,12 @@ const PHONE_NUMBER = "0484415517";
 const MAX_DRAG = 148;
 const TURN_THRESHOLD = 0.35;
 const VELOCITY_THRESHOLD = 0.42;
-const SNAPBACK_MS = 380;
-const COMPLETE_TURN_MS = 320;
-const STRIP_COUNT = 10;
+const SNAPBACK_MS = 620;
+const COMPLETE_TURN_MS = 640;
+const STRIP_COUNT_MOBILE = 10;
+const STRIP_COUNT_DESKTOP = 12;
 const TAP_THRESHOLD = 12;
+const TURN_EASE = (t: number) => 1 - Math.pow(1 - t, 3);
 
 type Layout = {
   isMobile: boolean;
@@ -173,69 +175,114 @@ function isPageTurnTarget(
   return variant === "left";
 }
 
-function getStripLocal(
+function smoothstep(value: number): number {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * (3 - 2 * t);
+}
+
+function getStripCurlAmount(
   index: number,
   count: number,
   progress: number,
   direction: "next" | "prev",
 ): number {
-  const t = (index + 0.5) / count;
+  const t = count <= 1 ? 0 : index / (count - 1);
 
   if (direction === "next") {
-    const foldStart = 1 - progress;
-    if (progress <= 0 || t < foldStart) {
+    const curlEdge = 1 - progress;
+    if (progress <= 0 || t < curlEdge) {
       return 0;
     }
-    return (t - foldStart) / Math.max(0.001, 1 - foldStart);
+    return (t - curlEdge) / Math.max(0.001, 1 - curlEdge);
   }
 
-  const foldEnd = progress;
-  if (progress <= 0 || t > foldEnd) {
+  const curlEdge = progress;
+  if (progress <= 0 || t > curlEdge) {
     return 0;
   }
-  return (foldEnd - t) / Math.max(0.001, foldEnd);
+  return (curlEdge - t) / Math.max(0.001, curlEdge);
+}
+
+function getStripTransform(
+  local: number,
+  direction: "next" | "prev",
+): string {
+  if (local <= 0) {
+    return "none";
+  }
+
+  const eased = smoothstep(local);
+  const arch = Math.sin(eased * Math.PI);
+  const rotateY =
+    direction === "next"
+      ? -Math.sin(eased * Math.PI * 0.5) * 94
+      : Math.sin(eased * Math.PI * 0.5) * 94;
+  const translateX =
+    direction === "next" ? -eased * 11 - arch * 4 : eased * 11 + arch * 4;
+  const translateZ = arch * 18;
+  const scaleY = 1 + arch * 0.045;
+
+  return `perspective(1200px) rotateY(${rotateY.toFixed(2)}deg) translateX(${translateX.toFixed(2)}px) translateZ(${translateZ.toFixed(2)}px) scaleY(${scaleY.toFixed(4)})`;
 }
 
 type CurlStripsProps = {
   page: MenuBookPage;
   direction: "next" | "prev";
   progress: number;
+  stripCount: number;
 };
 
-function CurlStrips({ page, direction, progress }: CurlStripsProps) {
+function CurlStrips({
+  page,
+  direction,
+  progress,
+  stripCount,
+}: CurlStripsProps) {
   return (
-    <div className={styles.curlLayer} data-direction={direction} aria-hidden>
+    <div
+      className={styles.curlLayer}
+      data-direction={direction}
+      style={{ ["--turn-progress" as string]: String(progress) }}
+      aria-hidden
+    >
       <span className={styles.curlRootShadow} />
       <span className={styles.curlHighlight} />
-      {Array.from({ length: STRIP_COUNT }, (_, index) => {
-        const local = getStripLocal(index, STRIP_COUNT, progress, direction);
-        const rotateY = direction === "next" ? -local * 88 : local * 88;
-        const translateX = direction === "next" ? -local * 7 : local * 7;
-        const scaleY = 1 + local * 0.04;
+      <span className={styles.curlFloorShadow} />
+      {Array.from({ length: stripCount }, (_, index) => {
+        const local = getStripCurlAmount(
+          index,
+          stripCount,
+          progress,
+          direction,
+        );
+        const bgPos =
+          stripCount <= 1
+            ? "0% center"
+            : `${(index / (stripCount - 1)) * 100}% center`;
         const stripStyle: CSSProperties = {
-          left: `${(index / STRIP_COUNT) * 100}%`,
-          width: `${100 / STRIP_COUNT}%`,
+          left: `${(index / stripCount) * 100}%`,
+          width: `${100 / stripCount}%`,
           zIndex: index + 1,
-          transform: `perspective(900px) rotateY(${rotateY}deg) translateX(${translateX}px) scaleY(${scaleY})`,
+          transform: getStripTransform(local, direction),
           transformOrigin:
             direction === "next" ? "left center" : "right center",
           opacity: local > 0 ? 1 : 0,
           pointerEvents: "none",
+          ["--strip-local" as string]: String(local),
         };
 
         return (
           <div key={index} className={styles.curlStrip} style={stripStyle}>
-            <div className={styles.curlStripFace}>
-              <img
-                src={page.src}
-                alt=""
-                className={styles.curlStripGhost}
-                style={{
-                  width: `${STRIP_COUNT * 100}%`,
-                  left: `${-index * 100}%`,
-                }}
-                draggable={false}
-              />
+            <div
+              className={styles.curlStripFace}
+              style={{
+                backgroundImage: `url(${page.src})`,
+                backgroundSize: `${stripCount * 100}% 96%`,
+                backgroundPosition: bgPos,
+              }}
+            >
+              <span className={styles.curlStripShade} aria-hidden />
+              <span className={styles.curlStripEdge} aria-hidden />
             </div>
           </div>
         );
@@ -252,6 +299,7 @@ type MenuPageProps = {
   quantity: number;
   onIncrement: () => void;
   onDecrement: () => void;
+  stripCount: number;
 };
 
 function MenuPage({
@@ -262,6 +310,7 @@ function MenuPage({
   quantity,
   onIncrement,
   onDecrement,
+  stripCount,
 }: MenuPageProps) {
   const pageClassName = [
     styles.page,
@@ -350,6 +399,7 @@ function MenuPage({
             page={page}
             direction={turn.direction}
             progress={turn.progress}
+            stripCount={stripCount}
           />
         ) : null}
       </div>
@@ -364,7 +414,9 @@ export default function MenuBook() {
   const pendingDragOffsetRef = useRef<number | null>(null);
   const dragRafRef = useRef<number | null>(null);
   const snapBackTimerRef = useRef<number | null>(null);
+  const snapBackAnimRef = useRef<number | null>(null);
   const completeTurnTimerRef = useRef<number | null>(null);
+  const dragOffsetRef = useRef(0);
   const snapBackDirectionRef = useRef<DragDirection>(null);
   const completeTurnDirectionRef = useRef<DragDirection>(null);
   const dragVelocityRef = useRef(0);
@@ -457,6 +509,10 @@ export default function MenuBook() {
   }, [applyDraftUpdate]);
 
   useEffect(() => {
+    dragOffsetRef.current = dragOffset;
+  }, [dragOffset]);
+
+  useEffect(() => {
     return () => {
       if (dragRafRef.current !== null) {
         cancelAnimationFrame(dragRafRef.current);
@@ -464,6 +520,10 @@ export default function MenuBook() {
 
       if (snapBackTimerRef.current !== null) {
         window.clearTimeout(snapBackTimerRef.current);
+      }
+
+      if (snapBackAnimRef.current !== null) {
+        cancelAnimationFrame(snapBackAnimRef.current);
       }
 
       if (completeTurnTimerRef.current !== null) {
@@ -611,6 +671,11 @@ export default function MenuBook() {
   );
 
   const beginSnapBack = useCallback((direction: DragDirection) => {
+    if (snapBackAnimRef.current !== null) {
+      cancelAnimationFrame(snapBackAnimRef.current);
+      snapBackAnimRef.current = null;
+    }
+
     if (!direction) {
       setDragOffset(0);
       return;
@@ -623,17 +688,27 @@ export default function MenuBook() {
       window.clearTimeout(snapBackTimerRef.current);
     }
 
-    snapBackTimerRef.current = window.setTimeout(() => {
+    const startOffset = dragOffsetRef.current;
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const t = Math.min(1, elapsed / SNAPBACK_MS);
+      const eased = TURN_EASE(t);
+      setDragOffset(startOffset * (1 - eased));
+
+      if (t < 1) {
+        snapBackAnimRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      snapBackAnimRef.current = null;
+      setDragOffset(0);
       setIsSnapBack(false);
       snapBackDirectionRef.current = null;
-      snapBackTimerRef.current = null;
-    }, SNAPBACK_MS + 40);
+    };
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setDragOffset(0);
-      });
-    });
+    snapBackAnimRef.current = requestAnimationFrame(tick);
   }, []);
 
   const beginCompleteTurn = useCallback(
@@ -642,27 +717,51 @@ export default function MenuBook() {
         return;
       }
 
-      completeTurnDirectionRef.current = direction;
-      setIsCompletingTurn(true);
-      setDragOffset(direction === "next" ? -MAX_DRAG : MAX_DRAG);
-
-      if (completeTurnTimerRef.current !== null) {
-        window.clearTimeout(completeTurnTimerRef.current);
+      if (snapBackAnimRef.current !== null) {
+        cancelAnimationFrame(snapBackAnimRef.current);
+        snapBackAnimRef.current = null;
       }
 
-      completeTurnTimerRef.current = window.setTimeout(() => {
-        completeTurnDirectionRef.current = null;
-        setIsCompletingTurn(false);
-        setDragOffset(0);
+      completeTurnDirectionRef.current = direction;
+      setIsCompletingTurn(true);
 
-        if (direction === "next") {
-          goNext();
-        } else {
-          goPrev();
+      const startOffset = dragOffsetRef.current;
+      const targetOffset = direction === "next" ? -MAX_DRAG : MAX_DRAG;
+      const startTime = performance.now();
+
+      const tick = (now: number) => {
+        const elapsed = now - startTime;
+        const t = Math.min(1, elapsed / COMPLETE_TURN_MS);
+        const eased = TURN_EASE(t);
+        setDragOffset(startOffset + (targetOffset - startOffset) * eased);
+
+        if (t < 1) {
+          snapBackAnimRef.current = requestAnimationFrame(tick);
+          return;
         }
 
-        completeTurnTimerRef.current = null;
-      }, COMPLETE_TURN_MS);
+        snapBackAnimRef.current = null;
+
+        if (completeTurnTimerRef.current !== null) {
+          window.clearTimeout(completeTurnTimerRef.current);
+        }
+
+        completeTurnTimerRef.current = window.setTimeout(() => {
+          completeTurnDirectionRef.current = null;
+          setIsCompletingTurn(false);
+          setDragOffset(0);
+
+          if (direction === "next") {
+            goNext();
+          } else {
+            goPrev();
+          }
+
+          completeTurnTimerRef.current = null;
+        }, 80);
+      };
+
+      snapBackAnimRef.current = requestAnimationFrame(tick);
     },
     [goNext, goPrev],
   );
@@ -732,6 +831,11 @@ export default function MenuBook() {
       dragRafRef.current = null;
     }
 
+    if (snapBackAnimRef.current !== null) {
+      cancelAnimationFrame(snapBackAnimRef.current);
+      snapBackAnimRef.current = null;
+    }
+
     pendingDragOffsetRef.current = null;
     setIsSnapBack(false);
     snapBackDirectionRef.current = null;
@@ -787,6 +891,9 @@ export default function MenuBook() {
       ? snapBackDirectionRef.current
       : dragDirection;
   const dragProgress = getDragProgress(dragOffset);
+  const stripCount = layout.isMobile
+    ? STRIP_COUNT_MOBILE
+    : STRIP_COUNT_DESKTOP;
 
   const buildTurnState = (
     variant: "left" | "right" | "single",
@@ -877,6 +984,7 @@ export default function MenuBook() {
                     }
                     onIncrement={() => changePageQuantity(currentPage, 1)}
                     onDecrement={() => changePageQuantity(currentPage, -1)}
+                    stripCount={stripCount}
                   />
 
                   {!layout.isMobile && (
@@ -896,6 +1004,7 @@ export default function MenuBook() {
                       onDecrement={() =>
                         changePageQuantity(currentPage + 1, -1)
                       }
+                      stripCount={stripCount}
                     />
                   )}
                 </div>
