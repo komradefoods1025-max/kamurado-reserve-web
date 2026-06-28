@@ -9,15 +9,17 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import {
+  MENU_BOOK_PAGES,
+  getMenuBookPage,
+  type MenuBookPage,
+} from "../../lib/menuBookPages";
+import {
+  addMenuBookItemToDraft,
+  getCartCount,
+  readDraft,
+} from "../../lib/reservationDraft";
 import styles from "./page.module.css";
-
-const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
-  const pageNumber = String(index + 1).padStart(2, "0");
-  return {
-    src: `/menu/${pageNumber}.jpg`,
-    alt: `メニュー ${index + 1}ページ`,
-  };
-});
 
 const MOBILE_BREAKPOINT = 768;
 const PHONE_NUMBER = "0484415517";
@@ -27,6 +29,7 @@ const VELOCITY_THRESHOLD = 0.42;
 const SNAPBACK_MS = 380;
 const COMPLETE_TURN_MS = 320;
 const STRIP_COUNT = 10;
+const TAP_THRESHOLD = 12;
 
 type Layout = {
   isMobile: boolean;
@@ -102,12 +105,12 @@ function BrandLogo() {
 
 function getMaxLeftPage(isMobile: boolean): number {
   if (isMobile) {
-    return MENU_PAGES.length - 1;
+    return MENU_BOOK_PAGES.length - 1;
   }
 
-  return MENU_PAGES.length % 2 === 1
-    ? MENU_PAGES.length - 1
-    : MENU_PAGES.length - 2;
+  return MENU_BOOK_PAGES.length % 2 === 1
+    ? MENU_BOOK_PAGES.length - 1
+    : MENU_BOOK_PAGES.length - 2;
 }
 
 function clampDragOffset(
@@ -189,7 +192,7 @@ function getStripLocal(
 }
 
 type CurlStripsProps = {
-  page: (typeof MENU_PAGES)[number];
+  page: MenuBookPage;
   direction: "next" | "prev";
   progress: number;
 };
@@ -237,7 +240,7 @@ function CurlStrips({ page, direction, progress }: CurlStripsProps) {
 }
 
 type MenuPageProps = {
-  page: (typeof MENU_PAGES)[number];
+  page: MenuBookPage;
   variant: "left" | "right" | "single";
   empty?: boolean;
   turn: PageTurnState;
@@ -291,6 +294,12 @@ function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
           className={styles.pageImage}
           draggable={false}
         />
+        <div className={styles.pageOrderMeta} aria-hidden="true">
+          <span className={styles.pageItemName}>{page.name}</span>
+          <span className={styles.pageItemPrice}>
+            {page.price.toLocaleString("ja-JP")}円
+          </span>
+        </div>
         {showCurl && turn.direction ? (
           <CurlStrips
             page={page}
@@ -304,6 +313,7 @@ function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
 }
 
 export default function MenuBook() {
+  const bookViewRef = useRef<HTMLDivElement>(null);
   const dragStartXRef = useRef(0);
   const activePointerIdRef = useRef<number | null>(null);
   const pendingDragOffsetRef = useRef<number | null>(null);
@@ -314,6 +324,7 @@ export default function MenuBook() {
   const completeTurnDirectionRef = useRef<DragDirection>(null);
   const dragVelocityRef = useRef(0);
   const lastDragSampleRef = useRef({ offset: 0, time: 0 });
+  const toastTimerRef = useRef<number | null>(null);
 
   const [layout, setLayout] = useState<Layout>(DEFAULT_LAYOUT);
   const [currentPage, setCurrentPage] = useState(0);
@@ -321,6 +332,8 @@ export default function MenuBook() {
   const [dragOffset, setDragOffset] = useState(0);
   const [isSnapBack, setIsSnapBack] = useState(false);
   const [isCompletingTurn, setIsCompletingTurn] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     const updateLayout = () => {
@@ -383,6 +396,10 @@ export default function MenuBook() {
   }, []);
 
   useEffect(() => {
+    setCartCount(getCartCount(readDraft()));
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (dragRafRef.current !== null) {
         cancelAnimationFrame(dragRafRef.current);
@@ -394,6 +411,10 @@ export default function MenuBook() {
 
       if (completeTurnTimerRef.current !== null) {
         window.clearTimeout(completeTurnTimerRef.current);
+      }
+
+      if (toastTimerRef.current !== null) {
+        window.clearTimeout(toastTimerRef.current);
       }
     };
   }, []);
@@ -432,6 +453,50 @@ export default function MenuBook() {
   const isLastPage = currentPage >= maxLeftPage;
   const canGoPrev = !isFirstPage;
   const canGoNext = !isLastPage;
+
+  const resolveTappedPageIndex = useCallback(
+    (clientX: number): number => {
+      const element = bookViewRef.current;
+      if (!element || layout.isMobile) {
+        return currentPage;
+      }
+
+      const rect = element.getBoundingClientRect();
+      const relativeX = clientX - rect.left;
+
+      if (relativeX <= rect.width / 2) {
+        return currentPage;
+      }
+
+      return currentPage + 1 < MENU_BOOK_PAGES.length
+        ? currentPage + 1
+        : currentPage;
+    },
+    [currentPage, layout.isMobile],
+  );
+
+  const showAddedToast = useCallback((message: string) => {
+    setToast(message);
+
+    if (toastTimerRef.current !== null) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, 2400);
+  }, []);
+
+  const addPageToCart = useCallback(
+    (pageIndex: number) => {
+      const page = getMenuBookPage(pageIndex);
+      addMenuBookItemToDraft(page);
+      setCartCount(getCartCount());
+      showAddedToast(`${page.name}をカートに追加しました`);
+    },
+    [showAddedToast],
+  );
 
   const goPrev = useCallback(() => {
     setCurrentPage((page) => {
@@ -523,7 +588,7 @@ export default function MenuBook() {
   );
 
   const finishDrag = useCallback(
-    (offsetX: number) => {
+    (offsetX: number, clientX: number) => {
       activePointerIdRef.current = null;
 
       if (dragRafRef.current !== null) {
@@ -559,14 +624,22 @@ export default function MenuBook() {
         return;
       }
 
-      if (offsetX === 0) {
+      if (Math.abs(offsetX) < TAP_THRESHOLD) {
+        addPageToCart(resolveTappedPageIndex(clientX));
         setDragOffset(0);
         return;
       }
 
       beginSnapBack(direction);
     },
-    [beginCompleteTurn, beginSnapBack, canGoNext, canGoPrev],
+    [
+      addPageToCart,
+      beginCompleteTurn,
+      beginSnapBack,
+      canGoNext,
+      canGoPrev,
+      resolveTappedPageIndex,
+    ],
   );
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -620,10 +693,12 @@ export default function MenuBook() {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
 
-    finishDrag(getReleaseOffset(event.clientX));
+    finishDrag(getReleaseOffset(event.clientX), event.clientX);
   };
 
-  const rightPage = layout.isMobile ? null : MENU_PAGES[currentPage + 1];
+  const rightPage = layout.isMobile
+    ? null
+    : MENU_BOOK_PAGES[currentPage + 1] ?? null;
   const hasRightPage = Boolean(rightPage);
   const dragDirection = getDragDirection(dragOffset);
   const activeDirection = isCompletingTurn
@@ -660,9 +735,17 @@ export default function MenuBook() {
     .filter(Boolean)
     .join(" ");
 
+  const reserveHref = cartCount > 0 ? "/reserve/cart" : "/reserve/menu";
+
   return (
     <main className={styles.wrap}>
       <BrandLogo />
+
+      {toast ? (
+        <div className={styles.cartToast} role="status" aria-live="polite">
+          {toast}
+        </div>
+      ) : null}
 
       <div className={styles.stage}>
         <div className={styles.bookArea}>
@@ -684,6 +767,7 @@ export default function MenuBook() {
               <span className={styles.bookCoverEdge} aria-hidden />
               <span className={styles.bookGoldFrame} aria-hidden />
               <div
+                ref={bookViewRef}
                 className={bookViewClassName}
                 style={{ width: layout.spreadWidth }}
                 onPointerDown={handlePointerDown}
@@ -693,14 +777,14 @@ export default function MenuBook() {
               >
                 <div className={styles.spread}>
                   <MenuPage
-                    page={MENU_PAGES[currentPage]}
+                    page={getMenuBookPage(currentPage)}
                     variant={layout.isMobile ? "single" : "left"}
                     turn={buildTurnState(layout.isMobile ? "single" : "left")}
                   />
 
                   {!layout.isMobile && (
                     <MenuPage
-                      page={rightPage ?? MENU_PAGES[currentPage]}
+                      page={rightPage ?? getMenuBookPage(currentPage)}
                       variant="right"
                       empty={!rightPage}
                       turn={buildTurnState("right")}
@@ -719,7 +803,7 @@ export default function MenuBook() {
               role="tablist"
               aria-label="ページインジケーター"
             >
-              {MENU_PAGES.map((page, index) => (
+              {MENU_BOOK_PAGES.map((page, index) => (
                 <button
                   key={page.src}
                   type="button"
@@ -739,7 +823,7 @@ export default function MenuBook() {
 
             <div className={styles.pageMeta}>
               <div className={styles.counter}>
-                {currentPage + 1} / {MENU_PAGES.length}
+                {currentPage + 1} / {MENU_BOOK_PAGES.length}
               </div>
               <p className={styles.swipeHint}>スワイプでページをめくれます</p>
             </div>
@@ -758,7 +842,7 @@ export default function MenuBook() {
       </div>
 
       <div className={styles.actions}>
-        <Link href="/" className={styles.reserveBtn}>
+        <Link href={reserveHref} className={styles.reserveBtn}>
           <CalendarIcon />
           <span>ランチ予約へ</span>
         </Link>
