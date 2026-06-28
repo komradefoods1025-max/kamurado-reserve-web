@@ -324,7 +324,7 @@ export default function ReserveCustomerPage() {
 
               <button
                 type="button"
-                onClick={() => router.push("/reserve/menu")}
+                onClick={() => router.push("/menu")}
                 className={styles.successBtnSecondary}
               >
                 もう一度予約する

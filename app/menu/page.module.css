@@ -6,8 +6,9 @@
   max-height: 100dvh;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 80% 55% at 50% 38%, rgba(255, 255, 255, 0.035), transparent 62%),
-    radial-gradient(ellipse 120% 90% at 50% 100%, rgba(0, 0, 0, 0.72), transparent 58%),
+    radial-gradient(ellipse 72% 48% at 50% 34%, rgba(216, 177, 91, 0.14), transparent 62%),
+    radial-gradient(ellipse 120% 90% at 50% 100%, rgba(0, 0, 0, 0.78), transparent 58%),
+    radial-gradient(ellipse 90% 60% at 50% 50%, rgba(36, 24, 14, 0.42), transparent 72%),
     repeating-linear-gradient(
       135deg,
       rgba(255, 255, 255, 0.012) 0 1px,
@@ -15,16 +16,69 @@
     ),
     repeating-linear-gradient(
       45deg,
-      rgba(255, 255, 255, 0.008) 0 1px,
-      transparent 1px 7px
+      rgba(88, 62, 34, 0.04) 0 1px,
+      transparent 1px 8px
     ),
-    linear-gradient(180deg, #121010 0%, #080707 42%, #030303 100%);
+    linear-gradient(180deg, #14100d 0%, #0a0806 42%, #030303 100%);
   color: #d8c08a;
   padding:
-    max(10px, env(safe-area-inset-top))
+    max(8px, env(safe-area-inset-top))
     10px
     max(10px, env(safe-area-inset-bottom));
   text-align: center;
+}
+
+.brandHeader {
+  flex-shrink: 0;
+  width: 100%;
+  padding: 2px 0 6px;
+}
+
+.brandLogo {
+  animation: brandFadeIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.brandSubline {
+  margin: 0;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  color: rgba(216, 177, 91, 0.72);
+}
+
+.brandTitle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  font-size: clamp(1.35rem, 4.2vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: rgba(232, 204, 140, 0.94);
+}
+
+.brandSeal {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 1px solid rgba(176, 48, 42, 0.82);
+  background: rgba(176, 48, 42, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(255, 236, 198, 0.18);
+}
+
+@keyframes brandFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .stage {
@@ -459,12 +513,12 @@
       rgba(88, 62, 34, 0.05) 0 1px,
       transparent 1px 8px
     ),
-    linear-gradient(180deg, #d8b884 0%, #c49a62 38%, #b88952 100%);
-  border: 1px solid rgba(120, 88, 48, 0.38);
+    linear-gradient(180deg, #efe2c8 0%, #dcc39a 38%, #cfad78 100%);
+  border: 1px solid rgba(196, 162, 92, 0.42);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 236, 198, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -10px 18px rgba(88, 58, 28, 0.12);
+    inset 0 0 0 1px rgba(255, 236, 198, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -10px 18px rgba(88, 58, 28, 0.1);
 }
 
 .pageScene {
@@ -500,7 +554,7 @@
   top: 0;
   bottom: 0;
   right: 0;
-  width: 4px;
+  width: 3px;
   z-index: 2;
   pointer-events: none;
   background: linear-gradient(
@@ -621,9 +675,9 @@
   flex-shrink: 0;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  margin: 12px 0 0;
+  margin: 6px 0 0;
   padding: 0;
 }
 
@@ -696,10 +750,10 @@
   margin: 0;
   line-height: 1.45;
   font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
-  font-size: 0.82rem;
+  font-size: 1.125rem;
   font-weight: 600;
-  color: rgba(232, 204, 140, 0.86);
-  letter-spacing: 0.12em;
+  color: rgba(232, 204, 140, 0.88);
+  letter-spacing: 0.1em;
 }
 
 .swipeHintAnim {
@@ -897,8 +951,13 @@
   width: 100%;
   margin: 0 auto;
   padding:
-    8px 8px
-    calc(8px + env(safe-area-inset-bottom));
+    10px 10px
+    calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(72, 58, 38, 0.55);
+  background:
+    radial-gradient(ellipse 100% 80% at 50% 0%, rgba(255, 236, 198, 0.05), transparent 58%),
+    linear-gradient(180deg, rgba(14, 11, 9, 0.98) 0%, rgba(4, 3, 2, 0.99) 100%);
+  box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.34);
 }
 
 .footerCartPanel {
@@ -1085,7 +1144,9 @@
   width: 100%;
 }
 
-.footerActions .footerBtn {
+.footerActions .footerBtn,
+.footerActions .footerBtnPhone,
+.footerActions .footerBtnReserve {
   width: 100%;
   min-width: 0;
 }
@@ -1111,17 +1172,22 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .brandLogo,
   .swipeFinger,
   .spreadStage[data-pulse="true"] .pageImage,
   .tapHintBubble,
   .cartFlyParticle,
   .footerCartPanel[data-bounce="true"],
-  .footerCartTotal[data-pulse="true"] {
+  .footerCartTotal[data-pulse="true"],
+  .footerBtnPhone::after,
+  .footerBtnReserve::after {
     animation: none !important;
   }
 }
 
-.footerBtn {
+.footerBtn,
+.footerBtnPhone,
+.footerBtnReserve {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1130,24 +1196,70 @@
   min-height: 46px;
   padding: 10px 18px;
   border-radius: 999px;
-  border: 1px solid rgba(196, 162, 92, 0.72);
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255, 236, 198, 0.06), transparent 58%),
-    linear-gradient(180deg, rgba(18, 14, 10, 0.96) 0%, rgba(8, 6, 5, 0.98) 100%);
-  box-shadow:
-    0 8px 20px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 236, 198, 0.08);
-  color: rgba(216, 177, 91, 0.94);
   text-decoration: none;
   font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.12em;
-  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.16s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.footerBtn:active {
-  transform: translateY(1px);
+.footerBtnPhone {
+  border: 1px solid rgba(196, 162, 92, 0.62);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 252, 245, 0.92), rgba(244, 236, 220, 0.96) 58%, rgba(232, 220, 198, 0.94) 100%);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  color: rgba(68, 52, 34, 0.92);
+}
+
+.footerBtnReserve {
+  border: 1px solid rgba(196, 162, 92, 0.82);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 236, 198, 0.28), transparent 58%),
+    linear-gradient(135deg, rgba(196, 162, 92, 0.96) 0%, rgba(154, 122, 58, 0.98) 52%, rgba(120, 88, 36, 0.98) 100%);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 236, 198, 0.28);
+  color: rgba(24, 16, 10, 0.92);
+}
+
+.footerBtnPhone::after,
+.footerBtnReserve::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.16) 48%,
+    transparent 100%
+  );
+  transform: translateX(-120%);
+  animation: footerBtnSheen 4.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes footerBtnSheen {
+  0%,
+  72%,
+  100% {
+    transform: translateX(-120%);
+  }
+
+  82% {
+    transform: translateX(120%);
+  }
+}
+
+.footerBtnPhone:active,
+.footerBtnReserve:active {
+  transform: translateY(2px);
 }
 
 .btnSvg {
@@ -1207,12 +1319,22 @@
   }
 
   .bookShell {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: calc(100% - 72px);
     padding: 16px 14px;
     margin-bottom: 0;
   }
 
+  .guideLine {
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+  }
+
   .bookRow {
     gap: 4px;
+    max-width: 100%;
+    padding-inline: 2px;
   }
 
   .pageNavBtn {
@@ -1226,7 +1348,9 @@
     height: 28px;
   }
 
-  .footerBtn {
+  .footerBtn,
+  .footerBtnPhone,
+  .footerBtnReserve {
     min-width: 0;
     width: 100%;
     min-height: 42px;
@@ -1236,11 +1360,6 @@
 
   .counter {
     font-size: 0.84rem;
-  }
-
-  .guideLine {
-    font-size: 0.76rem;
-    letter-spacing: 0.1em;
   }
 
   .swipeHintAnim {
