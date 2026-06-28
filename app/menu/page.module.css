@@ -682,6 +682,16 @@
   letter-spacing: 0.22em;
 }
 
+.cartSummary {
+  margin: 0;
+  line-height: 1.35;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: rgba(232, 214, 186, 0.52);
+  letter-spacing: 0.12em;
+}
+
 .dots {
   display: flex;
   flex-wrap: wrap;
@@ -865,6 +875,11 @@
   .swipeHint {
     font-size: 0.66rem;
     letter-spacing: 0.2em;
+  }
+
+  .cartSummary {
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
   }
 
   .pagePriceBadge {

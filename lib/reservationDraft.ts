@@ -152,3 +152,19 @@ export function getCartCount(draft: ReservationDraft = readDraft()): number {
     0,
   );
 }
+
+export function getCartAmount(draft: ReservationDraft = readDraft()): number {
+  return draft.items.reduce(
+    (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
+    0,
+  );
+}
+
+export function getCartSummary(
+  draft: ReservationDraft = readDraft(),
+): { count: number; amount: number } {
+  return {
+    count: getCartCount(draft),
+    amount: getCartAmount(draft),
+  };
+}

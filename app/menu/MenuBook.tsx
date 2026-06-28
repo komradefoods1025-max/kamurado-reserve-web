@@ -18,7 +18,7 @@ import {
 } from "../../lib/menuBookPages";
 import {
   addMenuBookItemToDraft,
-  getCartCount,
+  getCartSummary,
   readDraft,
 } from "../../lib/reservationDraft";
 import styles from "./page.module.css";
@@ -333,7 +333,7 @@ export default function MenuBook() {
   const [dragOffset, setDragOffset] = useState(0);
   const [isSnapBack, setIsSnapBack] = useState(false);
   const [isCompletingTurn, setIsCompletingTurn] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
+  const [cartSummary, setCartSummary] = useState({ count: 0, amount: 0 });
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -397,7 +397,7 @@ export default function MenuBook() {
   }, []);
 
   useEffect(() => {
-    setCartCount(getCartCount(readDraft()));
+    setCartSummary(getCartSummary(readDraft()));
   }, []);
 
   useEffect(() => {
@@ -496,8 +496,10 @@ export default function MenuBook() {
         return;
       }
 
-      addMenuBookItemToDraft(page);
-      setCartCount(getCartCount());
+      const updated = addMenuBookItemToDraft(page);
+      if (updated) {
+        setCartSummary(getCartSummary(updated));
+      }
       showAddedToast();
     },
     [showAddedToast],
@@ -740,7 +742,7 @@ export default function MenuBook() {
     .filter(Boolean)
     .join(" ");
 
-  const reserveHref = cartCount > 0 ? "/reserve/cart" : "/reserve/menu";
+  const reserveHref = cartSummary.count > 0 ? "/reserve/cart" : "/reserve/menu";
 
   return (
     <main className={styles.wrap}>
@@ -831,6 +833,10 @@ export default function MenuBook() {
                 {currentPage + 1} / {MENU_BOOK_PAGES.length}
               </div>
               <p className={styles.swipeHint}>スワイプでページをめくれます</p>
+              <p className={styles.cartSummary}>
+                現在のカート：{cartSummary.count}点 / ¥
+                {cartSummary.amount.toLocaleString("ja-JP")}
+              </p>
             </div>
           </div>
 
