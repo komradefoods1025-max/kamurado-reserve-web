@@ -1029,7 +1029,8 @@ export default function MenuBook() {
               <div className={styles.guideText}>
                 <p className={styles.guideLine}>スワイプでページをめくれます</p>
                 <p className={styles.guideLine}>
-                  🛒 商品をタップするとカートへ追加されます
+                  🛒 商品をタップすると
+                  <span className={styles.keepTogether}>カートへ追加されます</span>
                 </p>
               </div>
               <div
