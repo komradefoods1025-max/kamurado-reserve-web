@@ -621,10 +621,224 @@
   flex-shrink: 0;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
   width: 100%;
   margin: 12px 0 0;
   padding: 0;
+}
+
+.guideRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 12px;
+  width: 100%;
+  max-width: min(100%, 440px);
+}
+
+.guideText {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.guideLine {
+  margin: 0;
+  line-height: 1.45;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(232, 204, 140, 0.86);
+  letter-spacing: 0.12em;
+}
+
+.swipeHintAnim {
+  position: relative;
+  flex-shrink: 0;
+  width: 34px;
+  height: 30px;
+  opacity: 0.72;
+}
+
+.swipeHintAnimMirror {
+  transform: scaleX(-1);
+}
+
+.swipeTrack {
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 28px;
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(216, 177, 91, 0.28) 50%,
+    transparent 100%
+  );
+}
+
+.swipeFinger {
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  font-size: 13px;
+  line-height: 1;
+  transform: translateX(-50%);
+  animation: swipeFingerMove 2.5s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes swipeFingerMove {
+  0%,
+  100% {
+    transform: translateX(calc(-50% - 12px));
+    opacity: 0.42;
+  }
+
+  50% {
+    transform: translateX(calc(-50% + 12px));
+    opacity: 0.88;
+  }
+}
+
+.spreadStage[data-pulse="true"] .pageImage {
+  animation: pageSettlePulse 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pageSettlePulse {
+  from {
+    transform: scale(1.02);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+.tapHintBubble {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 9;
+  max-width: calc(100% - 24px);
+  padding: 9px 16px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(196, 162, 92, 0.72);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 236, 198, 0.14), transparent 58%),
+    rgba(18, 12, 8, 0.9);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 236, 198, 0.12);
+  pointer-events: none;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(255, 248, 238, 0.94);
+  white-space: nowrap;
+  animation: tapHintIn 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tapHintBubble[data-fading="true"] {
+  animation: tapHintOut 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes tapHintIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes tapHintOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, -58%) scale(0.96);
+  }
+}
+
+.cartFlyParticle {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 45;
+  font-size: 17px;
+  line-height: 1;
+  pointer-events: none;
+  transform: translate3d(var(--fly-start-x), var(--fly-start-y), 0)
+    translate(-50%, -50%);
+  animation: cartFlyMove 0.5s cubic-bezier(0.33, 0.12, 0.18, 1) forwards;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28));
+}
+
+@keyframes cartFlyMove {
+  0% {
+    transform: translate3d(var(--fly-start-x), var(--fly-start-y), 0)
+      translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate3d(
+        calc(var(--fly-start-x) + var(--fly-dx)),
+        calc(var(--fly-start-y) + var(--fly-dy)),
+        0
+      )
+      translate(-50%, -50%) scale(0.55);
+    opacity: 0.22;
+  }
+}
+
+.footerCartPanel[data-bounce="true"] {
+  animation: footerCartBounce 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes footerCartBounce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.012);
+  }
+}
+
+.footerCartTotal[data-pulse="true"] {
+  animation: cartTotalPulse 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes cartTotalPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    color: rgba(216, 177, 91, 0.56);
+    text-shadow: none;
+  }
+
+  45% {
+    transform: scale(1.05);
+    color: rgba(244, 214, 138, 0.98);
+    text-shadow: 0 0 12px rgba(216, 177, 91, 0.35);
+  }
 }
 
 .footerDock {
@@ -813,6 +1027,8 @@
   color: rgba(216, 177, 91, 0.56);
   letter-spacing: 0.1em;
   text-align: center;
+  transform-origin: center center;
+  will-change: transform, color;
 }
 
 .footerActions {
@@ -845,6 +1061,17 @@
   font-weight: 400;
   color: rgba(216, 177, 91, 0.62);
   letter-spacing: 0.18em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipeFinger,
+  .spreadStage[data-pulse="true"] .pageImage,
+  .tapHintBubble,
+  .cartFlyParticle,
+  .footerCartPanel[data-bounce="true"],
+  .footerCartTotal[data-pulse="true"] {
+    animation: none !important;
+  }
 }
 
 .footerBtn {
@@ -962,6 +1189,24 @@
 
   .counter {
     font-size: 0.84rem;
+  }
+
+  .guideLine {
+    font-size: 0.76rem;
+    letter-spacing: 0.1em;
+  }
+
+  .swipeHintAnim {
+    width: 28px;
+    height: 26px;
+  }
+
+  .swipeFinger {
+    font-size: 12px;
+  }
+
+  .swipeTrack {
+    width: 24px;
   }
 
   .swipeHint {

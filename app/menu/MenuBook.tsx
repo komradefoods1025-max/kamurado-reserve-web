@@ -6,6 +6,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
@@ -37,6 +38,9 @@ const PAGE_TRANSITION_MS = 420;
 const SWIPE_THRESHOLD = 52;
 const VELOCITY_THRESHOLD = 0.42;
 const TAP_THRESHOLD = 12;
+const TAP_HINT_STORAGE_KEY = "kamurado-menu-tap-hint-seen";
+const CART_FLY_MS = 500;
+const PAGE_PULSE_MS = 150;
 
 type Layout = {
   isMobile: boolean;
@@ -133,11 +137,21 @@ function resolveSwipeDirection(
 
 type MenuPageProps = {
   page: MenuBookPage;
+  pageIndex: number;
   variant: "left" | "right" | "single";
   empty?: boolean;
+  showTapHint?: boolean;
+  tapHintFading?: boolean;
 };
 
-function MenuPage({ page, variant, empty = false }: MenuPageProps) {
+function MenuPage({
+  page,
+  pageIndex,
+  variant,
+  empty = false,
+  showTapHint = false,
+  tapHintFading = false,
+}: MenuPageProps) {
   const pageClassName = [
     styles.page,
     variant === "left" ? styles.pageLeft : "",
@@ -164,9 +178,22 @@ function MenuPage({ page, variant, empty = false }: MenuPageProps) {
           draggable={false}
         />
         {typeof page.price === "number" ? (
-          <span className={styles.pagePriceBadge} aria-hidden="true">
+          <span
+            className={styles.pagePriceBadge}
+            data-price-badge={page.id}
+            aria-hidden="true"
+          >
             {formatMenuPrice(page.price)}
           </span>
+        ) : null}
+        {showTapHint && isOrderableMenuBookPage(page) ? (
+          <div
+            className={styles.tapHintBubble}
+            data-fading={tapHintFading ? "true" : undefined}
+            data-page-index={pageIndex}
+          >
+            🛒 タップで追加
+          </div>
         ) : null}
       </div>
     </div>
@@ -176,23 +203,36 @@ function MenuPage({ page, variant, empty = false }: MenuPageProps) {
 type MenuSpreadProps = {
   leftPageIndex: number;
   layout: Layout;
+  showTapHint?: boolean;
+  tapHintFading?: boolean;
 };
 
-function MenuSpread({ leftPageIndex, layout }: MenuSpreadProps) {
+function MenuSpread({
+  leftPageIndex,
+  layout,
+  showTapHint = false,
+  tapHintFading = false,
+}: MenuSpreadProps) {
   const leftPage = getMenuBookPage(leftPageIndex);
   const rightPage = layout.isMobile
     ? null
     : (MENU_BOOK_PAGES[leftPageIndex + 1] ?? null);
 
+  const leftTapHint = showTapHint;
+
   return (
     <div className={styles.spread}>
       <MenuPage
         page={leftPage}
+        pageIndex={leftPageIndex}
         variant={layout.isMobile ? "single" : "left"}
+        showTapHint={leftTapHint}
+        tapHintFading={tapHintFading}
       />
       {!layout.isMobile ? (
         <MenuPage
           page={rightPage ?? leftPage}
+          pageIndex={leftPageIndex + 1}
           variant="right"
           empty={!rightPage}
         />
@@ -211,6 +251,8 @@ function TransitionLayer({
   direction,
   leftPageIndex,
   layout,
+  showTapHint,
+  tapHintFading,
 }: TransitionLayerProps) {
   return (
     <div
@@ -220,19 +262,36 @@ function TransitionLayer({
     >
       <span className={styles.pageTransitionShadow} aria-hidden />
       <span className={styles.pageTransitionEdge} aria-hidden />
-      <MenuSpread leftPageIndex={leftPageIndex} layout={layout} />
+      <MenuSpread
+        leftPageIndex={leftPageIndex}
+        layout={layout}
+        showTapHint={showTapHint}
+        tapHintFading={tapHintFading}
+      />
     </div>
   );
 }
 
+type CartFlyParticle = {
+  id: number;
+  startX: number;
+  startY: number;
+  deltaX: number;
+  deltaY: number;
+};
+
 export default function MenuBook() {
   const bookViewRef = useRef<HTMLDivElement>(null);
+  const footerCartPanelRef = useRef<HTMLDivElement>(null);
   const dragStartXRef = useRef(0);
   const activePointerIdRef = useRef<number | null>(null);
   const dragVelocityRef = useRef(0);
   const lastDragSampleRef = useRef({ x: 0, time: 0 });
   const transitionTimerRef = useRef<number | null>(null);
   const toastTimerRef = useRef<number | null>(null);
+  const tapHintTimerRef = useRef<number | null>(null);
+  const flyIdRef = useRef(0);
+  const skipPagePulseRef = useRef(true);
 
   const [layout, setLayout] = useState<Layout>(DEFAULT_LAYOUT);
   const [currentPage, setCurrentPage] = useState(0);
@@ -245,6 +304,12 @@ export default function MenuBook() {
   const [cartSummary, setCartSummary] = useState({ count: 0, amount: 0 });
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [showTapHint, setShowTapHint] = useState(false);
+  const [tapHintFading, setTapHintFading] = useState(false);
+  const [pagePulse, setPagePulse] = useState(false);
+  const [cartSummaryPulse, setCartSummaryPulse] = useState(false);
+  const [footerBounce, setFooterBounce] = useState(false);
+  const [flyItems, setFlyItems] = useState<CartFlyParticle[]>([]);
 
   useEffect(() => {
     const updateLayout = () => {
@@ -256,7 +321,7 @@ export default function MenuBook() {
       const viewportHeight =
         window.visualViewport?.height ?? window.innerHeight;
       const footerHeight = isMobile ? 210 : 236;
-      const metaHeight = 52;
+      const metaHeight = 88;
       const verticalPadding = isMobile ? 16 : 24;
       const horizontalPadding = 28;
       const maxPageWidth = isMobile ? 380 : 360;
@@ -306,6 +371,51 @@ export default function MenuBook() {
   }, [applyDraftUpdate]);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (window.localStorage.getItem(TAP_HINT_STORAGE_KEY)) {
+      return;
+    }
+
+    setShowTapHint(true);
+
+    tapHintTimerRef.current = window.setTimeout(() => {
+      setTapHintFading(true);
+    }, 2500);
+
+    const hideTimer = window.setTimeout(() => {
+      setShowTapHint(false);
+      window.localStorage.setItem(TAP_HINT_STORAGE_KEY, "1");
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(hideTimer);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isTransitioning) {
+      return;
+    }
+
+    if (skipPagePulseRef.current) {
+      skipPagePulseRef.current = false;
+      return;
+    }
+
+    setPagePulse(true);
+    const timer = window.setTimeout(() => {
+      setPagePulse(false);
+    }, PAGE_PULSE_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [currentPage, isTransitioning]);
+
+  useEffect(() => {
     return () => {
       if (transitionTimerRef.current !== null) {
         window.clearTimeout(transitionTimerRef.current);
@@ -313,6 +423,10 @@ export default function MenuBook() {
 
       if (toastTimerRef.current !== null) {
         window.clearTimeout(toastTimerRef.current);
+      }
+
+      if (tapHintTimerRef.current !== null) {
+        window.clearTimeout(tapHintTimerRef.current);
       }
     };
   }, []);
@@ -365,6 +479,65 @@ export default function MenuBook() {
     showToastMessage("✓ カートへ追加しました");
   }, [showToastMessage]);
 
+  const triggerCartSummaryPulse = useCallback(() => {
+    setCartSummaryPulse(true);
+    window.setTimeout(() => {
+      setCartSummaryPulse(false);
+    }, 420);
+  }, []);
+
+  const launchCartFly = useCallback(
+    (page: MenuBookPage) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          const bookView = bookViewRef.current;
+          const footerPanel = footerCartPanelRef.current;
+          if (!bookView || !footerPanel) {
+            triggerCartSummaryPulse();
+            return;
+          }
+
+          const badge = bookView.querySelector(
+            `[data-price-badge="${page.id}"]`,
+          ) as HTMLElement | null;
+          const bookRect = bookView.getBoundingClientRect();
+          const badgeRect = badge?.getBoundingClientRect();
+          const startX = badgeRect
+            ? badgeRect.left + badgeRect.width / 2
+            : bookRect.right - bookRect.width * 0.12;
+          const startY = badgeRect
+            ? badgeRect.top + badgeRect.height / 2
+            : bookRect.top + bookRect.height * 0.12;
+          const footerRect = footerPanel.getBoundingClientRect();
+          const endX = footerRect.left + footerRect.width / 2;
+          const endY = footerRect.top + Math.min(28, footerRect.height * 0.35);
+
+          const id = ++flyIdRef.current;
+          setFlyItems((current) => [
+            ...current,
+            {
+              id,
+              startX,
+              startY,
+              deltaX: endX - startX,
+              deltaY: endY - startY,
+            },
+          ]);
+
+          window.setTimeout(() => {
+            setFlyItems((current) => current.filter((item) => item.id !== id));
+            triggerCartSummaryPulse();
+            setFooterBounce(true);
+            window.setTimeout(() => {
+              setFooterBounce(false);
+            }, 360);
+          }, CART_FLY_MS);
+        });
+      });
+    },
+    [triggerCartSummaryPulse],
+  );
+
   const changePageQuantity = useCallback(
     (page: MenuBookPage, delta: number) => {
       if (!isOrderableMenuBookPage(page)) {
@@ -379,11 +552,12 @@ export default function MenuBook() {
       if (updated) {
         applyDraftUpdate(updated);
         if (delta > 0) {
+          launchCartFly(page);
           showAddedToast();
         }
       }
     },
-    [applyDraftUpdate, showAddedToast],
+    [applyDraftUpdate, launchCartFly, showAddedToast],
   );
 
   const addPageToCart = useCallback(
@@ -558,11 +732,31 @@ export default function MenuBook() {
 
   const spreadProps = {
     layout,
+    showTapHint,
+    tapHintFading,
   };
 
   return (
     <main className={styles.wrap}>
       <BrandLogo />
+
+      {flyItems.map((item) => (
+        <span
+          key={item.id}
+          className={styles.cartFlyParticle}
+          aria-hidden="true"
+          style={
+            {
+              "--fly-start-x": `${item.startX}px`,
+              "--fly-start-y": `${item.startY}px`,
+              "--fly-dx": `${item.deltaX}px`,
+              "--fly-dy": `${item.deltaY}px`,
+            } as CSSProperties
+          }
+        >
+          🛒
+        </span>
+      ))}
 
       {toast ? (
         <div className={styles.cartToast} role="status" aria-live="polite">
@@ -621,6 +815,7 @@ export default function MenuBook() {
                 <div
                   className={styles.spreadStage}
                   data-transitioning={isTransitioning ? "true" : undefined}
+                  data-pulse={pagePulse ? "true" : undefined}
                   style={{
                     aspectRatio: layout.isMobile ? "1 / 1" : "2 / 1",
                   }}
@@ -671,8 +866,25 @@ export default function MenuBook() {
             <div className={styles.counter}>
               {currentPage + 1} / {MENU_BOOK_PAGES.length}
             </div>
-            <p className={styles.swipeHint}>スワイプでページをめくれます</p>
-            <p className={styles.swipeHint}>商品を押すとカートに追加できます</p>
+            <div className={styles.guideRow}>
+              <div className={styles.swipeHintAnim} aria-hidden="true">
+                <span className={styles.swipeTrack} />
+                <span className={styles.swipeFinger}>👆</span>
+              </div>
+              <div className={styles.guideText}>
+                <p className={styles.guideLine}>スワイプでページをめくれます</p>
+                <p className={styles.guideLine}>
+                  🛒 商品をタップするとカートへ追加されます
+                </p>
+              </div>
+              <div
+                className={`${styles.swipeHintAnim} ${styles.swipeHintAnimMirror}`}
+                aria-hidden="true"
+              >
+                <span className={styles.swipeTrack} />
+                <span className={styles.swipeFinger}>👆</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -681,7 +893,11 @@ export default function MenuBook() {
         className={styles.footerDock}
         style={{ maxWidth: layout.spreadWidth + 56 }}
       >
-        <div className={styles.footerCartPanel}>
+        <div
+          ref={footerCartPanelRef}
+          className={styles.footerCartPanel}
+          data-bounce={footerBounce ? "true" : undefined}
+        >
           {cartItems.length === 0 ? (
             <p className={styles.footerCartEmpty}>
               カートに商品が入っていません
@@ -744,7 +960,10 @@ export default function MenuBook() {
                   </li>
                 ))}
               </ul>
-              <p className={styles.footerCartTotal}>
+              <p
+                className={styles.footerCartTotal}
+                data-pulse={cartSummaryPulse ? "true" : undefined}
+              >
                 現在のカート：{cartSummary.count}点 / ¥
                 {cartSummary.amount.toLocaleString("ja-JP")}
               </p>
