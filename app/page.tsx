@@ -1,4 +1,5 @@
 import Link from "next/link";
+import styles from "./page.module.css";
 
 const FLOW_STEPS = [
   {
@@ -34,7 +35,7 @@ const FLOW_STEPS = [
 export default function HomePage() {
   return (
     <main
-      className="min-h-screen px-4 py-6 text-stone-800"
+      className={`min-h-screen px-4 py-6 text-stone-800 ${styles.page}`}
       style={{
         background: "linear-gradient(180deg, #f5ede2 0%, #efe3d1 100%)",
       }}
@@ -85,8 +86,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-center">
-              <div>
+            <div className={`grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-center ${styles.heroGrid}`}>
+              <div className={styles.heroCopy}>
                 <h1
                   className="mb-4 text-[42px] font-bold leading-[1.18] text-[#221a14] sm:text-[58px]"
                   style={{ wordBreak: "keep-all" }}
@@ -114,15 +115,7 @@ export default function HomePage() {
                 </p>
               </div>
 
-              <div
-                className="rounded-[28px] p-5 sm:p-6"
-                style={{
-                  border: "1px solid #dfc5a0",
-                  background:
-                    "linear-gradient(135deg, #f3dfbf 0%, #ead1ae 100%)",
-                  boxShadow: "0 12px 28px rgba(139, 93, 52, 0.10)",
-                }}
-              >
+              <div className={styles.guideBox}>
                 <div
                   style={{
                     display: "inline-flex",
@@ -160,7 +153,7 @@ export default function HomePage() {
 
             <div className="mt-8 grid gap-3 md:grid-cols-3">
               <Link
-                href="/reserve/menu"
+                href="/menu"
                 className="inline-flex min-h-[68px] items-center justify-center rounded-[22px] px-6 py-4 text-center text-[22px] font-bold transition hover:opacity-95"
                 style={{
                   background: "linear-gradient(135deg, #8b5d34, #a06d3f)",

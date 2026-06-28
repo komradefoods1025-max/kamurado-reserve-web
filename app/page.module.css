@@ -1,0 +1,29 @@
+.page {
+  overflow-x: hidden;
+}
+
+.heroGrid {
+  min-width: 0;
+}
+
+.heroCopy {
+  min-width: 0;
+}
+
+.guideBox {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  border-radius: 28px;
+  padding: 1.25rem;
+  border: 1px solid #dfc5a0;
+  background: linear-gradient(135deg, #f3dfbf 0%, #ead1ae 100%);
+  box-shadow: 0 12px 28px rgba(139, 93, 52, 0.1);
+}
+
+@media (min-width: 640px) {
+  .guideBox {
+    padding: 1.5rem;
+  }
+}
