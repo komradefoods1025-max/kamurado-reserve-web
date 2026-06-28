@@ -1,0 +1,237 @@
+.itemList {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.itemCard {
+  border-radius: 1.5rem;
+  border: 1px solid rgb(231 229 228);
+  background: #fff;
+  padding: 1.5rem;
+}
+
+.itemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.itemMain {
+  min-width: 0;
+  flex: 1;
+}
+
+.itemBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(89, 70, 48, 0.08);
+  color: #6d6258;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.itemName {
+  margin: 0 0 10px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 28px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.itemNameCompact {
+  display: none;
+}
+
+.itemRice {
+  display: none;
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #8a6a42;
+}
+
+.itemPriceDesktop {
+  color: #6d6258;
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+.itemPriceMobile {
+  display: none;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #4e4338;
+  font-weight: 600;
+}
+
+.itemSubtotal {
+  flex-shrink: 0;
+  color: #8a6240;
+  font-weight: 700;
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.itemActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.qtyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  border: 1px solid rgb(214 211 209);
+  font-size: 24px;
+  background: #fffdf9;
+  cursor: pointer;
+}
+
+.qtyValue {
+  min-width: 60px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #2d241c;
+}
+
+.removeBtn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  border-radius: 16px;
+  border: 1px solid rgb(214 211 209);
+  background: #fffdf9;
+  cursor: pointer;
+}
+
+.removeBtnLabelMobile {
+  display: none;
+}
+
+.itemDescription {
+  margin: 0;
+  font-size: 15px;
+}
+
+@media (max-width: 767px) {
+  .itemList {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .itemCard {
+    padding: 14px 14px 12px;
+    border-radius: 1.25rem;
+  }
+
+  .itemHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .itemBadge {
+    padding: 4px 10px;
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .itemName {
+    font-size: 17px;
+    line-height: 1.4;
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .itemNameFull {
+    display: none;
+  }
+
+  .itemNameCompact {
+    display: inline;
+  }
+
+  .itemRice {
+    display: block;
+  }
+
+  .itemPriceDesktop {
+    display: none;
+  }
+
+  .itemPriceMobile {
+    display: block;
+  }
+
+  .itemSubtotal {
+    display: none;
+  }
+
+  .itemActions {
+    gap: 8px;
+    margin-bottom: 0;
+    flex-wrap: nowrap;
+  }
+
+  .qtyBtn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .qtyValue {
+    min-width: 28px;
+    font-size: 20px;
+  }
+
+  .removeBtn {
+    margin-left: auto;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(138, 106, 66, 0.45);
+    background: transparent;
+    color: #8a6a42;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .removeBtnLabelDesktop {
+    display: none;
+  }
+
+  .removeBtnLabelMobile {
+    display: inline;
+  }
+
+  .itemDescription {
+    font-size: 13px;
+    margin-top: 8px;
+  }
+}
