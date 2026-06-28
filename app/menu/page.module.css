@@ -269,19 +269,19 @@
 }
 
 .spreadLayer[data-role="outgoing"][data-direction="next"] {
-  animation: pageSlideOutNext 850ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: pageSlideOutNext 450ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .spreadLayer[data-role="incoming"][data-direction="next"] {
-  animation: pageSlideInNext 850ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: pageSlideInNext 450ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .spreadLayer[data-role="outgoing"][data-direction="prev"] {
-  animation: pageSlideOutPrev 850ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: pageSlideOutPrev 450ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .spreadLayer[data-role="incoming"][data-direction="prev"] {
-  animation: pageSlideInPrev 850ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: pageSlideInPrev 450ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .pageTransitionShadow {
@@ -301,11 +301,11 @@
 }
 
 .spreadLayer[data-direction="next"] .pageTransitionShadow {
-  animation: pageShadowSweepNext 850ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: pageShadowSweepNext 450ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .spreadLayer[data-direction="prev"] .pageTransitionShadow {
-  animation: pageShadowSweepPrev 850ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: pageShadowSweepPrev 450ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .pageTransitionEdge {
@@ -327,12 +327,12 @@
 
 .spreadLayer[data-direction="next"][data-role="outgoing"] .pageTransitionEdge {
   right: 0;
-  animation: pageEdgeFlash 850ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: pageEdgeFlash 450ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .spreadLayer[data-direction="prev"][data-role="outgoing"] .pageTransitionEdge {
   left: 0;
-  animation: pageEdgeFlash 850ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: pageEdgeFlash 450ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes pageSlideOutNext {
