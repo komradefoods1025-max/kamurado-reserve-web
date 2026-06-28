@@ -140,11 +140,239 @@
   cursor: grab;
   user-select: none;
   overflow: hidden;
-  perspective: 1600px;
 }
 
-.bookViewDragging {
+.bookView:active {
   cursor: grabbing;
+}
+
+.bookRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.pageNavBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(196, 162, 92, 0.62);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 236, 198, 0.08), transparent 55%),
+    linear-gradient(180deg, rgba(22, 17, 12, 0.98) 0%, rgba(8, 6, 5, 0.99) 100%);
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 236, 198, 0.08);
+  color: rgba(216, 177, 91, 0.94);
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.16s ease;
+}
+
+.pageNavBtn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.pageNavBtn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.spreadStage {
+  position: relative;
+  width: 100%;
+}
+
+.spreadStage[data-transitioning="true"] {
+  overflow: hidden;
+}
+
+.spreadLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform, opacity;
+}
+
+.spreadLayer[data-role="incoming"] {
+  z-index: 2;
+}
+
+.spreadLayer[data-role="outgoing"] {
+  z-index: 1;
+}
+
+.spreadLayer[data-role="outgoing"][data-direction="next"] {
+  animation: pageSlideOutNext 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.spreadLayer[data-role="incoming"][data-direction="next"] {
+  animation: pageSlideInNext 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.spreadLayer[data-role="outgoing"][data-direction="prev"] {
+  animation: pageSlideOutPrev 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.spreadLayer[data-role="incoming"][data-direction="prev"] {
+  animation: pageSlideInPrev 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.pageTransitionShadow {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(12, 8, 5, 0.06) 24%,
+    rgba(12, 8, 5, 0.26) 50%,
+    rgba(12, 8, 5, 0.06) 76%,
+    transparent 100%
+  );
+  opacity: 0;
+}
+
+.spreadLayer[data-direction="next"] .pageTransitionShadow {
+  animation: pageShadowSweepNext 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.spreadLayer[data-direction="prev"] .pageTransitionShadow {
+  animation: pageShadowSweepPrev 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.pageTransitionEdge {
+  position: absolute;
+  top: 7%;
+  bottom: 7%;
+  width: 1px;
+  z-index: 13;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 236, 198, 0.04) 0%,
+    rgba(216, 177, 91, 0.78) 50%,
+    rgba(255, 236, 198, 0.04) 100%
+  );
+  box-shadow: 0 0 10px rgba(216, 177, 91, 0.28);
+  opacity: 0;
+}
+
+.spreadLayer[data-direction="next"][data-role="outgoing"] .pageTransitionEdge {
+  right: 0;
+  animation: pageEdgeFlash 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.spreadLayer[data-direction="prev"][data-role="outgoing"] .pageTransitionEdge {
+  left: 0;
+  animation: pageEdgeFlash 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes pageSlideOutNext {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-7%);
+  }
+}
+
+@keyframes pageSlideInNext {
+  from {
+    opacity: 0;
+    transform: translateX(7%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pageSlideOutPrev {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(7%);
+  }
+}
+
+@keyframes pageSlideInPrev {
+  from {
+    opacity: 0;
+    transform: translateX(-7%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pageShadowSweepNext {
+  0% {
+    opacity: 0;
+    transform: translateX(38%);
+  }
+
+  42% {
+    opacity: 0.72;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-38%);
+  }
+}
+
+@keyframes pageShadowSweepPrev {
+  0% {
+    opacity: 0;
+    transform: translateX(-38%);
+  }
+
+  42% {
+    opacity: 0.72;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(38%);
+  }
+}
+
+@keyframes pageEdgeFlash {
+  0% {
+    opacity: 0;
+  }
+
+  28% {
+    opacity: 0.92;
+  }
+
+  100% {
+    opacity: 0;
+  }
 }
 
 .bookViewSpread::after {
@@ -206,12 +434,7 @@
   display: flex;
   gap: 0;
   width: 100%;
-}
-
-@property --turn-progress {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
+  height: 100%;
 }
 
 .page {
@@ -242,55 +465,6 @@
     inset 0 0 0 1px rgba(255, 236, 198, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     inset 0 -10px 18px rgba(88, 58, 28, 0.12);
-  --turn-progress: 0;
-  --turn-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --turn-settle-duration: 620ms;
-}
-
-.page[data-settling="true"] {
-  transition:
-    --turn-progress var(--turn-settle-duration) var(--turn-ease),
-    clip-path var(--turn-settle-duration) var(--turn-ease);
-}
-
-.page[data-dragging="true"] {
-  transition: none;
-}
-
-.page[data-turning="true"][data-direction="next"] .pageImage,
-.page[data-turning="true"][data-direction="next"] .pagePriceBadge,
-.page[data-turning="true"][data-direction="next"] .pageQtyControls {
-  clip-path: polygon(
-    0 0,
-    calc((1 - var(--turn-progress)) * 100%) 0,
-    100% calc(var(--turn-progress) * 100%),
-    100% 100%,
-    0 100%
-  );
-}
-
-.page[data-turning="true"][data-direction="prev"] .pageImage,
-.page[data-turning="true"][data-direction="prev"] .pagePriceBadge,
-.page[data-turning="true"][data-direction="prev"] .pageQtyControls {
-  clip-path: polygon(
-    calc(var(--turn-progress) * 100%) 0,
-    100% 0,
-    100% 100%,
-    0 calc(var(--turn-progress) * 100%),
-    0 0
-  );
-}
-
-.page[data-settling="true"] .pageImage,
-.page[data-settling="true"] .pagePriceBadge,
-.page[data-settling="true"] .pageQtyControls {
-  transition: clip-path var(--turn-settle-duration) var(--turn-ease);
-}
-
-.page[data-dragging="true"] .pageImage,
-.page[data-dragging="true"] .pagePriceBadge,
-.page[data-dragging="true"] .pageQtyControls {
-  transition: none;
 }
 
 .pageScene {
@@ -300,8 +474,6 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  transform-style: preserve-3d;
-  transform: perspective(1400px) translateZ(0);
 }
 
 .pagePaperTexture {
@@ -352,68 +524,6 @@
 
 .pageRight {
   box-shadow: inset 3px 0 0 rgba(88, 58, 28, 0.12);
-}
-
-.pageDropShadow {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-  opacity: calc(var(--turn-progress) * 0.88);
-  background: linear-gradient(
-    135deg,
-    transparent calc(18% - var(--turn-progress) * 10%),
-    rgba(16, 10, 6, calc(0.18 + var(--turn-progress) * 0.46))
-      calc(28% + var(--turn-progress) * 16%),
-    rgba(16, 10, 6, calc(0.08 + var(--turn-progress) * 0.2))
-      calc(48% + var(--turn-progress) * 12%),
-    transparent calc(72% + var(--turn-progress) * 8%)
-  );
-}
-
-.page[data-direction="prev"] .pageDropShadow {
-  background: linear-gradient(
-    225deg,
-    transparent calc(18% - var(--turn-progress) * 10%),
-    rgba(16, 10, 6, calc(0.18 + var(--turn-progress) * 0.46))
-      calc(28% + var(--turn-progress) * 16%),
-    rgba(16, 10, 6, calc(0.08 + var(--turn-progress) * 0.2))
-      calc(48% + var(--turn-progress) * 12%),
-    transparent calc(72% + var(--turn-progress) * 8%)
-  );
-}
-
-.pageFallShadow {
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  bottom: 2%;
-  height: 18%;
-  z-index: 2;
-  pointer-events: none;
-  opacity: calc(var(--turn-progress) * 0.78);
-  border-radius: 50%;
-  transform: skewX(calc(var(--turn-progress) * -12deg))
-    translateY(calc(var(--turn-progress) * 6px));
-  background: radial-gradient(
-    ellipse at center,
-    rgba(20, 12, 8, calc(0.22 + var(--turn-progress) * 0.34)) 0%,
-    transparent 72%
-  );
-}
-
-.webglCurl {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.webglCanvas {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
 }
 
 .pageEmpty {
@@ -763,6 +873,16 @@
   .bookShell {
     padding: 16px 14px;
     margin-bottom: 0;
+  }
+
+  .bookRow {
+    gap: 4px;
+  }
+
+  .pageNavBtn {
+    width: 32px;
+    height: 32px;
+    font-size: 1.15rem;
   }
 
   .metalCorner {
