@@ -881,19 +881,24 @@
   }
 }
 
-.cartFlyParticle {
+.cartFlyImage {
   position: fixed;
   left: 0;
   top: 0;
   z-index: 45;
-  font-size: 17px;
-  line-height: 1;
+  width: var(--fly-width);
+  height: var(--fly-height);
+  object-fit: cover;
   pointer-events: none;
+  border-radius: 8px;
+  border: 1px solid rgba(196, 162, 92, 0.52);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 236, 198, 0.08) inset;
   transform: translate3d(var(--fly-start-x), var(--fly-start-y), 0)
-    translate(-50%, -50%);
-  animation: cartFlyMove 0.62s cubic-bezier(0.33, 0.12, 0.18, 1) forwards;
+    translate(-50%, -50%) scale(1);
+  animation: cartFlyMove 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   will-change: transform, opacity;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28));
 }
 
 @keyframes cartFlyMove {
@@ -903,14 +908,18 @@
     opacity: 1;
   }
 
+  55% {
+    opacity: 0.82;
+  }
+
   100% {
     transform: translate3d(
         calc(var(--fly-start-x) + var(--fly-dx)),
         calc(var(--fly-start-y) + var(--fly-dy)),
         0
       )
-      translate(-50%, -50%) scale(0.55);
-    opacity: 0.22;
+      translate(-50%, -50%) scale(0.34);
+    opacity: 0;
   }
 }
 
@@ -1182,7 +1191,7 @@
   .swipeFinger,
   .spreadStage[data-pulse="true"] .pageImage,
   .tapHintBubble,
-  .cartFlyParticle,
+  .cartFlyImage,
   .footerCartPanel[data-bounce="true"],
   .footerCartTotal[data-pulse="true"],
   .footerBtnPhone::after,

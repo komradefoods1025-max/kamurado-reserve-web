@@ -50,8 +50,10 @@ const VELOCITY_THRESHOLD = 0.42;
 const TAP_THRESHOLD = 12;
 const TAP_HINT_STORAGE_KEY = "kamurado-menu-tap-hint-seen";
 const SOUND_ENABLED_STORAGE_KEY = "kamurado-menu-sound-enabled";
-const CART_FLY_MS = 620;
+const CART_FLY_MS = 600;
 const CART_FLY_MAX_PARTICLES = 4;
+const CART_FLY_IMAGE_MAX_PX = 72;
+const CART_FLY_IMAGE_START_RATIO = 0.44;
 const PAGE_PULSE_MS = 150;
 
 type Layout = {
@@ -351,6 +353,9 @@ type CartFlyParticle = {
   startY: number;
   deltaX: number;
   deltaY: number;
+  imageUrl: string;
+  width: number;
+  height: number;
 };
 
 export default function MenuBook() {
@@ -623,23 +628,30 @@ export default function MenuBook() {
             `[data-menu-item-id="${item.id}"]`,
           ) as HTMLElement | null;
           const itemImage = itemRoot?.querySelector("img");
-          const badge = bookView.querySelector(
-            `[data-price-badge="${item.id}"]`,
-          ) as HTMLElement | null;
-          const bookRect = bookView.getBoundingClientRect();
+          const imageUrl = item.image;
           const originRect =
             itemImage?.getBoundingClientRect() ??
-            badge?.getBoundingClientRect() ??
             itemRoot?.getBoundingClientRect();
-          const startX = originRect
-            ? originRect.left + originRect.width / 2
-            : bookRect.right - bookRect.width * 0.12;
-          const startY = originRect
-            ? originRect.top + originRect.height * 0.42
-            : bookRect.top + bookRect.height * 0.12;
+
+          if (!imageUrl || !originRect) {
+            triggerCartSummaryPulse();
+            return;
+          }
+
+          const startX = originRect.left + originRect.width / 2;
+          const startY = originRect.top + originRect.height / 2;
           const footerRect = footerPanel.getBoundingClientRect();
           const endX = footerRect.left + footerRect.width / 2;
           const endY = footerRect.top + Math.min(28, footerRect.height * 0.35);
+
+          const sourceWidth = originRect.width * CART_FLY_IMAGE_START_RATIO;
+          const sourceHeight = originRect.height * CART_FLY_IMAGE_START_RATIO;
+          const shrinkRatio = Math.min(
+            1,
+            CART_FLY_IMAGE_MAX_PX / Math.max(sourceWidth, sourceHeight),
+          );
+          const width = Math.max(32, Math.round(sourceWidth * shrinkRatio));
+          const height = Math.max(32, Math.round(sourceHeight * shrinkRatio));
 
           const id = ++flyIdRef.current;
           setFlyItems((current) => [
@@ -650,6 +662,9 @@ export default function MenuBook() {
               startY,
               deltaX: endX - startX,
               deltaY: endY - startY,
+              imageUrl,
+              width,
+              height,
             },
           ]);
 
@@ -900,21 +915,24 @@ export default function MenuBook() {
       <BrandLogo />
 
       {flyItems.map((item) => (
-        <span
+        <img
           key={item.id}
-          className={styles.cartFlyParticle}
+          src={item.imageUrl}
+          alt=""
+          className={styles.cartFlyImage}
           aria-hidden="true"
+          draggable={false}
           style={
             {
               "--fly-start-x": `${item.startX}px`,
               "--fly-start-y": `${item.startY}px`,
               "--fly-dx": `${item.deltaX}px`,
               "--fly-dy": `${item.deltaY}px`,
+              "--fly-width": `${item.width}px`,
+              "--fly-height": `${item.height}px`,
             } as CSSProperties
           }
-        >
-          🛒
-        </span>
+        />
       ))}
 
       {toast ? (
