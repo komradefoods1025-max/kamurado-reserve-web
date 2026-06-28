@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { formatCartItemLabel } from "../../../lib/reservationDraft";
 import {
+  BOOK_CLOSE_ANIMATION_MS,
   playPremiumSound,
-  RESERVATION_THANKS_DISPLAY_DELAY_MS,
   unlockPremiumAudio,
 } from "../../../lib/premiumSounds";
+import BookCloseOverlay from "../../../components/BookCloseOverlay";
+import ReservationCompleteCelebration from "../../../components/ReservationCompleteCelebration";
 import ReserveStepNav from "../../../components/ReserveStepNav";
 import reserveStyles from "../../../components/reserve.module.css";
 import styles from "./page.module.css";
@@ -196,6 +198,7 @@ export default function ReserveCustomerPage() {
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [bookClosing, setBookClosing] = useState(false);
   const [completed, setCompleted] = useState<{
     reservationNo?: string;
   } | null>(null);
@@ -311,11 +314,14 @@ export default function ReserveCustomerPage() {
 
       clearReservationStorage();
       void playPremiumSound("reservationThanks");
+      void playPremiumSound("bookClose");
+      setBookClosing(true);
       window.setTimeout(() => {
+        setBookClosing(false);
         setCompleted({
           reservationNo,
         });
-      }, RESERVATION_THANKS_DISPLAY_DELAY_MS);
+      }, BOOK_CLOSE_ANIMATION_MS);
     } catch (error) {
       const message =
         error instanceof Error
@@ -339,13 +345,21 @@ export default function ReserveCustomerPage() {
     );
   }
 
+  if (bookClosing) {
+    return (
+      <main className={styles.page}>
+        <BookCloseOverlay />
+      </main>
+    );
+  }
+
   if (completed) {
     return (
       <main className={styles.page}>
         <div className={styles.container}>
           <div className={`${styles.stateCard} ${styles.stateCardSuccess}`}>
             <p className={styles.eyebrow}>COMPLETE</p>
-            <h1 className={reserveStyles.reserveTitle}>ご予約を受け付けました</h1>
+            <ReservationCompleteCelebration />
 
             <div className={styles.successBody}>
               <p>ありがとうございます。ご予約内容を送信しました。</p>

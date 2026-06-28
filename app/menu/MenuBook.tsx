@@ -50,7 +50,8 @@ const VELOCITY_THRESHOLD = 0.42;
 const TAP_THRESHOLD = 12;
 const TAP_HINT_STORAGE_KEY = "kamurado-menu-tap-hint-seen";
 const SOUND_ENABLED_STORAGE_KEY = "kamurado-menu-sound-enabled";
-const CART_FLY_MS = 500;
+const CART_FLY_MS = 620;
+const CART_FLY_MAX_PARTICLES = 4;
 const PAGE_PULSE_MS = 150;
 
 type Layout = {
@@ -618,16 +619,23 @@ export default function MenuBook() {
             return;
           }
 
+          const itemRoot = bookView.querySelector(
+            `[data-menu-item-id="${item.id}"]`,
+          ) as HTMLElement | null;
+          const itemImage = itemRoot?.querySelector("img");
           const badge = bookView.querySelector(
             `[data-price-badge="${item.id}"]`,
           ) as HTMLElement | null;
           const bookRect = bookView.getBoundingClientRect();
-          const badgeRect = badge?.getBoundingClientRect();
-          const startX = badgeRect
-            ? badgeRect.left + badgeRect.width / 2
+          const originRect =
+            itemImage?.getBoundingClientRect() ??
+            badge?.getBoundingClientRect() ??
+            itemRoot?.getBoundingClientRect();
+          const startX = originRect
+            ? originRect.left + originRect.width / 2
             : bookRect.right - bookRect.width * 0.12;
-          const startY = badgeRect
-            ? badgeRect.top + badgeRect.height / 2
+          const startY = originRect
+            ? originRect.top + originRect.height * 0.42
             : bookRect.top + bookRect.height * 0.12;
           const footerRect = footerPanel.getBoundingClientRect();
           const endX = footerRect.left + footerRect.width / 2;
@@ -635,7 +643,7 @@ export default function MenuBook() {
 
           const id = ++flyIdRef.current;
           setFlyItems((current) => [
-            ...current,
+            ...current.slice(-(CART_FLY_MAX_PARTICLES - 1)),
             {
               id,
               startX,

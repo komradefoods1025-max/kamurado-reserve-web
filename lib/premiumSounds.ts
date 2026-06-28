@@ -1,6 +1,7 @@
 "use client";
 
 export type PremiumSoundId =
+  | "bookClose"
   | "cartAdd"
   | "cartThanks"
   | "orderReceived"
@@ -11,7 +12,8 @@ export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
 export const VOICE_PLAYBACK_RATE = 1.17;
 
 export const ORDER_RECEIVED_NAV_DELAY_MS = 300;
-export const RESERVATION_THANKS_DISPLAY_DELAY_MS = 300;
+export const BOOK_CLOSE_ANIMATION_MS = 900;
+export const RESERVATION_THANKS_DISPLAY_DELAY_MS = BOOK_CLOSE_ANIMATION_MS;
 
 export const PAGE_FLIP_ANIMATION_MS = 450;
 export const PAGE_FLIP_LIFT_MS = 100;
@@ -62,6 +64,12 @@ export const PREMIUM_SOUNDS: Record<
     src: "/sounds/reservation-thanks.mp3",
     volume: 0.55,
     playbackRate: VOICE_PLAYBACK_RATE,
+  },
+  bookClose: {
+    src: "/sounds/book-close.mp3",
+    volume: 0.4,
+    startOffset: 0,
+    playDuration: 0.38,
   },
 };
 
