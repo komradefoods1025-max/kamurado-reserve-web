@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -19,6 +20,7 @@ import {
   type MenuBookPage,
 } from "../../lib/menuBookPages";
 import {
+  ORDER_RECEIVED_NAV_DELAY_MS,
   PAGE_FLIP_ANIMATION_MS,
   playPageFlipSound,
   playPremiumSound,
@@ -351,6 +353,7 @@ type CartFlyParticle = {
 };
 
 export default function MenuBook() {
+  const router = useRouter();
   const bookViewRef = useRef<HTMLDivElement>(null);
   const footerCartPanelRef = useRef<HTMLDivElement>(null);
   const dragStartXRef = useRef(0);
@@ -673,14 +676,17 @@ export default function MenuBook() {
 
       if (updated) {
         applyDraftUpdate(updated);
-        if (delta > 0 && playCartAddSound) {
-          launchCartFly(item);
-          triggerCartAddSound();
-          showAddedToast();
+        if (delta > 0) {
+          void playPremiumSound("cartThanks", soundEnabled);
+          if (playCartAddSound) {
+            launchCartFly(item);
+            triggerCartAddSound();
+            showAddedToast();
+          }
         }
       }
     },
-    [applyDraftUpdate, launchCartFly, triggerCartAddSound, showAddedToast],
+    [applyDraftUpdate, launchCartFly, soundEnabled, triggerCartAddSound, showAddedToast],
   );
 
   const addItemToCart = useCallback(
@@ -864,7 +870,15 @@ export default function MenuBook() {
     if (cartSummary.count <= 0) {
       event.preventDefault();
       showToastMessage("カートに商品が入っていません");
+      return;
     }
+
+    event.preventDefault();
+    unlockMenuAudio();
+    void playPremiumSound("orderReceived", soundEnabled);
+    window.setTimeout(() => {
+      router.push(reserveHref);
+    }, ORDER_RECEIVED_NAV_DELAY_MS);
   };
 
   const spreadProps = {
