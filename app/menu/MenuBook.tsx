@@ -335,8 +335,14 @@ export default function MenuBook() {
       const logoHeight = 72;
       const dotsHeight = 44;
       const verticalPadding = 20;
-      const navSpace = isMobile ? 84 : 108;
-      const horizontalPadding = 24;
+      const navBtnWidth = isMobile ? 32 : 36;
+      const navGap = isMobile ? 6 : 10;
+      const bookShellExtra = 28;
+      const bookAreaPadding = isMobile ? 16 : 0;
+      const navSpace = isMobile
+        ? navBtnWidth * 2 + navGap * 2 + bookShellExtra
+        : 108;
+      const horizontalPadding = 24 + bookAreaPadding;
       const maxPageWidth = isMobile ? 360 : 340;
 
       const maxPageHeight = Math.max(
@@ -731,8 +737,11 @@ export default function MenuBook() {
               ))}
             </div>
 
-            <div className={styles.counter}>
-              {currentPage + 1} / {MENU_PAGES.length}
+            <div className={styles.pageMeta}>
+              <div className={styles.counter}>
+                {currentPage + 1} / {MENU_PAGES.length}
+              </div>
+              <p className={styles.swipeHint}>スワイプでページをめくれます</p>
             </div>
           </div>
 
