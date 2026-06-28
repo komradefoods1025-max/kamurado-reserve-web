@@ -4,12 +4,14 @@ export type PremiumSoundId =
   | "cartAdd"
   | "cartThanks"
   | "orderReceived"
-  | "reservationComplete";
+  | "reservationThanks";
 
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
 export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
+export const VOICE_PLAYBACK_RATE = 1.17;
 
 export const ORDER_RECEIVED_NAV_DELAY_MS = 300;
+export const RESERVATION_THANKS_DISPLAY_DELAY_MS = 300;
 
 export const PAGE_FLIP_ANIMATION_MS = 450;
 export const PAGE_FLIP_LIFT_MS = 100;
@@ -37,6 +39,7 @@ export const PREMIUM_SOUNDS: Record<
     volume: number;
     startOffset?: number;
     playDuration?: number;
+    playbackRate?: number;
   }
 > = {
   cartAdd: {
@@ -48,16 +51,17 @@ export const PREMIUM_SOUNDS: Record<
   cartThanks: {
     src: "/sounds/cart-thanks.mp3",
     volume: 0.45,
+    playbackRate: VOICE_PLAYBACK_RATE,
   },
   orderReceived: {
     src: "/sounds/order-received.mp3",
     volume: 0.5,
+    playbackRate: VOICE_PLAYBACK_RATE,
   },
-  reservationComplete: {
-    src: "/sounds/reservation-complete.mp3",
-    volume: 0.5,
-    startOffset: 0,
-    playDuration: 1.1,
+  reservationThanks: {
+    src: "/sounds/reservation-thanks.mp3",
+    volume: 0.55,
+    playbackRate: VOICE_PLAYBACK_RATE,
   },
 };
 
@@ -66,6 +70,7 @@ type SoundSegmentConfig = {
   volume: number;
   startOffset?: number;
   playDuration?: number;
+  playbackRate?: number;
 };
 
 let audioContext: AudioContext | null = null;
@@ -165,19 +170,22 @@ function scheduleSegmentPlayback(
   }
 
   const startOffset = config.startOffset ?? 0;
+  const playbackRate = config.playbackRate ?? 1;
   const availableDuration = Math.max(buffer.duration - startOffset, 0);
-  const segmentDuration = Math.min(
-    config.playDuration ?? playDuration,
-    playDuration,
+  const bufferDuration = Math.min(
+    config.playDuration ?? availableDuration,
+    playDuration > 0 ? playDuration * playbackRate : availableDuration,
     availableDuration,
   );
+  const wallClockDuration = bufferDuration / playbackRate;
 
-  if (segmentDuration <= 0) {
+  if (bufferDuration <= 0 || wallClockDuration <= 0) {
     return false;
   }
 
   const source = context.createBufferSource();
   source.buffer = buffer;
+  source.playbackRate.value = playbackRate;
 
   const gain = context.createGain();
   source.connect(gain);
@@ -187,15 +195,15 @@ function scheduleSegmentPlayback(
   const peak = config.volume;
   const fadeOutStart = Math.max(
     PREMIUM_SOUND_FADE_IN_SEC,
-    segmentDuration - PREMIUM_SOUND_FADE_OUT_SEC,
+    wallClockDuration - PREMIUM_SOUND_FADE_OUT_SEC,
   );
 
   gain.gain.setValueAtTime(0, startAt);
   gain.gain.linearRampToValueAtTime(peak, startAt + PREMIUM_SOUND_FADE_IN_SEC);
   gain.gain.setValueAtTime(peak, startAt + fadeOutStart);
-  gain.gain.linearRampToValueAtTime(0, startAt + segmentDuration);
+  gain.gain.linearRampToValueAtTime(0, startAt + wallClockDuration);
 
-  source.start(startAt, startOffset, segmentDuration);
+  source.start(startAt, startOffset, bufferDuration);
   return true;
 }
 
@@ -203,16 +211,20 @@ function playWithWebAudio(
   config: SoundSegmentConfig,
   buffer: AudioBuffer,
 ): boolean {
-  const availableDuration = Math.max(
-    buffer.duration - (config.startOffset ?? 0),
-    0,
-  );
-  const playDuration = Math.min(
+  const playbackRate = config.playbackRate ?? 1;
+  const startOffset = config.startOffset ?? 0;
+  const availableDuration = Math.max(buffer.duration - startOffset, 0);
+  const bufferPlayDuration = Math.min(
     config.playDuration ?? availableDuration,
     availableDuration,
   );
 
-  return scheduleSegmentPlayback(config, buffer, playDuration, 0);
+  return scheduleSegmentPlayback(
+    config,
+    buffer,
+    bufferPlayDuration / playbackRate,
+    0,
+  );
 }
 
 function playWithFallback(config: SoundSegmentConfig): void {
@@ -221,6 +233,7 @@ function playWithFallback(config: SoundSegmentConfig): void {
   try {
     audio.currentTime = config.startOffset ?? 0;
     audio.volume = config.volume;
+    audio.playbackRate = config.playbackRate ?? 1;
     void audio.play().catch(() => {});
   } catch {
     // Ignore environments that cannot play audio.
