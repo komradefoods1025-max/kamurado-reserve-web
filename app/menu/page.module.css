@@ -493,6 +493,10 @@
   letter-spacing: 0.04em;
 }
 
+.telTitle {
+  white-space: nowrap;
+}
+
 @media (max-width: 767px) {
   .bookArea {
     gap: 8px;
@@ -528,7 +532,26 @@
     font-size: 15px;
   }
 
+  .telBtn {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    font-size: 15px;
+    padding: 0 12px;
+  }
+
+  .telTitle {
+    font-size: 15px;
+    white-space: nowrap;
+  }
+
   .telNumber {
-    font-size: 12px;
+    font-size: 14px;
+    white-space: nowrap;
+    letter-spacing: 0.03em;
   }
 }

@@ -21,6 +21,14 @@ const MENU_PAGES = Array.from({ length: 11 }, (_, index) => {
 
 const MOBILE_BREAKPOINT = 768;
 const PHONE_NUMBER = "0484415517";
+
+function PhoneIcon() {
+  return (
+    <span className={styles.btnIcon} aria-hidden="true">
+      ☎
+    </span>
+  );
+}
 const MAX_DRAG = 148;
 const TURN_THRESHOLD = 0.35;
 const VELOCITY_THRESHOLD = 0.42;
@@ -549,10 +557,8 @@ export default function MenuBook() {
           <span>ランチ予約へ</span>
         </Link>
         <a href={`tel:${PHONE_NUMBER}`} className={styles.telBtn}>
-          <span className={styles.btnIcon} aria-hidden="true">
-            ☎
-          </span>
-          <span>電話する</span>
+          <PhoneIcon />
+          <span className={styles.telTitle}>電話する</span>
           <span className={styles.telNumber}>048-441-5517</span>
         </a>
       </div>
