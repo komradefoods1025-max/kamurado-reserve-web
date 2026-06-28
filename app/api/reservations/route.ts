@@ -47,7 +47,69 @@ function normalizeItems(items: unknown) {
   });
 }
 
-async function postToGas(payload: unknown) {
+type GasPostResult = {
+  ok: boolean;
+  status: number;
+  rawText: string;
+  data: any;
+};
+
+function extractGasErrorMessage(gasResult: GasPostResult) {
+  const parsed =
+    gasResult.data && typeof gasResult.data === "object"
+      ? (gasResult.data as Record<string, unknown>)
+      : null;
+
+  const error =
+    (parsed?.error && String(parsed.error)) ||
+    (parsed?.message && String(parsed.message)) ||
+    (gasResult.rawText.trim() || "") ||
+    `GASへの送信でHTTPエラーが発生しました (${gasResult.status})`;
+
+  return {
+    message: error,
+    error,
+    stack: parsed?.stack ? String(parsed.stack) : null,
+    detail: parsed ?? gasResult.rawText,
+    gasStatus: gasResult.status,
+  };
+}
+
+function logGasHttpError(
+  action: string,
+  gasResult: GasPostResult,
+  payload?: unknown,
+) {
+  console.error(`[reservations/${action}] GAS HTTP error`, {
+    status: gasResult.status,
+    responseText: gasResult.rawText,
+    parsed: gasResult.data,
+    payload,
+  });
+}
+
+function buildGasFailureResponse(
+  action: string,
+  gasResult: GasPostResult,
+  payload?: unknown,
+) {
+  logGasHttpError(action, gasResult, payload);
+  const gasError = extractGasErrorMessage(gasResult);
+
+  return NextResponse.json(
+    {
+      ok: false,
+      message: gasError.message,
+      error: gasError.error,
+      stack: gasError.stack,
+      detail: gasError.detail,
+      gasStatus: gasError.gasStatus,
+    },
+    { status: 500 },
+  );
+}
+
+async function postToGas(payload: unknown): Promise<GasPostResult> {
   if (!SAVE_URL) {
     return {
       ok: false,
@@ -110,14 +172,10 @@ async function handleGetLatestReservation(body: any) {
   });
 
   if (!gasResult.ok) {
-    return NextResponse.json(
-      {
-        ok: false,
-        message: `GASへの送信でHTTPエラーが発生しました (${gasResult.status})`,
-        detail: gasResult.rawText,
-      },
-      { status: 500 }
-    );
+    return buildGasFailureResponse("getLatestReservation", gasResult, {
+      action: "getLatestReservation",
+      phone,
+    });
   }
 
   const data = gasResult.data;
@@ -270,14 +328,11 @@ async function handleUpdateReservation(body: any) {
   });
 
   if (!gasResult.ok) {
-    return NextResponse.json(
-      {
-        ok: false,
-        message: `GASへの送信でHTTPエラーが発生しました (${gasResult.status})`,
-        detail: gasResult.rawText,
-      },
-      { status: 500 }
-    );
+    return buildGasFailureResponse("updateReservation", gasResult, {
+      action: "updateReservation",
+      reservationNo,
+      items,
+    });
   }
 
   const data = gasResult.data;
@@ -333,14 +388,11 @@ async function handleCancelReservation(body: any) {
   });
 
   if (!gasResult.ok) {
-    return NextResponse.json(
-      {
-        ok: false,
-        message: `GASへの送信でHTTPエラーが発生しました (${gasResult.status})`,
-        detail: gasResult.rawText,
-      },
-      { status: 500 }
-    );
+    return buildGasFailureResponse("cancelReservation", gasResult, {
+      action: "cancelReservation",
+      reservationNo,
+      phone,
+    });
   }
 
   const data = gasResult.data;
@@ -427,17 +479,16 @@ async function handleCreateReservation(body: any) {
     status: "受付済み",
   };
 
+  console.log("[reservations/create] incoming body.items", body?.items ?? []);
+  console.log(
+    "[reservations/create] payload",
+    JSON.stringify(payload, null, 2),
+  );
+
   const gasResult = await postToGas(payload);
 
   if (!gasResult.ok) {
-    return NextResponse.json(
-      {
-        ok: false,
-        message: `GASへの送信でHTTPエラーが発生しました (${gasResult.status})`,
-        detail: gasResult.rawText,
-      },
-      { status: 500 }
-    );
+    return buildGasFailureResponse("create", gasResult, payload);
   }
 
   const data = gasResult.data;

@@ -144,6 +144,8 @@
   font-size: 0.875rem;
   line-height: 1.5;
   color: rgb(185 28 28);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .actionRow {

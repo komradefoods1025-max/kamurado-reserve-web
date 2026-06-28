@@ -46,7 +46,9 @@ type SubmitResponse = {
   id?: string;
   message?: string;
   error?: string;
+  stack?: string;
   detail?: unknown;
+  gasStatus?: number;
 };
 
 const CART_KEYS = [
@@ -127,7 +129,31 @@ function isValidJapanesePhone(phone: string) {
   return /^0\d{9,10}$/.test(digits);
 }
 
+function formatReservationSubmitError(
+  data: SubmitResponse,
+  rawText: string,
+  status: number,
+) {
+  const lines = [
+    data.error,
+    data.message,
+    data.stack,
+  ].filter((line): line is string => Boolean(line && String(line).trim()));
+
+  if (lines.length > 0) {
+    return Array.from(new Set(lines)).join("\n");
+  }
+
+  if (rawText.trim()) {
+    return rawText.trim();
+  }
+
+  return `予約送信に失敗しました (HTTP ${status})`;
+}
+
 async function submitReservation(payload: Record<string, unknown>) {
+  console.log("[reserve/customer] reservation payload", payload);
+
   const res = await fetch("/api/reservations", {
     method: "POST",
     headers: {
@@ -146,9 +172,13 @@ async function submitReservation(payload: Record<string, unknown>) {
   }
 
   if (!res.ok || data.ok === false) {
-    throw new Error(
-      data.message || data.error || "予約送信に失敗しました。"
-    );
+    console.error("[reserve/customer] reservation submit failed", {
+      status: res.status,
+      responseText: rawText,
+      data,
+    });
+
+    throw new Error(formatReservationSubmitError(data, rawText, res.status));
   }
 
   return data;
