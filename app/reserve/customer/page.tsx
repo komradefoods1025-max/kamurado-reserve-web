@@ -7,6 +7,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { formatCartItemLabel } from "../../../lib/reservationDraft";
 import ReserveStepNav from "../../../components/ReserveStepNav";
 import reserveStyles from "../../../components/reserve.module.css";
+import styles from "./page.module.css";
 
 type CartItem = {
   id: string;
@@ -289,9 +290,11 @@ export default function ReserveCustomerPage() {
 
   if (!loaded) {
     return (
-      <main className="min-h-screen bg-stone-50 px-4 py-8">
-        <div className="mx-auto max-w-4xl rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-          <p className="text-sm text-stone-500">お客様情報を読み込み中です…</p>
+      <main className={styles.page}>
+        <div className={styles.container}>
+          <div className={styles.stateCard}>
+            <p className={styles.subtitle}>お客様情報を読み込み中です…</p>
+          </div>
         </div>
       </main>
     );
@@ -299,35 +302,34 @@ export default function ReserveCustomerPage() {
 
   if (completed) {
     return (
-      <main className="min-h-screen bg-stone-50 px-4 py-8 text-stone-800">
-        <div className="mx-auto max-w-3xl rounded-3xl border border-amber-200 bg-white p-8 shadow-sm">
-          <p className="text-sm tracking-[0.2em] text-amber-700">COMPLETE</p>
-          <h1 className="mt-2 text-2xl font-bold">ご予約を受け付けました</h1>
+      <main className={styles.page}>
+        <div className={styles.container}>
+          <div className={`${styles.stateCard} ${styles.stateCardSuccess}`}>
+            <p className={styles.eyebrow}>COMPLETE</p>
+            <h1 className={reserveStyles.reserveTitle}>ご予約を受け付けました</h1>
 
-          <div className="mt-5 rounded-2xl bg-amber-50 p-4 text-sm text-stone-700">
-            <p>ありがとうございます。ご予約内容を送信しました。</p>
-            {completed.reservationNo ? (
-              <p className="mt-2 font-medium">
-                予約番号：{completed.reservationNo}
-              </p>
-            ) : null}
-          </div>
+            <div className={styles.successBody}>
+              <p>ありがとうございます。ご予約内容を送信しました。</p>
+              {completed.reservationNo ? (
+                <p className={styles.summaryTotal}>
+                  予約番号：{completed.reservationNo}
+                </p>
+              ) : null}
+            </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center rounded-2xl bg-amber-900 px-6 py-3 text-sm font-medium text-white"
-            >
-              トップへ戻る
-            </Link>
+            <div className={styles.successActions}>
+              <Link href="/" className={styles.successBtn}>
+                トップへ戻る
+              </Link>
 
-            <button
-              type="button"
-              onClick={() => router.push("/reserve/menu")}
-              className="inline-flex items-center justify-center rounded-2xl border border-stone-300 bg-white px-6 py-3 text-sm font-medium text-stone-700"
-            >
-              もう一度予約する
-            </button>
+              <button
+                type="button"
+                onClick={() => router.push("/reserve/menu")}
+                className={styles.successBtnSecondary}
+              >
+                もう一度予約する
+              </button>
+            </div>
           </div>
         </div>
       </main>
@@ -336,20 +338,19 @@ export default function ReserveCustomerPage() {
 
   if (!draft.items || draft.items.length === 0) {
     return (
-      <main className="min-h-screen bg-stone-50 px-4 py-8 text-stone-800">
-        <div className="mx-auto max-w-3xl rounded-3xl border border-stone-200 bg-white p-8 shadow-sm">
-          <h1 className={reserveStyles.reserveTitle}>お客様情報の入力</h1>
-          <p className="mt-3 text-sm text-stone-600">
-            先にメニューと受取日時を選択してください。
-          </p>
+      <main className={styles.page}>
+        <div className={styles.container}>
+          <div className={styles.stateCard}>
+            <h1 className={reserveStyles.reserveTitle}>お客様情報の入力</h1>
+            <p className={styles.subtitle}>
+              先にメニューと受取日時を選択してください。
+            </p>
 
-          <div className="mt-6">
-            <Link
-              href="/menu"
-              className="inline-flex rounded-2xl bg-amber-900 px-5 py-3 text-sm font-medium text-white"
-            >
-              メニュー選択へ戻る
-            </Link>
+            <div className={styles.emptyAction}>
+              <Link href="/menu" className={styles.emptyBtn}>
+                メニュー選択へ戻る
+              </Link>
+            </div>
           </div>
         </div>
       </main>
@@ -357,82 +358,84 @@ export default function ReserveCustomerPage() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 px-4 py-6 text-stone-800">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-4">
-          <p className="text-sm tracking-[0.2em] text-amber-700">RESERVE</p>
-          <h1 className={`mt-1 ${reserveStyles.reserveTitle}`}>お客様情報の入力</h1>
-          <p className="mt-2 text-sm text-stone-600">
+    <main className={styles.page}>
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <p className={styles.eyebrow}>RESERVE</p>
+          <h1 className={reserveStyles.reserveTitle}>お客様情報の入力</h1>
+          <p className={styles.subtitle}>
             内容をご確認のうえ、ご予約を確定してください。
           </p>
         </div>
 
         <ReserveStepNav activeStep={4} />
 
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <form
-            onSubmit={handleSubmit}
-            className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm"
-          >
-            <h2 className="text-lg font-semibold">ご入力情報</h2>
+        <div className={styles.layout}>
+          <form onSubmit={handleSubmit} className={styles.formCard}>
+            <h2 className={styles.cardTitle}>ご入力情報</h2>
 
-            <div className="mt-5 space-y-5">
-              <div>
-                <label className="mb-2 block text-sm font-medium">お名前</label>
+            <div className={styles.formFields}>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="customer-name">
+                  お名前
+                </label>
                 <input
+                  id="customer-name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="例：山田 太郎"
-                  className="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm outline-none ring-0 transition focus:border-amber-700"
+                  className={styles.input}
                 />
                 {errors.name ? (
-                  <p className="mt-2 text-sm text-red-600">{errors.name}</p>
+                  <p className={styles.fieldError}>{errors.name}</p>
                 ) : null}
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">電話番号</label>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="customer-phone">
+                  電話番号
+                </label>
                 <input
+                  id="customer-phone"
                   type="tel"
                   inputMode="numeric"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="例：09012345678"
-                  className="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm outline-none ring-0 transition focus:border-amber-700"
+                  className={styles.input}
                 />
-                <p className="mt-2 text-xs text-stone-500">
+                <p className={styles.fieldHint}>
                   ハイフンなしでも入力できます。
                 </p>
                 {errors.phone ? (
-                  <p className="mt-2 text-sm text-red-600">{errors.phone}</p>
+                  <p className={styles.fieldError}>{errors.phone}</p>
                 ) : null}
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="customer-note">
                   備考（任意）
                 </label>
                 <textarea
+                  id="customer-note"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   rows={4}
                   placeholder="ご要望があればご記入ください"
-                  className="w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-sm outline-none ring-0 transition focus:border-amber-700"
+                  className={styles.textarea}
                 />
               </div>
             </div>
 
             {submitError ? (
-              <div className="mt-5 rounded-2xl bg-red-50 px-4 py-4 text-sm text-red-700">
-                {submitError}
-              </div>
+              <div className={styles.submitError}>{submitError}</div>
             ) : null}
 
-            <div className={`mt-6 ${reserveStyles.reserveActionRow}`}>
+            <div className={styles.actionRow}>
               <Link
                 href="/reserve/schedule"
-                className={`${reserveStyles.reserveBtn} ${reserveStyles.reserveBtnSecondary}`}
+                className={`${styles.actionBtn} ${styles.actionBtnSecondary}`}
               >
                 受取日時を変更する
               </Link>
@@ -440,49 +443,48 @@ export default function ReserveCustomerPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className={`${reserveStyles.reserveBtn} ${reserveStyles.reserveBtnPrimary}`}
+                className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
               >
                 {submitting ? "送信中…" : "この内容で予約する"}
               </button>
             </div>
           </form>
 
-          <aside className="space-y-5">
-            <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
-              <h2 className="text-lg font-semibold">受取情報</h2>
-              <div className="mt-4 space-y-3 text-sm text-stone-700">
-                <div className="flex items-center justify-between gap-4">
+          <aside className={styles.sidebar}>
+            <section className={styles.infoCard}>
+              <h2 className={styles.cardTitle}>受取情報</h2>
+              <div className={styles.infoList}>
+                <div className={styles.infoRow}>
                   <span>受取日</span>
-                  <span className="text-right font-medium">
+                  <span className={styles.infoValue}>
                     {formatDateLabel(draft.pickupDate)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between gap-4">
+                <div className={styles.infoRow}>
                   <span>受取時間</span>
-                  <span className="font-medium">{draft.pickupTime}</span>
+                  <span className={styles.infoValue}>{draft.pickupTime}</span>
                 </div>
               </div>
             </section>
 
-            <section className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-semibold">ご注文内容</h2>
+            <section className={styles.orderCard}>
+              <h2 className={styles.cardTitle}>ご注文内容</h2>
 
-              <div className="mt-4 space-y-4">
+              <div className={styles.orderList}>
                 {draft.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="border-b border-stone-100 pb-4 last:border-b-0 last:pb-0"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="font-medium">{formatCartItemLabel(item)}</p>
+                  <div key={item.id} className={styles.orderItem}>
+                    <div className={styles.orderItemRow}>
+                      <div className={styles.orderItemMain}>
+                        <p className={styles.orderItemName}>
+                          {formatCartItemLabel(item)}
+                        </p>
 
-                        <p className="mt-1 text-xs text-stone-500">
+                        <p className={styles.orderItemMeta}>
                           ¥{money.format(item.price)} × {item.quantity}
                         </p>
                       </div>
 
-                      <p className="text-sm font-semibold">
+                      <p className={styles.orderItemPrice}>
                         ¥{money.format(item.price * item.quantity)}
                       </p>
                     </div>
@@ -490,12 +492,12 @@ export default function ReserveCustomerPage() {
                 ))}
               </div>
 
-              <div className="mt-5 rounded-2xl bg-stone-50 p-4">
-                <div className="flex items-center justify-between text-sm text-stone-600">
+              <div className={styles.orderSummary}>
+                <div className={styles.summaryRow}>
                   <span>商品数</span>
                   <span>{totals.totalQuantity}点</span>
                 </div>
-                <div className="mt-3 flex items-center justify-between text-base font-bold">
+                <div className={`${styles.summaryRow} ${styles.summaryTotal}`}>
                   <span>合計</span>
                   <span>¥{money.format(totals.totalAmount)}</span>
                 </div>
