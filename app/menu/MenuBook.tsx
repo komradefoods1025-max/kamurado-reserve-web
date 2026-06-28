@@ -7,7 +7,6 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
@@ -33,8 +32,10 @@ const TURN_THRESHOLD = 0.35;
 const VELOCITY_THRESHOLD = 0.42;
 const SNAPBACK_MS = 620;
 const COMPLETE_TURN_MS = 640;
-const STRIP_COUNT_MOBILE = 10;
-const STRIP_COUNT_DESKTOP = 12;
+const MESH_COLS_MOBILE = 6;
+const MESH_ROWS_MOBILE = 8;
+const MESH_COLS_DESKTOP = 8;
+const MESH_ROWS_DESKTOP = 10;
 const TAP_THRESHOLD = 12;
 const TURN_EASE = (t: number) => 1 - Math.pow(1 - t, 3);
 
@@ -60,26 +61,23 @@ const DEFAULT_LAYOUT: Layout = {
   spreadWidth: 320,
 };
 
-function CalendarIcon() {
+function CartIcon() {
   return (
     <svg className={styles.btnSvg} viewBox="0 0 24 24" aria-hidden="true">
-      <rect
-        x="3"
-        y="5"
-        width="18"
-        height="16"
-        rx="2"
+      <path
+        d="M6 6h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
       />
-      <path d="M3 9h18" stroke="currentColor" strokeWidth="1.5" />
       <path
-        d="M8 3v4M16 3v4"
+        d="M8 4v3M16 4v3M4 10h16"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
       />
+      <circle cx="9" cy="14.5" r="1" fill="currentColor" />
+      <circle cx="15" cy="14.5" r="1" fill="currentColor" />
     </svg>
   );
 }
@@ -99,15 +97,7 @@ function PhoneIcon() {
 }
 
 function BrandLogo() {
-  return (
-    <div className={styles.logoArea}>
-      <p className={styles.logoSub}>鉄板焼きダイニング</p>
-      <div className={styles.logoMainRow}>
-        <span className={styles.logoMain}>かむらど</span>
-        <span className={styles.logoSeal} aria-hidden="true" />
-      </div>
-    </div>
-  );
+  return null;
 }
 
 function getMaxLeftPage(isMobile: boolean): number {
@@ -180,31 +170,43 @@ function smoothstep(value: number): number {
   return t * t * (3 - 2 * t);
 }
 
-function getStripCurlAmount(
-  index: number,
-  count: number,
+function getPatchCurlAmount(
+  col: number,
+  row: number,
+  cols: number,
+  rows: number,
   progress: number,
   direction: "next" | "prev",
 ): number {
-  const t = count <= 1 ? 0 : index / (count - 1);
+  const x = cols <= 1 ? 0.5 : col / (cols - 1);
+  const y = rows <= 1 ? 0.5 : row / (rows - 1);
+  const reach = 2 * progress;
 
-  if (direction === "next") {
-    const curlEdge = 1 - progress;
-    if (progress <= 0 || t < curlEdge) {
-      return 0;
-    }
-    return (t - curlEdge) / Math.max(0.001, 1 - curlEdge);
-  }
-
-  const curlEdge = progress;
-  if (progress <= 0 || t > curlEdge) {
+  if (progress <= 0) {
     return 0;
   }
-  return (curlEdge - t) / Math.max(0.001, curlEdge);
+
+  if (direction === "next") {
+    const cornerDist = (1 - x) + y;
+    if (cornerDist > reach) {
+      return 0;
+    }
+    return (reach - cornerDist) / Math.max(0.001, reach);
+  }
+
+  const cornerDist = x + y;
+  if (cornerDist > reach) {
+    return 0;
+  }
+  return (reach - cornerDist) / Math.max(0.001, reach);
 }
 
-function getStripTransform(
+function getPatchTransform(
   local: number,
+  col: number,
+  row: number,
+  cols: number,
+  rows: number,
   direction: "next" | "prev",
 ): string {
   if (local <= 0) {
@@ -213,31 +215,103 @@ function getStripTransform(
 
   const eased = smoothstep(local);
   const arch = Math.sin(eased * Math.PI);
+  const x = cols <= 1 ? 0.5 : col / (cols - 1);
+  const y = rows <= 1 ? 0.5 : row / (rows - 1);
+  const liftBias =
+    direction === "next" ? (1 - x) * 0.65 + y * 0.35 : x * 0.65 + y * 0.35;
   const rotateY =
     direction === "next"
-      ? -Math.sin(eased * Math.PI * 0.5) * 94
-      : Math.sin(eased * Math.PI * 0.5) * 94;
+      ? -Math.sin(eased * Math.PI * 0.5) * (92 + liftBias * 14)
+      : Math.sin(eased * Math.PI * 0.5) * (92 + liftBias * 14);
+  const rotateX =
+    direction === "next"
+      ? Math.sin(eased * Math.PI * 0.5) *
+          (10 + (1 - x) * 20) *
+          (0.35 + y * 0.65)
+      : -Math.sin(eased * Math.PI * 0.5) *
+          (10 + x * 20) *
+          (0.35 + y * 0.65);
+  const translateZ = arch * 26;
   const translateX =
-    direction === "next" ? -eased * 11 - arch * 4 : eased * 11 + arch * 4;
-  const translateZ = arch * 18;
-  const scaleY = 1 + arch * 0.045;
+    direction === "next" ? -eased * 13 - arch * 6 : eased * 13 + arch * 6;
+  const translateY = -eased * (1 - y) * 9;
 
-  return `perspective(1200px) rotateY(${rotateY.toFixed(2)}deg) translateX(${translateX.toFixed(2)}px) translateZ(${translateZ.toFixed(2)}px) scaleY(${scaleY.toFixed(4)})`;
+  return `perspective(1400px) rotateY(${rotateY.toFixed(2)}deg) rotateX(${rotateX.toFixed(2)}deg) translate3d(${translateX.toFixed(2)}px, ${translateY.toFixed(2)}px, ${translateZ.toFixed(2)}px)`;
 }
 
-type CurlStripsProps = {
+type CurlMeshProps = {
   page: MenuBookPage;
   direction: "next" | "prev";
   progress: number;
-  stripCount: number;
+  meshCols: number;
+  meshRows: number;
 };
 
-function CurlStrips({
+function CurlMesh({
   page,
   direction,
   progress,
-  stripCount,
-}: CurlStripsProps) {
+  meshCols,
+  meshRows,
+}: CurlMeshProps) {
+  const patches = [];
+
+  for (let row = 0; row < meshRows; row += 1) {
+    for (let col = 0; col < meshCols; col += 1) {
+      const local = getPatchCurlAmount(
+        col,
+        row,
+        meshCols,
+        meshRows,
+        progress,
+        direction,
+      );
+      const bgPosX = meshCols <= 1 ? 0 : (col / (meshCols - 1)) * 100;
+      const bgPosY = meshRows <= 1 ? 50 : (row / (meshRows - 1)) * 100;
+      const patchStyle: CSSProperties = {
+        left: `${(col / meshCols) * 100}%`,
+        top: `${(row / meshRows) * 100}%`,
+        width: `${100 / meshCols}%`,
+        height: `${100 / meshRows}%`,
+        zIndex: Math.round(col + row + local * 10),
+        transform: getPatchTransform(
+          local,
+          col,
+          row,
+          meshCols,
+          meshRows,
+          direction,
+        ),
+        transformOrigin:
+          direction === "next" ? "left center" : "right center",
+        opacity: local > 0 ? 1 : 0,
+        pointerEvents: "none",
+        ["--strip-local" as string]: String(local),
+      };
+
+      patches.push(
+        <div
+          key={`${col}-${row}`}
+          className={styles.curlPatch}
+          style={patchStyle}
+        >
+          <div
+            className={styles.curlPatchFace}
+            style={{
+              backgroundImage: `url(${page.src})`,
+              backgroundSize: `${meshCols * 100}% ${meshRows * 100}%`,
+              backgroundPosition: `${bgPosX}% ${bgPosY}%`,
+            }}
+          >
+            <span className={styles.curlStripShade} aria-hidden />
+            <span className={styles.curlStripEdge} aria-hidden />
+            <span className={styles.curlPatchThickness} aria-hidden />
+          </div>
+        </div>,
+      );
+    }
+  }
+
   return (
     <div
       className={styles.curlLayer}
@@ -248,45 +322,7 @@ function CurlStrips({
       <span className={styles.curlRootShadow} />
       <span className={styles.curlHighlight} />
       <span className={styles.curlFloorShadow} />
-      {Array.from({ length: stripCount }, (_, index) => {
-        const local = getStripCurlAmount(
-          index,
-          stripCount,
-          progress,
-          direction,
-        );
-        const bgPos =
-          stripCount <= 1
-            ? "0% center"
-            : `${(index / (stripCount - 1)) * 100}% center`;
-        const stripStyle: CSSProperties = {
-          left: `${(index / stripCount) * 100}%`,
-          width: `${100 / stripCount}%`,
-          zIndex: index + 1,
-          transform: getStripTransform(local, direction),
-          transformOrigin:
-            direction === "next" ? "left center" : "right center",
-          opacity: local > 0 ? 1 : 0,
-          pointerEvents: "none",
-          ["--strip-local" as string]: String(local),
-        };
-
-        return (
-          <div key={index} className={styles.curlStrip} style={stripStyle}>
-            <div
-              className={styles.curlStripFace}
-              style={{
-                backgroundImage: `url(${page.src})`,
-                backgroundSize: `${stripCount * 100}% 96%`,
-                backgroundPosition: bgPos,
-              }}
-            >
-              <span className={styles.curlStripShade} aria-hidden />
-              <span className={styles.curlStripEdge} aria-hidden />
-            </div>
-          </div>
-        );
-      })}
+      {patches}
     </div>
   );
 }
@@ -299,7 +335,8 @@ type MenuPageProps = {
   quantity: number;
   onIncrement: () => void;
   onDecrement: () => void;
-  stripCount: number;
+  meshCols: number;
+  meshRows: number;
 };
 
 function MenuPage({
@@ -310,7 +347,8 @@ function MenuPage({
   quantity,
   onIncrement,
   onDecrement,
-  stripCount,
+  meshCols,
+  meshRows,
 }: MenuPageProps) {
   const pageClassName = [
     styles.page,
@@ -344,10 +382,6 @@ function MenuPage({
       data-direction={turn.isTarget ? turn.direction ?? undefined : undefined}
       data-turning={showCurl ? "true" : undefined}
     >
-      <span className={styles.pageCornerOrnament} data-corner="tl" aria-hidden />
-      <span className={styles.pageCornerOrnament} data-corner="tr" aria-hidden />
-      <span className={styles.pageCornerOrnament} data-corner="bl" aria-hidden />
-      <span className={styles.pageCornerOrnament} data-corner="br" aria-hidden />
       <div className={styles.pageScene}>
         <span className={styles.pagePaperTexture} aria-hidden />
         <span className={styles.pageThickness} aria-hidden />
@@ -395,11 +429,12 @@ function MenuPage({
           </div>
         ) : null}
         {showCurl && turn.direction ? (
-          <CurlStrips
+          <CurlMesh
             page={page}
             direction={turn.direction}
             progress={turn.progress}
-            stripCount={stripCount}
+            meshCols={meshCols}
+            meshRows={meshRows}
           />
         ) : null}
       </div>
@@ -444,29 +479,18 @@ export default function MenuBook() {
       const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
       const viewportHeight =
         window.visualViewport?.height ?? window.innerHeight;
-      const footerHeight = 112;
-      const logoHeight = 72;
-      const dotsHeight = 44;
-      const verticalPadding = 20;
-      const navBtnWidth = isMobile ? 32 : 36;
-      const navGap = isMobile ? 6 : 10;
-      const bookShellExtra = 28;
-      const bookAreaPadding = isMobile ? 16 : 0;
-      const navSpace = isMobile
-        ? navBtnWidth * 2 + navGap * 2 + bookShellExtra
-        : 108;
-      const horizontalPadding = 24 + bookAreaPadding;
-      const maxPageWidth = isMobile ? 360 : 340;
+      const footerHeight = 168;
+      const metaHeight = 72;
+      const verticalPadding = 24;
+      const bookShellExtra = 56;
+      const horizontalPadding = 28;
+      const maxPageWidth = isMobile ? 380 : 360;
 
       const maxPageHeight = Math.max(
-        160,
-        viewportHeight -
-          footerHeight -
-          logoHeight -
-          dotsHeight -
-          verticalPadding,
+        180,
+        viewportHeight - footerHeight - metaHeight - verticalPadding,
       );
-      const contentWidth = window.innerWidth - horizontalPadding - navSpace;
+      const contentWidth = window.innerWidth - horizontalPadding;
       const pageWidth = Math.floor(
         Math.min(
           isMobile ? contentWidth : contentWidth / 2,
@@ -652,23 +676,6 @@ export default function MenuBook() {
       return Math.min(maxPage, page + step);
     });
   }, [layout.isMobile]);
-
-  const goToPage = useCallback(
-    (index: number) => {
-      if (isCompletingTurn) {
-        return;
-      }
-
-      if (layout.isMobile) {
-        setCurrentPage(Math.min(index, maxLeftPage));
-        return;
-      }
-
-      const leftIndex = index % 2 === 0 ? index : Math.max(0, index - 1);
-      setCurrentPage(Math.min(leftIndex, maxLeftPage));
-    },
-    [isCompletingTurn, layout.isMobile, maxLeftPage],
-  );
 
   const beginSnapBack = useCallback((direction: DragDirection) => {
     if (snapBackAnimRef.current !== null) {
@@ -891,9 +898,8 @@ export default function MenuBook() {
       ? snapBackDirectionRef.current
       : dragDirection;
   const dragProgress = getDragProgress(dragOffset);
-  const stripCount = layout.isMobile
-    ? STRIP_COUNT_MOBILE
-    : STRIP_COUNT_DESKTOP;
+  const meshCols = layout.isMobile ? MESH_COLS_MOBILE : MESH_COLS_DESKTOP;
+  const meshRows = layout.isMobile ? MESH_ROWS_MOBILE : MESH_ROWS_DESKTOP;
 
   const buildTurnState = (
     variant: "left" | "right" | "single",
@@ -944,138 +950,92 @@ export default function MenuBook() {
       ) : null}
 
       <div className={styles.stage}>
-        <div className={styles.bookArea}>
-          <button
-            type="button"
-            className={styles.navBtn}
-            onClick={goPrev}
-            disabled={isFirstPage || isCompletingTurn}
-            aria-label="前のページ"
+        <div
+          className={styles.bookShell}
+          style={{ width: layout.spreadWidth + 56 }}
+        >
+          <span className={styles.metalCorner} data-corner="tl" aria-hidden />
+          <span className={styles.metalCorner} data-corner="tr" aria-hidden />
+          <span className={styles.metalCorner} data-corner="bl" aria-hidden />
+          <span className={styles.metalCorner} data-corner="br" aria-hidden />
+          <span className={styles.bookStitch} aria-hidden />
+          <span className={styles.bookCoverEdge} aria-hidden />
+          <div
+            ref={bookViewRef}
+            className={bookViewClassName}
+            style={{ width: layout.spreadWidth }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={endPointer}
+            onPointerCancel={endPointer}
           >
-            ‹
-          </button>
+            <div className={styles.spread}>
+              <MenuPage
+                page={getMenuBookPage(currentPage)}
+                variant={layout.isMobile ? "single" : "left"}
+                turn={buildTurnState(layout.isMobile ? "single" : "left")}
+                quantity={
+                  getMenuBookPage(currentPage).id
+                    ? (itemQuantities[getMenuBookPage(currentPage).id!] ?? 0)
+                    : 0
+                }
+                onIncrement={() => changePageQuantity(currentPage, 1)}
+                onDecrement={() => changePageQuantity(currentPage, -1)}
+                meshCols={meshCols}
+                meshRows={meshRows}
+              />
 
-          <div className={styles.bookColumn}>
-            <div
-              className={styles.bookShell}
-              style={{ width: layout.spreadWidth + 28 }}
-            >
-              <span className={styles.bookCoverEdge} aria-hidden />
-              <span className={styles.bookGoldFrame} aria-hidden />
-              <div
-                ref={bookViewRef}
-                className={bookViewClassName}
-                style={{ width: layout.spreadWidth }}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={endPointer}
-                onPointerCancel={endPointer}
-              >
-                <div className={styles.spread}>
-                  <MenuPage
-                    page={getMenuBookPage(currentPage)}
-                    variant={layout.isMobile ? "single" : "left"}
-                    turn={buildTurnState(layout.isMobile ? "single" : "left")}
-                    quantity={
-                      getMenuBookPage(currentPage).id
-                        ? (itemQuantities[getMenuBookPage(currentPage).id!] ??
-                          0)
-                        : 0
-                    }
-                    onIncrement={() => changePageQuantity(currentPage, 1)}
-                    onDecrement={() => changePageQuantity(currentPage, -1)}
-                    stripCount={stripCount}
-                  />
-
-                  {!layout.isMobile && (
-                    <MenuPage
-                      page={rightPage ?? getMenuBookPage(currentPage)}
-                      variant="right"
-                      empty={!rightPage}
-                      turn={buildTurnState("right")}
-                      quantity={
-                        rightPage?.id
-                          ? (itemQuantities[rightPage.id] ?? 0)
-                          : 0
-                      }
-                      onIncrement={() =>
-                        changePageQuantity(currentPage + 1, 1)
-                      }
-                      onDecrement={() =>
-                        changePageQuantity(currentPage + 1, -1)
-                      }
-                      stripCount={stripCount}
-                    />
-                  )}
-                </div>
-              </div>
-              {!layout.isMobile ? (
-                <span className={styles.bookSpineGlow} aria-hidden />
-              ) : null}
-              <span className={styles.bookFloorShadow} aria-hidden />
-            </div>
-
-            <div
-              className={styles.dots}
-              role="tablist"
-              aria-label="ページインジケーター"
-            >
-              {MENU_BOOK_PAGES.map((page, index) => (
-                <button
-                  key={page.src}
-                  type="button"
-                  role="tab"
-                  className={
-                    index === currentPage
-                      ? `${styles.dot} ${styles.dotActive}`
-                      : styles.dot
+              {!layout.isMobile && (
+                <MenuPage
+                  page={rightPage ?? getMenuBookPage(currentPage)}
+                  variant="right"
+                  empty={!rightPage}
+                  turn={buildTurnState("right")}
+                  quantity={
+                    rightPage?.id ? (itemQuantities[rightPage.id] ?? 0) : 0
                   }
-                  aria-label={`${index + 1}ページ目`}
-                  aria-selected={index === currentPage}
-                  disabled={isCompletingTurn}
-                  onClick={() => goToPage(index)}
+                  onIncrement={() => changePageQuantity(currentPage + 1, 1)}
+                  onDecrement={() =>
+                    changePageQuantity(currentPage + 1, -1)
+                  }
+                  meshCols={meshCols}
+                  meshRows={meshRows}
                 />
-              ))}
-            </div>
-
-            <div className={styles.pageMeta}>
-              <div className={styles.counter}>
-                {currentPage + 1} / {MENU_BOOK_PAGES.length}
-              </div>
-              <p className={styles.swipeHint}>スワイプでページをめくれます</p>
-              <p className={styles.cartSummary}>
-                現在のカート：{cartSummary.count}点 / ¥
-                {cartSummary.amount.toLocaleString("ja-JP")}
-              </p>
+              )}
             </div>
           </div>
-
-          <button
-            type="button"
-            className={styles.navBtn}
-            onClick={goNext}
-            disabled={isLastPage || isCompletingTurn}
-            aria-label="次のページ"
-          >
-            ›
-          </button>
+          {!layout.isMobile ? (
+            <span className={styles.bookSpineGlow} aria-hidden />
+          ) : null}
+          <span className={styles.bookFloorShadow} aria-hidden />
         </div>
       </div>
 
-      <div className={styles.actions}>
+      <div className={styles.footerDock}>
+        <a href={`tel:${PHONE_NUMBER}`} className={styles.footerBtn}>
+          <PhoneIcon />
+          <span>電話する</span>
+        </a>
+
+        <div className={styles.footerCenter}>
+          <div className={styles.counter}>
+            {currentPage + 1} / {MENU_BOOK_PAGES.length}
+          </div>
+          <p className={styles.swipeHint}>スワイプでページをめくれます</p>
+          <p className={styles.cartSummary}>
+            現在のカート：{cartSummary.count}点 / ¥
+            {cartSummary.amount.toLocaleString("ja-JP")}
+          </p>
+        </div>
+
         <Link
           href={reserveHref}
-          className={styles.reserveBtn}
+          className={styles.footerBtn}
           onClick={handleReserveClick}
         >
-          <CalendarIcon />
+          <CartIcon />
           <span>ランチ予約へ</span>
         </Link>
-        <a href={`tel:${PHONE_NUMBER}`} className={styles.telBtn}>
-          <PhoneIcon />
-          <span className={styles.telTitle}>電話する</span>
-          <span className={styles.telNumber}>048-441-5517</span>
-        </a>
       </div>
     </main>
   );
