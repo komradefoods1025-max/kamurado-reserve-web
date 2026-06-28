@@ -19,11 +19,11 @@ import {
   type MenuBookPage,
 } from "../../lib/menuBookPages";
 import {
-  ORDER_RECEIVED_NAV_DELAY_MS,
   PAGE_FLIP_ANIMATION_MS,
   playPageFlipSound,
   playPremiumSound,
-  playOrderReceivedNavigationSound,
+  playGoToDatetimeNavigationSound,
+  RESERVE_DATETIME_PATH,
   stopAllPremiumSounds,
   unlockPremiumAudio,
 } from "../../lib/premiumSounds";
@@ -372,7 +372,6 @@ export default function MenuBook() {
   const tapHintTimerRef = useRef<number | null>(null);
   const flyIdRef = useRef(0);
   const isReserveNavigatingRef = useRef(false);
-  const reserveNavTimerRef = useRef<number | null>(null);
   const skipPagePulseRef = useRef(true);
 
   const [layout, setLayout] = useState<Layout>(DEFAULT_LAYOUT);
@@ -515,11 +514,6 @@ export default function MenuBook() {
 
     return () => {
       stopAllPremiumSounds();
-
-      if (reserveNavTimerRef.current !== null) {
-        window.clearTimeout(reserveNavTimerRef.current);
-        reserveNavTimerRef.current = null;
-      }
 
       if (transitionTimerRef.current !== null) {
         window.clearTimeout(transitionTimerRef.current);
@@ -903,9 +897,9 @@ export default function MenuBook() {
     .filter(Boolean)
     .join(" ");
 
-  const reserveHref = "/reserve/cart";
+  const reserveHref = RESERVE_DATETIME_PATH;
 
-  const handleReserveClick = (
+  const handleReserveClick = async (
     event: React.MouseEvent<HTMLButtonElement>,
   ) => {
     event.preventDefault();
@@ -922,16 +916,13 @@ export default function MenuBook() {
     isReserveNavigatingRef.current = true;
     setIsReserveNavigating(true);
 
-    void playOrderReceivedNavigationSound(soundEnabled);
-
-    if (reserveNavTimerRef.current !== null) {
-      window.clearTimeout(reserveNavTimerRef.current);
-    }
-
-    reserveNavTimerRef.current = window.setTimeout(() => {
-      reserveNavTimerRef.current = null;
+    try {
+      await playGoToDatetimeNavigationSound(soundEnabled);
+    } catch {
+      // Continue to navigation even if audio fails.
+    } finally {
       router.push(reserveHref);
-    }, ORDER_RECEIVED_NAV_DELAY_MS);
+    }
   };
 
   const spreadProps = {
