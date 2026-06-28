@@ -313,8 +313,12 @@ export default function ReserveCustomerPage() {
         result.reservationNo || result.reservation_no || result.id || "";
 
       clearReservationStorage();
-      void playPremiumSound("reservationThanks");
-      void playPremiumSound("bookClose");
+      void playPremiumSound("reservationThanks", {
+        trigger: "reservation-submit-success",
+      });
+      void playPremiumSound("bookClose", {
+        trigger: "reservation-submit-success",
+      });
       setBookClosing(true);
       window.setTimeout(() => {
         setBookClosing(false);

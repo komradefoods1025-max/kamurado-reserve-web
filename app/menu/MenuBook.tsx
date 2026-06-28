@@ -24,6 +24,7 @@ import {
   playPageFlipSound,
   playPremiumSound,
   playOrderReceivedNavigationSound,
+  stopAllPremiumSounds,
   unlockPremiumAudio,
 } from "../../lib/premiumSounds";
 import {
@@ -371,6 +372,7 @@ export default function MenuBook() {
   const tapHintTimerRef = useRef<number | null>(null);
   const flyIdRef = useRef(0);
   const isReserveNavigatingRef = useRef(false);
+  const reserveNavTimerRef = useRef<number | null>(null);
   const skipPagePulseRef = useRef(true);
 
   const [layout, setLayout] = useState<Layout>(DEFAULT_LAYOUT);
@@ -509,7 +511,16 @@ export default function MenuBook() {
   }, [currentPage, isTransitioning]);
 
   useEffect(() => {
+    stopAllPremiumSounds();
+
     return () => {
+      stopAllPremiumSounds();
+
+      if (reserveNavTimerRef.current !== null) {
+        window.clearTimeout(reserveNavTimerRef.current);
+        reserveNavTimerRef.current = null;
+      }
+
       if (transitionTimerRef.current !== null) {
         window.clearTimeout(transitionTimerRef.current);
       }
@@ -592,7 +603,10 @@ export default function MenuBook() {
   }, []);
 
   const triggerCartAddSound = useCallback(() => {
-    void playPremiumSound("cartAdd", soundEnabled);
+    void playPremiumSound("cartAdd", {
+      enabled: soundEnabled,
+      trigger: "cart-item-tap",
+    });
   }, [soundEnabled]);
 
   const toggleSoundEnabled = useCallback(() => {
@@ -701,13 +715,15 @@ export default function MenuBook() {
 
       if (updated) {
         applyDraftUpdate(updated);
-        if (delta > 0) {
-          void playPremiumSound("cartThanks", soundEnabled);
-          if (playCartAddSound) {
-            launchCartFly(item);
-            triggerCartAddSound();
-            showAddedToast();
-          }
+        if (delta > 0 && playCartAddSound) {
+          void unlockPremiumAudio();
+          void playPremiumSound("cartThanks", {
+            enabled: soundEnabled,
+            trigger: "cart-item-tap",
+          });
+          launchCartFly(item);
+          triggerCartAddSound();
+          showAddedToast();
         }
       }
     },
@@ -908,7 +924,12 @@ export default function MenuBook() {
 
     void playOrderReceivedNavigationSound(soundEnabled);
 
-    window.setTimeout(() => {
+    if (reserveNavTimerRef.current !== null) {
+      window.clearTimeout(reserveNavTimerRef.current);
+    }
+
+    reserveNavTimerRef.current = window.setTimeout(() => {
+      reserveNavTimerRef.current = null;
       router.push(reserveHref);
     }, ORDER_RECEIVED_NAV_DELAY_MS);
   };

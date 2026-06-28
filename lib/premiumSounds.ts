@@ -7,6 +7,15 @@ export type PremiumSoundId =
   | "orderReceived"
   | "reservationThanks";
 
+export type PremiumSoundTrigger =
+  | "cart-item-tap"
+  | "cart-add-button"
+  | "reserve-button"
+  | "reservation-submit-success"
+  | "page-flip";
+
+export const SOUND_ASSET_VERSION = 2;
+
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
 export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
 export const VOICE_PLAYBACK_RATE = 1.17;
@@ -20,14 +29,18 @@ export const PAGE_FLIP_LIFT_MS = 100;
 export const PAGE_FLIP_RUB_MS = 200;
 export const PAGE_FLIP_LAND_MS = 150;
 
+function versionedSoundSrc(path: string): string {
+  return `${path}?v=${SOUND_ASSET_VERSION}`;
+}
+
 export const PAGE_FLIP_SOUND = {
   rub: {
-    src: "/sounds/page-flip.mp3",
+    src: versionedSoundSrc("/sounds/page-flip.mp3"),
     volume: 0.55,
     startOffset: 0.02,
   },
   land: {
-    src: "/sounds/page-flip-land.mp3",
+    src: versionedSoundSrc("/sounds/page-flip-land.mp3"),
     volume: 0.45,
     startOffset: 0.66,
     playDuration: 0.15,
@@ -45,32 +58,43 @@ export const PREMIUM_SOUNDS: Record<
   }
 > = {
   cartAdd: {
-    src: "/sounds/cart-add.mp3",
+    src: versionedSoundSrc("/sounds/cart-add.mp3"),
     volume: 0.35,
     startOffset: 0,
     playDuration: 0.42,
   },
   cartThanks: {
-    src: "/sounds/cart-thanks.mp3",
+    src: versionedSoundSrc("/sounds/cart-thanks.mp3"),
     volume: 0.45,
     playbackRate: VOICE_PLAYBACK_RATE,
   },
   orderReceived: {
-    src: "/sounds/order-received.mp3",
+    src: versionedSoundSrc("/sounds/order-received.mp3"),
     volume: 0.5,
     playbackRate: VOICE_PLAYBACK_RATE,
   },
   reservationThanks: {
-    src: "/sounds/reservation-thanks.mp3",
+    src: versionedSoundSrc("/sounds/reservation-thanks.mp3"),
     volume: 0.55,
     playbackRate: VOICE_PLAYBACK_RATE,
   },
   bookClose: {
-    src: "/sounds/book-close.mp3",
+    src: versionedSoundSrc("/sounds/book-close.mp3"),
     volume: 0.4,
     startOffset: 0,
     playDuration: 0.38,
   },
+};
+
+const ALLOWED_SOUND_TRIGGERS: Record<
+  PremiumSoundId,
+  ReadonlySet<PremiumSoundTrigger>
+> = {
+  cartAdd: new Set(["cart-item-tap"]),
+  cartThanks: new Set(["cart-item-tap"]),
+  orderReceived: new Set(["reserve-button"]),
+  reservationThanks: new Set(["reservation-submit-success"]),
+  bookClose: new Set(["reservation-submit-success"]),
 };
 
 type SoundSegmentConfig = {
@@ -81,8 +105,14 @@ type SoundSegmentConfig = {
   playbackRate?: number;
 };
 
+export type PlayPremiumSoundOptions = {
+  enabled?: boolean;
+  trigger: PremiumSoundTrigger;
+};
+
 let audioContext: AudioContext | null = null;
 let unlocked = false;
+let lifecycleHandlersInstalled = false;
 const bufferCache = new Map<string, AudioBuffer>();
 const fallbackAudios = new Map<string, HTMLAudioElement>();
 const preloadElements: HTMLAudioElement[] = [];
@@ -127,19 +157,39 @@ function ensureFallbackAudio(src: string): HTMLAudioElement {
 }
 
 function ensurePreloadElement(src: string): HTMLAudioElement {
-  const existing = preloadElements.find((element) => element.src.endsWith(src));
+  const existing = preloadElements.find((element) =>
+    element.src.includes(src.split("?")[0] ?? src),
+  );
   if (existing) {
     return existing;
   }
 
   const audio = document.createElement("audio");
-  audio.preload = "auto";
+  audio.preload = "metadata";
   audio.setAttribute("playsinline", "true");
   audio.src = src;
   audio.style.display = "none";
   document.body.appendChild(audio);
   preloadElements.push(audio);
   return audio;
+}
+
+function installLifecycleHandlers(): void {
+  if (lifecycleHandlersInstalled || typeof window === "undefined") {
+    return;
+  }
+
+  lifecycleHandlersInstalled = true;
+
+  window.addEventListener("pagehide", () => {
+    stopAllPremiumSounds();
+  });
+
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+      stopAllPremiumSounds();
+    }
+  });
 }
 
 async function decodeSound(src: string): Promise<AudioBuffer | null> {
@@ -165,6 +215,30 @@ async function decodeSound(src: string): Promise<AudioBuffer | null> {
     return buffer;
   } catch {
     return null;
+  }
+}
+
+function registerActiveSource(source: AudioBufferSourceNode): void {
+  activeBufferSources.add(source);
+  source.onended = () => {
+    activeBufferSources.delete(source);
+  };
+}
+
+function playSilentUnlockPulse(context: AudioContext): void {
+  try {
+    const buffer = context.createBuffer(1, 1, context.sampleRate);
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+
+    const gain = context.createGain();
+    gain.gain.value = 0;
+    source.connect(gain);
+    gain.connect(context.destination);
+    source.start();
+    registerActiveSource(source);
+  } catch {
+    // Ignore environments that cannot unlock audio.
   }
 }
 
@@ -242,6 +316,7 @@ function playWithFallback(config: SoundSegmentConfig): void {
   const audio = ensureFallbackAudio(config.src);
 
   try {
+    audio.pause();
     audio.currentTime = config.startOffset ?? 0;
     audio.volume = config.volume;
     audio.playbackRate = config.playbackRate ?? 1;
@@ -251,13 +326,6 @@ function playWithFallback(config: SoundSegmentConfig): void {
   }
 }
 
-function registerActiveSource(source: AudioBufferSourceNode): void {
-  activeBufferSources.add(source);
-  source.onended = () => {
-    activeBufferSources.delete(source);
-  };
-}
-
 function pauseHtmlAudio(audio: HTMLAudioElement): void {
   try {
     audio.pause();
@@ -265,6 +333,13 @@ function pauseHtmlAudio(audio: HTMLAudioElement): void {
   } catch {
     // Ignore environments that cannot pause audio.
   }
+}
+
+function isTriggerAllowed(
+  soundId: PremiumSoundId,
+  trigger: PremiumSoundTrigger,
+): boolean {
+  return ALLOWED_SOUND_TRIGGERS[soundId].has(trigger);
 }
 
 export function stopAllPremiumSounds(): void {
@@ -315,6 +390,7 @@ export async function unlockPremiumAudio(): Promise<void> {
     return;
   }
 
+  installLifecycleHandlers();
   unlocked = true;
 
   const context = getOrCreateContext();
@@ -322,33 +398,31 @@ export async function unlockPremiumAudio(): Promise<void> {
     try {
       await context.resume();
     } catch {
-      // Ignore unlock failures and fall back to HTMLAudioElement.
+      // Ignore unlock failures and fall back below.
     }
   }
 
-  await Promise.all(
-    getAllSoundSources().map(async (src) => {
-      ensurePreloadElement(src);
+  if (context) {
+    playSilentUnlockPulse(context);
+  }
 
-      const audio = ensureFallbackAudio(src);
-      try {
-        audio.load();
-        audio.volume = 0;
-        await audio.play();
-        audio.pause();
-        audio.currentTime = 0;
-        audio.volume = 1;
-      } catch {
-        // Ignore unlock failures for individual clips.
-      }
+  for (const src of getAllSoundSources()) {
+    ensurePreloadElement(src);
+  }
 
-      await decodeSound(src);
-    }),
-  );
+  await Promise.all(getAllSoundSources().map((src) => decodeSound(src)));
 }
 
-export async function playPageFlipSound(enabled = true): Promise<void> {
-  if (!enabled || !unlocked || typeof window === "undefined") {
+export async function playPageFlipSound(
+  enabled = true,
+  trigger: PremiumSoundTrigger = "page-flip",
+): Promise<void> {
+  if (
+    !enabled ||
+    !unlocked ||
+    trigger !== "page-flip" ||
+    typeof window === "undefined"
+  ) {
     return;
   }
 
@@ -398,11 +472,20 @@ export async function playPageFlipSound(enabled = true): Promise<void> {
 
 export async function playPremiumSound(
   soundId: PremiumSoundId,
-  enabled = true,
+  options: PlayPremiumSoundOptions,
 ): Promise<void> {
-  if (!enabled || !unlocked || typeof window === "undefined") {
+  const { enabled = true, trigger } = options;
+
+  if (
+    !enabled ||
+    !unlocked ||
+    !isTriggerAllowed(soundId, trigger) ||
+    typeof window === "undefined"
+  ) {
     return;
   }
+
+  installLifecycleHandlers();
 
   const config = PREMIUM_SOUNDS[soundId];
   const context = getOrCreateContext();
@@ -437,5 +520,8 @@ export async function playOrderReceivedNavigationSound(
     return;
   }
 
-  await playPremiumSound("orderReceived", enabled);
+  await playPremiumSound("orderReceived", {
+    enabled,
+    trigger: "reserve-button",
+  });
 }
