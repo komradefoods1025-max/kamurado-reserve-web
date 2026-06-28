@@ -19,6 +19,10 @@ import {
   type MenuBookPage,
 } from "../../lib/menuBookPages";
 import {
+  playPremiumSound,
+  unlockPremiumAudio,
+} from "../../lib/premiumSounds";
+import {
   addMenuBookItemToDraft,
   adjustMenuBookItemQuantity,
   getCartItemRiceSize,
@@ -44,17 +48,6 @@ const TAP_HINT_STORAGE_KEY = "kamurado-menu-tap-hint-seen";
 const SOUND_ENABLED_STORAGE_KEY = "kamurado-menu-sound-enabled";
 const CART_FLY_MS = 500;
 const PAGE_PULSE_MS = 150;
-
-type MenuSoundId = "pageFlip" | "cartAdd" | "click";
-
-const MENU_SOUNDS: Record<
-  MenuSoundId,
-  { src: string; volume: number }
-> = {
-  pageFlip: { src: "/sounds/page-flip.mp3", volume: 0.09 },
-  cartAdd: { src: "/sounds/cart-add.mp3", volume: 0.1 },
-  click: { src: "/sounds/click.mp3", volume: 0.06 },
-};
 
 type Layout = {
   isMobile: boolean;
@@ -367,12 +360,6 @@ export default function MenuBook() {
   const tapHintTimerRef = useRef<number | null>(null);
   const flyIdRef = useRef(0);
   const skipPagePulseRef = useRef(true);
-  const audioRefs = useRef<Record<MenuSoundId, HTMLAudioElement | null>>({
-    pageFlip: null,
-    cartAdd: null,
-    click: null,
-  });
-  const audioUnlockedRef = useRef(false);
 
   const [layout, setLayout] = useState<Layout>(DEFAULT_LAYOUT);
   const [currentPage, setCurrentPage] = useState(0);
@@ -587,73 +574,13 @@ export default function MenuBook() {
     showToastMessage("✓ カートへ追加しました");
   }, [showToastMessage]);
 
-  const ensureMenuAudio = useCallback((soundId: MenuSoundId) => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    if (!audioRefs.current[soundId]) {
-      const config = MENU_SOUNDS[soundId];
-      const audio = new Audio(config.src);
-      audio.preload = "none";
-      audio.volume = config.volume;
-      audioRefs.current[soundId] = audio;
-    }
-
-    return audioRefs.current[soundId];
+  const unlockMenuAudio = useCallback(() => {
+    void unlockPremiumAudio();
   }, []);
 
-  const unlockMenuAudio = useCallback(() => {
-    if (audioUnlockedRef.current) {
-      return;
-    }
-
-    audioUnlockedRef.current = true;
-
-    (Object.keys(MENU_SOUNDS) as MenuSoundId[]).forEach((soundId) => {
-      const audio = ensureMenuAudio(soundId);
-      if (!audio) {
-        return;
-      }
-
-      try {
-        audio.load();
-        const targetVolume = MENU_SOUNDS[soundId].volume;
-        audio.volume = 0;
-        void audio
-          .play()
-          .then(() => {
-            audio.pause();
-            audio.currentTime = 0;
-            audio.volume = targetVolume;
-          })
-          .catch(() => {
-            audio.volume = targetVolume;
-          });
-      } catch {
-        // Ignore environments that cannot load audio.
-      }
-    });
-  }, [ensureMenuAudio]);
-
   const playMenuSound = useCallback(
-    (soundId: MenuSoundId) => {
-      if (!soundEnabled || !audioUnlockedRef.current) {
-        return;
-      }
-
-      const audio = audioRefs.current[soundId];
-      if (!audio) {
-        return;
-      }
-
-      try {
-        audio.volume = MENU_SOUNDS[soundId].volume;
-        audio.currentTime = 0;
-        void audio.play().catch(() => {});
-      } catch {
-        // Ignore environments that cannot play audio.
-      }
+    (soundId: "pageFlip" | "cartAdd") => {
+      void playPremiumSound(soundId, soundEnabled);
     },
     [soundEnabled],
   );
@@ -734,7 +661,7 @@ export default function MenuBook() {
     (
       item: MenuBookItem,
       delta: number,
-      sound: "cartAdd" | "click" | "none" = "none",
+      playCartAddSound = false,
     ) => {
       if (!isOrderableMenuBookPage(item)) {
         return;
@@ -747,12 +674,10 @@ export default function MenuBook() {
 
       if (updated) {
         applyDraftUpdate(updated);
-        if (delta > 0 && sound === "cartAdd") {
+        if (delta > 0 && playCartAddSound) {
           launchCartFly(item);
           playMenuSound("cartAdd");
           showAddedToast();
-        } else if (delta !== 0 && sound === "click") {
-          playMenuSound("click");
         }
       }
     },
@@ -761,7 +686,7 @@ export default function MenuBook() {
 
   const addItemToCart = useCallback(
     (item: MenuBookItem) => {
-      changePageQuantity(item, 1, "cartAdd");
+      changePageQuantity(item, 1, true);
     },
     [changePageQuantity],
   );
@@ -773,7 +698,7 @@ export default function MenuBook() {
         return;
       }
 
-      changePageQuantity(item, delta, "click");
+      changePageQuantity(item, delta);
     },
     [changePageQuantity],
   );
@@ -783,10 +708,9 @@ export default function MenuBook() {
       const updated = updateCartItemRiceSize(itemId, riceSize);
       if (updated) {
         applyDraftUpdate(updated);
-        playMenuSound("click");
       }
     },
-    [applyDraftUpdate, playMenuSound],
+    [applyDraftUpdate],
   );
 
   const startTransition = useCallback(
