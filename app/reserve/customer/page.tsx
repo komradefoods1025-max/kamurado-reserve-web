@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { formatCartItemLabel } from "../../../lib/reservationDraft";
+import ReserveStepNav from "../../../components/ReserveStepNav";
+import reserveStyles from "../../../components/reserve.module.css";
 
 type CartItem = {
   id: string;
@@ -336,7 +338,7 @@ export default function ReserveCustomerPage() {
     return (
       <main className="min-h-screen bg-stone-50 px-4 py-8 text-stone-800">
         <div className="mx-auto max-w-3xl rounded-3xl border border-stone-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-bold">お客様情報の入力</h1>
+          <h1 className={reserveStyles.reserveTitle}>お客様情報の入力</h1>
           <p className="mt-3 text-sm text-stone-600">
             先にメニューと受取日時を選択してください。
           </p>
@@ -359,29 +361,13 @@ export default function ReserveCustomerPage() {
       <div className="mx-auto max-w-5xl">
         <div className="mb-4">
           <p className="text-sm tracking-[0.2em] text-amber-700">RESERVE</p>
-          <h1 className="mt-1 text-2xl font-bold">お客様情報の入力</h1>
+          <h1 className={`mt-1 ${reserveStyles.reserveTitle}`}>お客様情報の入力</h1>
           <p className="mt-2 text-sm text-stone-600">
             内容をご確認のうえ、ご予約を確定してください。
           </p>
         </div>
 
-        <div className="mb-6 flex items-center gap-2 text-xs text-stone-500">
-          <span className="rounded-full bg-amber-900 px-3 py-1 text-white">
-            1. メニュー
-          </span>
-          <span>→</span>
-          <span className="rounded-full bg-amber-900 px-3 py-1 text-white">
-            2. カート
-          </span>
-          <span>→</span>
-          <span className="rounded-full bg-amber-900 px-3 py-1 text-white">
-            3. 日時
-          </span>
-          <span>→</span>
-          <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-900">
-            4. お客様情報
-          </span>
-        </div>
+        <ReserveStepNav activeStep={4} />
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <form
@@ -443,10 +429,10 @@ export default function ReserveCustomerPage() {
               </div>
             ) : null}
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
+            <div className={`mt-6 ${reserveStyles.reserveActionRow}`}>
               <Link
                 href="/reserve/schedule"
-                className="inline-flex items-center justify-center rounded-2xl border border-stone-300 bg-white px-5 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100"
+                className={`${reserveStyles.reserveBtn} ${reserveStyles.reserveBtnSecondary}`}
               >
                 受取日時を変更する
               </Link>
@@ -454,7 +440,7 @@ export default function ReserveCustomerPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center justify-center rounded-2xl bg-amber-900 px-6 py-3 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-40 hover:opacity-90"
+                className={`${reserveStyles.reserveBtn} ${reserveStyles.reserveBtnPrimary}`}
               >
                 {submitting ? "送信中…" : "この内容で予約する"}
               </button>

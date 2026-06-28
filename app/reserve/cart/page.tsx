@@ -7,6 +7,8 @@ import {
   getCartItemRiceSize,
   isBentoCartItem,
 } from "../../../lib/reservationDraft";
+import ReserveStepNav from "../../../components/ReserveStepNav";
+import reserveStyles from "../../../components/reserve.module.css";
 import styles from "./page.module.css";
 
 type CartItem = {
@@ -169,36 +171,7 @@ export default function ReserveCartPage() {
             内容をご確認のうえ、受取日時の選択へ進んでください。
           </p>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-              gap: 12,
-              marginBottom: 22,
-            }}
-          >
-            {["1. メニュー", "2. カート", "3. 日時", "4. お客様情報"].map(
-              (step, index) => (
-                <div
-                  key={step}
-                  style={{
-                    borderRadius: 999,
-                    padding: "14px 12px",
-                    textAlign: "center",
-                    fontWeight: 700,
-                    fontSize: 16,
-                    lineHeight: 1.4,
-                    background: index === 1 ? "#6f4a2b" : "rgba(89,70,48,0.08)",
-                    color: index === 1 ? "#fff" : "#6d6258",
-                    overflowWrap: "anywhere",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {step}
-                </div>
-              ),
-            )}
-          </div>
+          <ReserveStepNav activeStep={2} />
 
           {draft.items.length === 0 ? (
             <div
@@ -348,34 +321,17 @@ export default function ReserveCartPage() {
                 </div>
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  gap: 12,
-                  flexWrap: "wrap",
-                  justifyContent: "space-between",
-                }}
-              >
+              <div className={reserveStyles.reserveActionRow}>
                 <Link
                   href="/menu"
-                  className="inline-flex items-center justify-center border"
-                  style={{
-                    padding: "14px 20px",
-                    borderRadius: 18,
-                    background: "#fffdf9",
-                  }}
+                  className={`${reserveStyles.reserveBtn} ${reserveStyles.reserveBtnSecondary}`}
                 >
                   メニューに戻る
                 </Link>
 
                 <Link
                   href="/reserve/schedule"
-                  className="inline-flex items-center justify-center bg-amber-900 text-white"
-                  style={{
-                    padding: "14px 20px",
-                    borderRadius: 18,
-                    minWidth: 190,
-                  }}
+                  className={`${reserveStyles.reserveBtn} ${reserveStyles.reserveBtnPrimary}`}
                 >
                   受取日時を選ぶ
                 </Link>
