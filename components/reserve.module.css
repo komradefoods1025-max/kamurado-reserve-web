@@ -1,0 +1,152 @@
+.stepNav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 14px 12px;
+  border-radius: 999px;
+  background: rgba(89, 70, 48, 0.08);
+  color: #6d6258;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.stepItem[data-active="true"] {
+  background: #6f4a2b;
+  color: #fff;
+}
+
+.stepSingleLine {
+  display: block;
+}
+
+.stepMultiLine {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  line-height: 1.3;
+}
+
+.reserveTitle {
+  margin-top: 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.reserveActionRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reserveBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 18px;
+  border-radius: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.reserveBtnSecondary {
+  border: 1px solid rgb(214 211 209);
+  background: #fff;
+  color: rgb(68 64 60);
+}
+
+.reserveBtnSecondary:hover {
+  background: rgb(245 245 244);
+}
+
+.reserveBtnPrimary {
+  border: 1px solid #78350f;
+  background: rgb(120 53 15);
+  color: #fff;
+}
+
+.reserveBtnPrimary:hover {
+  opacity: 0.9;
+}
+
+.reserveBtnPrimary:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+@media (max-width: 767px) {
+  .stepNav {
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .stepItem {
+    min-height: 42px;
+    padding: 8px 10px;
+    font-size: 15px;
+  }
+
+  .stepItem[data-step="4"] .stepSingleLine {
+    display: none;
+  }
+
+  .stepItem[data-step="4"] .stepMultiLine {
+    display: flex;
+  }
+
+  .stepItem:not([data-step="4"]) .stepSingleLine {
+    white-space: nowrap;
+  }
+
+  .reserveTitle {
+    font-size: clamp(1.125rem, 4.8vw, 1.375rem);
+    white-space: nowrap;
+  }
+
+  .reserveBtn {
+    min-height: 50px;
+    padding: 13px 16px;
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 640px) {
+  .reserveActionRow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .reserveBtn {
+    width: auto;
+    min-width: 190px;
+  }
+}
+
+@media (min-width: 768px) {
+  .reserveBtn {
+    font-size: 0.875rem;
+    min-height: 48px;
+    padding: 12px 20px;
+  }
+}

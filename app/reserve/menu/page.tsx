@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import MenuCard, { type ReserveMenuItem } from "../../../components/MenuCard";
+import ReserveStepNav from "../../../components/ReserveStepNav";
 import { menuImageUrl } from "../../../lib/menuImage";
 
 type CartItem = {
@@ -288,36 +289,7 @@ export default function ReserveMenuPage() {
             ご希望の商品をカートに追加してください。
           </p>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-              gap: 12,
-              marginBottom: 22,
-            }}
-          >
-            {["1. メニュー", "2. カート", "3. 日時", "4. お客様情報"].map(
-              (step, index) => (
-                <div
-                  key={step}
-                  style={{
-                    borderRadius: 999,
-                    padding: "14px 12px",
-                    textAlign: "center",
-                    fontWeight: 700,
-                    fontSize: 16,
-                    lineHeight: 1.4,
-                    background: index === 0 ? "#6f4a2b" : "rgba(89,70,48,0.08)",
-                    color: index === 0 ? "#fff" : "#6d6258",
-                    overflowWrap: "anywhere",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {step}
-                </div>
-              )
-            )}
-          </div>
+          <ReserveStepNav activeStep={1} />
 
           <div
             style={{
