@@ -15,7 +15,7 @@ export type PremiumSoundTrigger =
   | "page-flip";
 
 export const SOUND_ASSET_VERSION = 2;
-export const GO_TO_DATETIME_SOUND_VERSION = 1;
+export const GO_TO_DATETIME_SOUND_VERSION = 2;
 
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
 export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
@@ -72,7 +72,7 @@ export const PREMIUM_SOUNDS: Record<
     playbackRate: VOICE_PLAYBACK_RATE,
   },
   goToDatetime: {
-    src: versionedSoundSrc("/sounds/go-to-datetime.mp3", GO_TO_DATETIME_SOUND_VERSION),
+    src: versionedSoundSrc("/sounds/go-to-datetime.m4a", GO_TO_DATETIME_SOUND_VERSION),
     volume: 0.5,
     playbackRate: VOICE_PLAYBACK_RATE,
   },
@@ -526,13 +526,14 @@ async function playPremiumSoundAndWait(
     return;
   }
 
+  stopAllPremiumSounds();
+
   if (!enabled) {
     await minWait;
     return;
   }
 
   await unlockPremiumAudio();
-  stopAllPremiumSounds();
 
   if (!unlocked || !isTriggerAllowed(soundId, trigger)) {
     await minWait;
@@ -652,6 +653,8 @@ export async function playGoToDatetimeNavigationSound(
   if (typeof window === "undefined") {
     return;
   }
+
+  stopAllPremiumSounds();
 
   try {
     await playPremiumSoundAndWait("goToDatetime", {
