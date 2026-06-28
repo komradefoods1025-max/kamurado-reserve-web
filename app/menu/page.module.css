@@ -603,6 +603,14 @@
   cursor: not-allowed;
 }
 
+.pageMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
 .counter {
   flex-shrink: 0;
   margin: 0;
@@ -612,6 +620,16 @@
   font-weight: 500;
   color: rgba(232, 214, 186, 0.88);
   letter-spacing: 0.18em;
+}
+
+.swipeHint {
+  margin: 0;
+  line-height: 1.35;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", "Times New Roman", serif;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: rgba(232, 214, 186, 0.58);
+  letter-spacing: 0.22em;
 }
 
 .dots {
@@ -756,12 +774,20 @@
 
 @media (max-width: 767px) {
   .bookArea {
-    gap: 8px;
-    padding-inline: 0;
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 32px;
+    gap: 6px;
+    padding-inline: 8px;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    max-width: 100%;
   }
 
   .bookColumn {
     gap: 10px;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .bookShell {
@@ -773,11 +799,22 @@
     width: 32px;
     height: 32px;
     font-size: 1.05rem;
+    flex-shrink: 0;
+    justify-self: center;
   }
 
   .counter {
     font-size: 0.82rem;
     letter-spacing: 0.16em;
+  }
+
+  .pageMeta {
+    gap: 4px;
+  }
+
+  .swipeHint {
+    font-size: 0.66rem;
+    letter-spacing: 0.2em;
   }
 
   .dots {
