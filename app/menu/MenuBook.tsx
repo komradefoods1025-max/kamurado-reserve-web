@@ -669,6 +669,7 @@ export default function MenuBook() {
               {currentPage + 1} / {MENU_BOOK_PAGES.length}
             </div>
             <p className={styles.swipeHint}>スワイプでページをめくれます</p>
+            <p className={styles.swipeHint}>商品を押すとカートに追加できます</p>
           </div>
         </div>
       </div>
