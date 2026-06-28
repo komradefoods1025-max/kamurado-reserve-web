@@ -3,8 +3,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { formatCartItemLabel } from "../../../lib/reservationDraft";
+import {
+  playPremiumSound,
+  unlockPremiumAudio,
+} from "../../../lib/premiumSounds";
 import ReserveStepNav from "../../../components/ReserveStepNav";
 import reserveStyles from "../../../components/reserve.module.css";
 import styles from "./page.module.css";
@@ -164,6 +168,19 @@ export default function ReserveCustomerPage() {
   const [completed, setCompleted] = useState<{
     reservationNo?: string;
   } | null>(null);
+  const reservationSoundPlayedRef = useRef(false);
+
+  useEffect(() => {
+    if (!completed || reservationSoundPlayedRef.current) {
+      return;
+    }
+
+    reservationSoundPlayedRef.current = true;
+
+    void unlockPremiumAudio().then(() => {
+      void playPremiumSound("reservationComplete");
+    });
+  }, [completed]);
 
   useEffect(() => {
     const cartItems = readFirstAvailableJson<CartItem[]>(CART_KEYS, []);
@@ -267,6 +284,7 @@ export default function ReserveCustomerPage() {
 
     try {
       setSubmitting(true);
+      void unlockPremiumAudio();
 
       const result = await submitReservation(payload);
 
