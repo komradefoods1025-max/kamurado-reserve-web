@@ -21,6 +21,7 @@ import {
   adjustMenuBookItemQuantity,
   getCartSummary,
   readDraft,
+  type CartItem,
   type ReservationDraft,
 } from "../../lib/reservationDraft";
 import styles from "./page.module.css";
@@ -305,6 +306,7 @@ export default function MenuBook() {
   const [isSnapBack, setIsSnapBack] = useState(false);
   const [isCompletingTurn, setIsCompletingTurn] = useState(false);
   const [cartSummary, setCartSummary] = useState({ count: 0, amount: 0 });
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>(
     {},
   );
@@ -319,9 +321,9 @@ export default function MenuBook() {
       const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
       const viewportHeight =
         window.visualViewport?.height ?? window.innerHeight;
-      const footerHeight = 168;
-      const metaHeight = 72;
-      const verticalPadding = 24;
+      const footerHeight = isMobile ? 210 : 168;
+      const metaHeight = isMobile ? 52 : 72;
+      const verticalPadding = isMobile ? 16 : 24;
       const bookShellExtra = 56;
       const horizontalPadding = 28;
       const maxPageWidth = isMobile ? 380 : 360;
@@ -361,6 +363,9 @@ export default function MenuBook() {
 
   const applyDraftUpdate = useCallback((draft: ReservationDraft) => {
     setCartSummary(getCartSummary(draft));
+    setCartItems(
+      draft.items.filter((item) => Number(item.quantity || 0) > 0),
+    );
     const nextQuantities: Record<string, number> = {};
     draft.items.forEach((item) => {
       nextQuantities[item.id] = Number(item.quantity || 0);
@@ -498,6 +503,18 @@ export default function MenuBook() {
   const addPageToCart = useCallback(
     (pageIndex: number) => {
       changePageQuantity(pageIndex, 1);
+    },
+    [changePageQuantity],
+  );
+
+  const changeCartItemQuantity = useCallback(
+    (itemId: string, delta: number) => {
+      const pageIndex = MENU_BOOK_PAGES.findIndex((page) => page.id === itemId);
+      if (pageIndex < 0) {
+        return;
+      }
+
+      changePageQuantity(pageIndex, delta);
     },
     [changePageQuantity],
   );
@@ -794,92 +811,170 @@ export default function MenuBook() {
       ) : null}
 
       <div className={styles.stage}>
-        <div
-          className={styles.bookShell}
-          style={{ width: layout.spreadWidth + 56 }}
-        >
-          <span className={styles.metalCorner} data-corner="tl" aria-hidden />
-          <span className={styles.metalCorner} data-corner="tr" aria-hidden />
-          <span className={styles.metalCorner} data-corner="bl" aria-hidden />
-          <span className={styles.metalCorner} data-corner="br" aria-hidden />
-          <span className={styles.bookStitch} aria-hidden />
-          <span className={styles.bookCoverEdge} aria-hidden />
+        <div className={styles.bookColumn}>
           <div
-            ref={bookViewRef}
-            className={bookViewClassName}
-            style={{ width: layout.spreadWidth }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={endPointer}
-            onPointerCancel={endPointer}
+            className={styles.bookShell}
+            style={{ width: layout.spreadWidth + 56 }}
           >
-            <div className={styles.spread}>
-              <MenuPage
-                page={getMenuBookPage(currentPage)}
-                variant={layout.isMobile ? "single" : "left"}
-                turn={buildTurnState(layout.isMobile ? "single" : "left")}
-                quantity={
-                  getMenuBookPage(currentPage).id
-                    ? (itemQuantities[getMenuBookPage(currentPage).id!] ?? 0)
-                    : 0
-                }
-                onIncrement={() => changePageQuantity(currentPage, 1)}
-                onDecrement={() => changePageQuantity(currentPage, -1)}
-                segmentsX={meshSegmentsX}
-                segmentsY={meshSegmentsY}
-              />
-
-              {!layout.isMobile && (
+            <span className={styles.metalCorner} data-corner="tl" aria-hidden />
+            <span className={styles.metalCorner} data-corner="tr" aria-hidden />
+            <span className={styles.metalCorner} data-corner="bl" aria-hidden />
+            <span className={styles.metalCorner} data-corner="br" aria-hidden />
+            <span className={styles.bookStitch} aria-hidden />
+            <span className={styles.bookCoverEdge} aria-hidden />
+            <div
+              ref={bookViewRef}
+              className={bookViewClassName}
+              style={{ width: layout.spreadWidth }}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={endPointer}
+              onPointerCancel={endPointer}
+            >
+              <div className={styles.spread}>
                 <MenuPage
-                  page={rightPage ?? getMenuBookPage(currentPage)}
-                  variant="right"
-                  empty={!rightPage}
-                  turn={buildTurnState("right")}
+                  page={getMenuBookPage(currentPage)}
+                  variant={layout.isMobile ? "single" : "left"}
+                  turn={buildTurnState(layout.isMobile ? "single" : "left")}
                   quantity={
-                    rightPage?.id ? (itemQuantities[rightPage.id] ?? 0) : 0
+                    getMenuBookPage(currentPage).id
+                      ? (itemQuantities[getMenuBookPage(currentPage).id!] ?? 0)
+                      : 0
                   }
-                  onIncrement={() => changePageQuantity(currentPage + 1, 1)}
-                  onDecrement={() =>
-                    changePageQuantity(currentPage + 1, -1)
-                  }
+                  onIncrement={() => changePageQuantity(currentPage, 1)}
+                  onDecrement={() => changePageQuantity(currentPage, -1)}
                   segmentsX={meshSegmentsX}
                   segmentsY={meshSegmentsY}
                 />
-              )}
+
+                {!layout.isMobile && (
+                  <MenuPage
+                    page={rightPage ?? getMenuBookPage(currentPage)}
+                    variant="right"
+                    empty={!rightPage}
+                    turn={buildTurnState("right")}
+                    quantity={
+                      rightPage?.id ? (itemQuantities[rightPage.id] ?? 0) : 0
+                    }
+                    onIncrement={() => changePageQuantity(currentPage + 1, 1)}
+                    onDecrement={() =>
+                      changePageQuantity(currentPage + 1, -1)
+                    }
+                    segmentsX={meshSegmentsX}
+                    segmentsY={meshSegmentsY}
+                  />
+                )}
+              </div>
             </div>
+            {!layout.isMobile ? (
+              <span className={styles.bookSpineGlow} aria-hidden />
+            ) : null}
+            <span className={styles.bookFloorShadow} aria-hidden />
           </div>
-          {!layout.isMobile ? (
-            <span className={styles.bookSpineGlow} aria-hidden />
-          ) : null}
-          <span className={styles.bookFloorShadow} aria-hidden />
+
+          <div className={styles.pageMeta} data-mobile-only>
+            <div className={styles.counter}>
+              {currentPage + 1} / {MENU_BOOK_PAGES.length}
+            </div>
+            <p className={styles.swipeHint}>スワイプでページをめくれます</p>
+          </div>
         </div>
       </div>
 
-      <div className={styles.footerDock}>
-        <a href={`tel:${PHONE_NUMBER}`} className={styles.footerBtn}>
-          <PhoneIcon />
-          <span>電話する</span>
-        </a>
+      <div
+        className={
+          layout.isMobile ? styles.footerDockMobile : styles.footerDock
+        }
+      >
+        {layout.isMobile ? (
+          <>
+            <div className={styles.footerCartPanel}>
+              {cartItems.length === 0 ? (
+                <p className={styles.footerCartEmpty}>
+                  カートに商品が入っていません
+                </p>
+              ) : (
+                <>
+                  <ul className={styles.footerCartList}>
+                    {cartItems.map((item) => (
+                      <li key={item.id} className={styles.footerCartItem}>
+                        <span className={styles.footerCartName}>
+                          {item.name} ×{Number(item.quantity || 0)}
+                        </span>
+                        <div className={styles.footerCartQty}>
+                          <button
+                            type="button"
+                            className={styles.footerCartQtyBtn}
+                            aria-label={`${item.name}の数量を減らす`}
+                            onClick={() => changeCartItemQuantity(item.id, -1)}
+                          >
+                            −
+                          </button>
+                          <span className={styles.footerCartQtyValue}>
+                            {Number(item.quantity || 0)}
+                          </span>
+                          <button
+                            type="button"
+                            className={styles.footerCartQtyBtn}
+                            aria-label={`${item.name}の数量を増やす`}
+                            onClick={() => changeCartItemQuantity(item.id, 1)}
+                          >
+                            ＋
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className={styles.footerCartTotal}>
+                    現在のカート：{cartSummary.count}点 / ¥
+                    {cartSummary.amount.toLocaleString("ja-JP")}
+                  </p>
+                </>
+              )}
+            </div>
+            <div className={styles.footerActions}>
+              <a href={`tel:${PHONE_NUMBER}`} className={styles.footerBtn}>
+                <PhoneIcon />
+                <span>電話する</span>
+              </a>
+              <Link
+                href={reserveHref}
+                className={styles.footerBtn}
+                onClick={handleReserveClick}
+              >
+                <CartIcon />
+                <span>ランチ予約へ</span>
+              </Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <a href={`tel:${PHONE_NUMBER}`} className={styles.footerBtn}>
+              <PhoneIcon />
+              <span>電話する</span>
+            </a>
 
-        <div className={styles.footerCenter}>
-          <div className={styles.counter}>
-            {currentPage + 1} / {MENU_BOOK_PAGES.length}
-          </div>
-          <p className={styles.swipeHint}>スワイプでページをめくれます</p>
-          <p className={styles.cartSummary}>
-            現在のカート：{cartSummary.count}点 / ¥
-            {cartSummary.amount.toLocaleString("ja-JP")}
-          </p>
-        </div>
+            <div className={styles.footerCenter}>
+              <div className={styles.counter}>
+                {currentPage + 1} / {MENU_BOOK_PAGES.length}
+              </div>
+              <p className={styles.swipeHint}>スワイプでページをめくれます</p>
+              <p className={styles.cartSummary}>
+                現在のカート：{cartSummary.count}点 / ¥
+                {cartSummary.amount.toLocaleString("ja-JP")}
+              </p>
+            </div>
 
-        <Link
-          href={reserveHref}
-          className={styles.footerBtn}
-          onClick={handleReserveClick}
-        >
-          <CartIcon />
-          <span>ランチ予約へ</span>
-        </Link>
+            <Link
+              href={reserveHref}
+              className={styles.footerBtn}
+              onClick={handleReserveClick}
+            >
+              <CartIcon />
+              <span>ランチ予約へ</span>
+            </Link>
+          </>
+        )}
       </div>
     </main>
   );
