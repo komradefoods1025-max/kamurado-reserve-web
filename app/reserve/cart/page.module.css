@@ -39,24 +39,29 @@
 }
 
 .itemName {
-  margin: 0 0 10px;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  font-size: 28px;
+  margin: 0 0 6px;
+  font-size: clamp(20px, 2vw, 28px);
   line-height: 1.35;
   font-weight: 700;
-}
-
-.itemNameCompact {
-  display: none;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .itemRice {
-  display: none;
-  margin: 0 0 8px;
-  font-size: 14px;
+  display: block;
+  margin: 6px 0 8px;
+  font-size: 16px;
   line-height: 1.4;
   color: #8a6a42;
+  white-space: nowrap;
+}
+
+.riceEmoji {
+  display: none;
 }
 
 .itemPriceDesktop {
@@ -161,22 +166,15 @@
     line-height: 1.4;
     font-weight: 700;
     margin-bottom: 4px;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-  }
-
-  .itemNameFull {
-    display: none;
-  }
-
-  .itemNameCompact {
-    display: inline;
   }
 
   .itemRice {
-    display: block;
+    margin: 0 0 8px;
+    font-size: 14px;
+  }
+
+  .riceEmoji {
+    display: inline;
   }
 
   .itemPriceDesktop {
