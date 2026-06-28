@@ -39,6 +39,9 @@ const SWIPE_THRESHOLD = 52;
 const VELOCITY_THRESHOLD = 0.42;
 const TAP_THRESHOLD = 12;
 const TAP_HINT_STORAGE_KEY = "kamurado-menu-tap-hint-seen";
+const SOUND_ENABLED_STORAGE_KEY = "kamurado-menu-sound-enabled";
+const PAGE_FLIP_SOUND_SRC = "/sounds/page-flip.mp3";
+const PAGE_FLIP_VOLUME = 0.08;
 const CART_FLY_MS = 500;
 const PAGE_PULSE_MS = 150;
 
@@ -86,6 +89,55 @@ function PhoneIcon() {
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function SoundToggleIcon({ enabled }: { enabled: boolean }) {
+  if (enabled) {
+    return (
+      <svg className={styles.soundToggleSvg} viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M5 9v6h4l5 4V5L9 9H5z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M16 9a4 4 0 0 1 0 6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M18.5 6.5a7.5 7.5 0 0 1 0 11"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg className={styles.soundToggleSvg} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M5 9v6h4l5 4V5L9 9H5z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M18 9l-6 6M12 9l6 6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -292,6 +344,8 @@ export default function MenuBook() {
   const tapHintTimerRef = useRef<number | null>(null);
   const flyIdRef = useRef(0);
   const skipPagePulseRef = useRef(true);
+  const pageFlipAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUnlockedRef = useRef(false);
 
   const [layout, setLayout] = useState<Layout>(DEFAULT_LAYOUT);
   const [currentPage, setCurrentPage] = useState(0);
@@ -310,6 +364,7 @@ export default function MenuBook() {
   const [cartSummaryPulse, setCartSummaryPulse] = useState(false);
   const [footerBounce, setFooterBounce] = useState(false);
   const [flyItems, setFlyItems] = useState<CartFlyParticle[]>([]);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   useEffect(() => {
     const updateLayout = () => {
@@ -369,6 +424,17 @@ export default function MenuBook() {
   useEffect(() => {
     applyDraftUpdate(readDraft());
   }, [applyDraftUpdate]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const stored = window.localStorage.getItem(SOUND_ENABLED_STORAGE_KEY);
+    if (stored === "0") {
+      setSoundEnabled(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -478,6 +544,71 @@ export default function MenuBook() {
   const showAddedToast = useCallback(() => {
     showToastMessage("✓ カートへ追加しました");
   }, [showToastMessage]);
+
+  const ensurePageFlipAudio = useCallback(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    if (!pageFlipAudioRef.current) {
+      const audio = new Audio(PAGE_FLIP_SOUND_SRC);
+      audio.preload = "none";
+      audio.volume = PAGE_FLIP_VOLUME;
+      pageFlipAudioRef.current = audio;
+    }
+
+    return pageFlipAudioRef.current;
+  }, []);
+
+  const unlockPageFlipAudio = useCallback(() => {
+    if (audioUnlockedRef.current) {
+      return;
+    }
+
+    const audio = ensurePageFlipAudio();
+    if (!audio) {
+      return;
+    }
+
+    audioUnlockedRef.current = true;
+
+    try {
+      audio.load();
+    } catch {
+      // Ignore environments that cannot load audio.
+    }
+  }, [ensurePageFlipAudio]);
+
+  const playPageFlipSound = useCallback(() => {
+    if (!soundEnabled || !audioUnlockedRef.current) {
+      return;
+    }
+
+    const audio = pageFlipAudioRef.current;
+    if (!audio) {
+      return;
+    }
+
+    try {
+      audio.currentTime = 0;
+      void audio.play().catch(() => {});
+    } catch {
+      // Ignore environments that cannot play audio.
+    }
+  }, [soundEnabled]);
+
+  const toggleSoundEnabled = useCallback(() => {
+    setSoundEnabled((current) => {
+      const next = !current;
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(
+          SOUND_ENABLED_STORAGE_KEY,
+          next ? "1" : "0",
+        );
+      }
+      return next;
+    });
+  }, []);
 
   const triggerCartSummaryPulse = useCallback(() => {
     setCartSummaryPulse(true);
@@ -616,6 +747,7 @@ export default function MenuBook() {
       setTransitionDirection(direction);
       setTransitionTargetPage(targetPage);
       setIsTransitioning(true);
+      playPageFlipSound();
 
       if (transitionTimerRef.current !== null) {
         window.clearTimeout(transitionTimerRef.current);
@@ -629,7 +761,7 @@ export default function MenuBook() {
         transitionTimerRef.current = null;
       }, PAGE_TRANSITION_MS);
     },
-    [canGoNext, canGoPrev, currentPage, isTransitioning, layout.isMobile],
+    [canGoNext, canGoPrev, currentPage, isTransitioning, layout.isMobile, playPageFlipSound],
   );
 
   const finishPointer = useCallback(
@@ -668,6 +800,7 @@ export default function MenuBook() {
       return;
     }
 
+    unlockPageFlipAudio();
     event.currentTarget.setPointerCapture(event.pointerId);
     activePointerIdRef.current = event.pointerId;
     dragStartXRef.current = event.clientX;
@@ -710,6 +843,11 @@ export default function MenuBook() {
     }
 
     finishPointer(event.clientX - dragStartXRef.current, event.clientX);
+  };
+
+  const handlePageNavClick = (direction: PageDirection) => {
+    unlockPageFlipAudio();
+    startTransition(direction);
   };
 
   const bookViewClassName = [
@@ -772,7 +910,7 @@ export default function MenuBook() {
               className={styles.pageNavBtn}
               aria-label="前のページ"
               disabled={!canGoPrev || isTransitioning}
-              onClick={() => startTransition("prev")}
+              onClick={() => handlePageNavClick("prev")}
             >
               ‹
             </button>
@@ -856,15 +994,33 @@ export default function MenuBook() {
               className={styles.pageNavBtn}
               aria-label="次のページ"
               disabled={!canGoNext || isTransitioning}
-              onClick={() => startTransition("next")}
+              onClick={() => handlePageNavClick("next")}
             >
               ›
             </button>
           </div>
 
           <div className={styles.pageMeta}>
-            <div className={styles.counter}>
-              {currentPage + 1} / {MENU_BOOK_PAGES.length}
+            <div className={styles.pageMetaTop}>
+              <div className={styles.counter}>
+                {currentPage + 1} / {MENU_BOOK_PAGES.length}
+              </div>
+              <button
+                type="button"
+                className={styles.soundToggleBtn}
+                aria-label={
+                  soundEnabled
+                    ? "ページめくり音をオフにする"
+                    : "ページめくり音をオンにする"
+                }
+                aria-pressed={soundEnabled}
+                onClick={() => {
+                  unlockPageFlipAudio();
+                  toggleSoundEnabled();
+                }}
+              >
+                <SoundToggleIcon enabled={soundEnabled} />
+              </button>
             </div>
             <div className={styles.guideRow}>
               <div className={styles.swipeHintAnim} aria-hidden="true">
