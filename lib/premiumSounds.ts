@@ -1,9 +1,15 @@
 "use client";
 
-export type PremiumSoundId = "cartAdd" | "reservationComplete";
+export type PremiumSoundId =
+  | "cartAdd"
+  | "cartThanks"
+  | "orderReceived"
+  | "reservationComplete";
 
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
 export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
+
+export const ORDER_RECEIVED_NAV_DELAY_MS = 300;
 
 export const PAGE_FLIP_ANIMATION_MS = 450;
 export const PAGE_FLIP_LIFT_MS = 100;
@@ -38,6 +44,14 @@ export const PREMIUM_SOUNDS: Record<
     volume: 0.35,
     startOffset: 0,
     playDuration: 0.42,
+  },
+  cartThanks: {
+    src: "/sounds/cart-thanks.mp3",
+    volume: 0.45,
+  },
+  orderReceived: {
+    src: "/sounds/order-received.mp3",
+    volume: 0.5,
   },
   reservationComplete: {
     src: "/sounds/reservation-complete.mp3",
