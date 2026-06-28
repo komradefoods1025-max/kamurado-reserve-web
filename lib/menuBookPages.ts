@@ -6,7 +6,7 @@ export type MenuBookPage = {
   id?: string;
   name?: string;
   price?: number;
-  itemType?: "bento" | "extra";
+  itemType?: "bento" | "drink" | "extra";
 };
 
 /** public/menu/01.jpg〜11.jpg と予約カート id の対応 */
@@ -34,21 +34,21 @@ export const MENU_BOOK_PAGES: MenuBookPage[] = [
   {
     pageNumber: 3,
     src: "/menu/03.jpg",
-    alt: "チキンカツ弁当 タルタルソースがけ",
+    alt: "生姜焼き弁当",
     orderable: true,
-    id: "chicken_katsu_tartar_bento",
-    name: "チキンカツ弁当 タルタルソースがけ",
+    id: "shogayaki_bento",
+    name: "生姜焼き弁当",
     price: 700,
     itemType: "bento",
   },
   {
     pageNumber: 4,
     src: "/menu/04.jpg",
-    alt: "生姜焼き弁当",
+    alt: "オリジナルハンバーグ弁当",
     orderable: true,
-    id: "shogayaki_bento",
-    name: "生姜焼き弁当",
-    price: 700,
+    id: "original_hamburg_bento",
+    name: "オリジナルハンバーグ弁当",
+    price: 800,
     itemType: "bento",
   },
   {
@@ -74,16 +74,6 @@ export const MENU_BOOK_PAGES: MenuBookPage[] = [
   {
     pageNumber: 7,
     src: "/menu/07.jpg",
-    alt: "チキンカツ弁当",
-    orderable: true,
-    id: "chicken_katsu_bento",
-    name: "チキンカツ弁当",
-    price: 800,
-    itemType: "bento",
-  },
-  {
-    pageNumber: 8,
-    src: "/menu/08.jpg",
     alt: "チーズハンバーグ弁当",
     orderable: true,
     id: "cheese_hamburg_bento",
@@ -92,8 +82,28 @@ export const MENU_BOOK_PAGES: MenuBookPage[] = [
     itemType: "bento",
   },
   {
+    pageNumber: 8,
+    src: "/menu/08.jpg",
+    alt: "チキンカツ弁当",
+    orderable: true,
+    id: "chicken_katsu_bento",
+    name: "チキンカツ弁当",
+    price: 750,
+    itemType: "bento",
+  },
+  {
     pageNumber: 9,
     src: "/menu/09.jpg",
+    alt: "チキンカツ弁当 タルタルソースがけ",
+    orderable: true,
+    id: "chicken_katsu_tartar_bento",
+    name: "チキンカツ弁当 タルタルソースがけ",
+    price: 800,
+    itemType: "bento",
+  },
+  {
+    pageNumber: 10,
+    src: "/menu/10.jpg",
     alt: "からあげ弁当",
     orderable: true,
     id: "karaage_bento",
@@ -102,24 +112,14 @@ export const MENU_BOOK_PAGES: MenuBookPage[] = [
     itemType: "bento",
   },
   {
-    pageNumber: 10,
-    src: "/menu/10.jpg",
-    alt: "オリジナルハンバーグ弁当",
-    orderable: true,
-    id: "original_hamburg_bento",
-    name: "オリジナルハンバーグ弁当",
-    price: 750,
-    itemType: "bento",
-  },
-  {
     pageNumber: 11,
     src: "/menu/11.jpg",
-    alt: "チキンカツおろしポン酢弁当",
+    alt: "追加唐揚げ",
     orderable: true,
-    id: "chicken_katsu_oroshi_ponzu_bento",
-    name: "チキンカツおろしポン酢弁当",
-    price: 750,
-    itemType: "bento",
+    id: "extra_karaage",
+    name: "追加唐揚げ",
+    price: 80,
+    itemType: "extra",
   },
 ];
 
