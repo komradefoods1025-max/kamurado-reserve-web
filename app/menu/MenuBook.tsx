@@ -26,6 +26,7 @@ const TURN_THRESHOLD = 0.35;
 const VELOCITY_THRESHOLD = 0.42;
 const SNAPBACK_MS = 380;
 const COMPLETE_TURN_MS = 320;
+const STRIP_COUNT = 10;
 
 type Layout = {
   isMobile: boolean;
@@ -84,6 +85,18 @@ function PhoneIcon() {
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+function BrandLogo() {
+  return (
+    <div className={styles.logoArea}>
+      <p className={styles.logoSub}>鉄板焼きダイニング</p>
+      <div className={styles.logoMainRow}>
+        <span className={styles.logoMain}>かむらど</span>
+        <span className={styles.logoSeal} aria-hidden="true" />
+      </div>
+    </div>
   );
 }
 
@@ -152,6 +165,77 @@ function isPageTurnTarget(
   return variant === "left";
 }
 
+function getStripLocal(
+  index: number,
+  count: number,
+  progress: number,
+  direction: "next" | "prev",
+): number {
+  const t = (index + 0.5) / count;
+
+  if (direction === "next") {
+    const foldStart = 1 - progress;
+    if (progress <= 0 || t < foldStart) {
+      return 0;
+    }
+    return (t - foldStart) / Math.max(0.001, 1 - foldStart);
+  }
+
+  const foldEnd = progress;
+  if (progress <= 0 || t > foldEnd) {
+    return 0;
+  }
+  return (foldEnd - t) / Math.max(0.001, foldEnd);
+}
+
+type CurlStripsProps = {
+  page: (typeof MENU_PAGES)[number];
+  direction: "next" | "prev";
+  progress: number;
+};
+
+function CurlStrips({ page, direction, progress }: CurlStripsProps) {
+  return (
+    <div className={styles.curlLayer} data-direction={direction} aria-hidden>
+      <span className={styles.curlRootShadow} />
+      <span className={styles.curlHighlight} />
+      {Array.from({ length: STRIP_COUNT }, (_, index) => {
+        const local = getStripLocal(index, STRIP_COUNT, progress, direction);
+        const rotateY = direction === "next" ? -local * 88 : local * 88;
+        const translateX = direction === "next" ? -local * 7 : local * 7;
+        const scaleY = 1 + local * 0.04;
+        const stripStyle: CSSProperties = {
+          left: `${(index / STRIP_COUNT) * 100}%`,
+          width: `${100 / STRIP_COUNT}%`,
+          zIndex: index + 1,
+          transform: `perspective(900px) rotateY(${rotateY}deg) translateX(${translateX}px) scaleY(${scaleY})`,
+          transformOrigin:
+            direction === "next" ? "left center" : "right center",
+          opacity: local > 0 ? 1 : 0,
+          pointerEvents: "none",
+        };
+
+        return (
+          <div key={index} className={styles.curlStrip} style={stripStyle}>
+            <div className={styles.curlStripFace}>
+              <img
+                src={page.src}
+                alt=""
+                className={styles.curlStripGhost}
+                style={{
+                  width: `${STRIP_COUNT * 100}%`,
+                  left: `${-index * 100}%`,
+                }}
+                draggable={false}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 type MenuPageProps = {
   page: (typeof MENU_PAGES)[number];
   variant: "left" | "right" | "single";
@@ -174,8 +258,10 @@ function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
     ? { ["--turn-progress" as string]: String(turn.progress) }
     : undefined;
 
-  const showTurningPage =
-    turn.isTarget && (turn.progress > 0 || turn.settling) && turn.direction;
+  const showCurl =
+    turn.isTarget &&
+    (turn.progress > 0 || turn.settling) &&
+    turn.direction;
 
   if (empty) {
     return <div className={pageClassName} aria-hidden />;
@@ -188,12 +274,15 @@ function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
       data-dragging={turn.dragging ? "true" : undefined}
       data-settling={turn.settling ? "true" : undefined}
       data-direction={turn.isTarget ? turn.direction ?? undefined : undefined}
-      data-turning={showTurningPage ? "true" : undefined}
+      data-turning={showCurl ? "true" : undefined}
     >
+      <span className={styles.pageCornerOrnament} data-corner="tl" aria-hidden />
+      <span className={styles.pageCornerOrnament} data-corner="tr" aria-hidden />
+      <span className={styles.pageCornerOrnament} data-corner="bl" aria-hidden />
+      <span className={styles.pageCornerOrnament} data-corner="br" aria-hidden />
       <div className={styles.pageScene}>
         <span className={styles.pagePaperTexture} aria-hidden />
         <span className={styles.pageThickness} aria-hidden />
-        <span className={styles.pageCornerLift} aria-hidden />
         <span className={styles.pageDropShadow} aria-hidden />
         <span className={styles.pageFallShadow} aria-hidden />
         <img
@@ -202,22 +291,12 @@ function MenuPage({ page, variant, empty = false, turn }: MenuPageProps) {
           className={styles.pageImage}
           draggable={false}
         />
-        {showTurningPage ? (
-          <div
-            className={styles.turningPage}
-            data-direction={turn.direction ?? undefined}
-            aria-hidden
-          >
-            <div className={styles.turningPageInner}>
-              <span className={styles.turningPageEdge} aria-hidden />
-              <img
-                src={page.src}
-                alt=""
-                className={styles.turningGhost}
-                draggable={false}
-              />
-            </div>
-          </div>
+        {showCurl && turn.direction ? (
+          <CurlStrips
+            page={page}
+            direction={turn.direction}
+            progress={turn.progress}
+          />
         ) : null}
       </div>
     </div>
@@ -253,15 +332,20 @@ export default function MenuBook() {
       const viewportHeight =
         window.visualViewport?.height ?? window.innerHeight;
       const footerHeight = 112;
-      const counterHeight = 36;
-      const verticalPadding = 28;
+      const logoHeight = 72;
+      const dotsHeight = 44;
+      const verticalPadding = 20;
       const navSpace = isMobile ? 84 : 108;
       const horizontalPadding = 24;
       const maxPageWidth = isMobile ? 360 : 340;
 
       const maxPageHeight = Math.max(
         160,
-        viewportHeight - footerHeight - counterHeight - verticalPadding,
+        viewportHeight -
+          footerHeight -
+          logoHeight -
+          dotsHeight -
+          verticalPadding,
       );
       const contentWidth = window.innerWidth - horizontalPadding - navSpace;
       const pageWidth = Math.floor(
@@ -357,6 +441,23 @@ export default function MenuBook() {
       return Math.min(maxPage, page + step);
     });
   }, [layout.isMobile]);
+
+  const goToPage = useCallback(
+    (index: number) => {
+      if (isCompletingTurn) {
+        return;
+      }
+
+      if (layout.isMobile) {
+        setCurrentPage(Math.min(index, maxLeftPage));
+        return;
+      }
+
+      const leftIndex = index % 2 === 0 ? index : Math.max(0, index - 1);
+      setCurrentPage(Math.min(leftIndex, maxLeftPage));
+    },
+    [isCompletingTurn, layout.isMobile, maxLeftPage],
+  );
 
   const beginSnapBack = useCallback((direction: DragDirection) => {
     if (!direction) {
@@ -555,10 +656,7 @@ export default function MenuBook() {
 
   return (
     <main className={styles.wrap}>
-      <header className={styles.header}>
-        <h1>グランドメニュー</h1>
-        <p>左右スワイプまたはボタンでページをめくれます</p>
-      </header>
+      <BrandLogo />
 
       <div className={styles.stage}>
         <div className={styles.bookArea}>
@@ -575,13 +673,10 @@ export default function MenuBook() {
           <div className={styles.bookColumn}>
             <div
               className={styles.bookShell}
-              style={{
-                width: layout.isMobile
-                  ? layout.spreadWidth + 24
-                  : layout.spreadWidth + 24,
-              }}
+              style={{ width: layout.spreadWidth + 28 }}
             >
               <span className={styles.bookCoverEdge} aria-hidden />
+              <span className={styles.bookGoldFrame} aria-hidden />
               <div
                 className={bookViewClassName}
                 style={{ width: layout.spreadWidth }}
@@ -611,6 +706,29 @@ export default function MenuBook() {
                 <span className={styles.bookSpineGlow} aria-hidden />
               ) : null}
               <span className={styles.bookFloorShadow} aria-hidden />
+            </div>
+
+            <div
+              className={styles.dots}
+              role="tablist"
+              aria-label="ページインジケーター"
+            >
+              {MENU_PAGES.map((page, index) => (
+                <button
+                  key={page.src}
+                  type="button"
+                  role="tab"
+                  className={
+                    index === currentPage
+                      ? `${styles.dot} ${styles.dotActive}`
+                      : styles.dot
+                  }
+                  aria-label={`${index + 1}ページ目`}
+                  aria-selected={index === currentPage}
+                  disabled={isCompletingTurn}
+                  onClick={() => goToPage(index)}
+                />
+              ))}
             </div>
 
             <div className={styles.counter}>
