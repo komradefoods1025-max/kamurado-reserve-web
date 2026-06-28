@@ -6,7 +6,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
@@ -25,21 +24,13 @@ import {
   type ReservationDraft,
 } from "../../lib/reservationDraft";
 import styles from "./page.module.css";
-import WebGLPageCurl from "./WebGLPageCurl";
-import { turnAnimationEase } from "./pageTurnMath";
 
 const MOBILE_BREAKPOINT = 768;
 const PHONE_NUMBER = "0484415517";
 const PHONE_DISPLAY = "048-441-5517";
-const MAX_DRAG = 148;
-const TURN_THRESHOLD = 0.35;
+const PAGE_TRANSITION_MS = 420;
+const SWIPE_THRESHOLD = 52;
 const VELOCITY_THRESHOLD = 0.42;
-const SNAPBACK_MS = 760;
-const COMPLETE_TURN_MS = 820;
-const MESH_SEGMENTS_X_MOBILE = 12;
-const MESH_SEGMENTS_Y_MOBILE = 10;
-const MESH_SEGMENTS_X_DESKTOP = 16;
-const MESH_SEGMENTS_Y_DESKTOP = 12;
 const TAP_THRESHOLD = 12;
 
 type Layout = {
@@ -48,15 +39,7 @@ type Layout = {
   spreadWidth: number;
 };
 
-type DragDirection = "next" | "prev" | null;
-
-type PageTurnState = {
-  progress: number;
-  direction: DragDirection;
-  dragging: boolean;
-  settling: boolean;
-  isTarget: boolean;
-};
+type PageDirection = "next" | "prev";
 
 const DEFAULT_LAYOUT: Layout = {
   isMobile: true,
@@ -113,83 +96,52 @@ function getMaxLeftPage(isMobile: boolean): number {
     : MENU_BOOK_PAGES.length - 2;
 }
 
-function clampDragOffset(
-  offset: number,
-  canGoPrev: boolean,
-  canGoNext: boolean,
+function getTargetPageIndex(
+  current: number,
+  direction: PageDirection,
+  isMobile: boolean,
 ): number {
-  let clamped = offset;
+  const step = isMobile ? 1 : 2;
+  const maxPage = getMaxLeftPage(isMobile);
 
-  if (!canGoPrev && clamped > 0) {
-    clamped *= 0.22;
+  if (direction === "next") {
+    return Math.min(maxPage, current + step);
   }
 
-  if (!canGoNext && clamped < 0) {
-    clamped *= 0.22;
-  }
-
-  return Math.max(-MAX_DRAG, Math.min(MAX_DRAG, clamped));
+  return Math.max(0, current - step);
 }
 
-function getDragProgress(offset: number): number {
-  return Math.min(1, Math.abs(offset) / MAX_DRAG);
-}
-
-function getDragDirection(offset: number): DragDirection {
-  if (offset <= -8) {
+function resolveSwipeDirection(
+  offsetX: number,
+  velocity: number,
+): PageDirection | null {
+  if (offsetX <= -SWIPE_THRESHOLD || velocity <= -VELOCITY_THRESHOLD) {
     return "next";
   }
 
-  if (offset >= 8) {
+  if (offsetX >= SWIPE_THRESHOLD || velocity >= VELOCITY_THRESHOLD) {
     return "prev";
   }
 
   return null;
 }
 
-function isPageTurnTarget(
-  variant: "left" | "right" | "single",
-  direction: DragDirection,
-  isMobile: boolean,
-  hasRightPage: boolean,
-): boolean {
-  if (!direction) {
-    return false;
-  }
-
-  if (isMobile) {
-    return true;
-  }
-
-  if (direction === "next") {
-    return hasRightPage ? variant === "right" : variant === "left";
-  }
-
-  return variant === "left";
-}
-
 type MenuPageProps = {
   page: MenuBookPage;
   variant: "left" | "right" | "single";
   empty?: boolean;
-  turn: PageTurnState;
   quantity: number;
   onIncrement: () => void;
   onDecrement: () => void;
-  segmentsX: number;
-  segmentsY: number;
 };
 
 function MenuPage({
   page,
   variant,
   empty = false,
-  turn,
   quantity,
   onIncrement,
   onDecrement,
-  segmentsX,
-  segmentsY,
 }: MenuPageProps) {
   const pageClassName = [
     styles.page,
@@ -201,46 +153,27 @@ function MenuPage({
     .filter(Boolean)
     .join(" ");
 
-  const pageStyle: CSSProperties | undefined = turn.isTarget
-    ? { ["--turn-progress" as string]: String(turn.progress) }
-    : undefined;
-
-  const showCurl =
-    turn.isTarget &&
-    (turn.progress > 0 || turn.settling) &&
-    turn.direction;
-
   if (empty) {
     return <div className={pageClassName} aria-hidden />;
   }
 
   return (
-    <div
-      className={pageClassName}
-      style={pageStyle}
-      data-dragging={turn.dragging ? "true" : undefined}
-      data-settling={turn.settling ? "true" : undefined}
-      data-direction={turn.isTarget ? turn.direction ?? undefined : undefined}
-      data-turning={showCurl ? "true" : undefined}
-    >
+    <div className={pageClassName}>
       <div className={styles.pageScene}>
         <span className={styles.pagePaperTexture} aria-hidden />
         <span className={styles.pageThickness} aria-hidden />
-        <span className={styles.pageDropShadow} aria-hidden />
-        <span className={styles.pageFallShadow} aria-hidden />
         <img
           src={page.src}
           alt={page.alt}
           className={styles.pageImage}
-          style={showCurl ? { visibility: "hidden" } : undefined}
           draggable={false}
         />
-        {typeof page.price === "number" && !showCurl ? (
+        {typeof page.price === "number" ? (
           <span className={styles.pagePriceBadge} aria-hidden="true">
             {formatMenuPrice(page.price)}
           </span>
         ) : null}
-        {page.orderable && typeof page.id === "string" && !showCurl ? (
+        {page.orderable && typeof page.id === "string" ? (
           <div
             className={styles.pageQtyControls}
             onPointerDown={(event) => event.stopPropagation()}
@@ -270,16 +203,79 @@ function MenuPage({
             </button>
           </div>
         ) : null}
-        {showCurl && turn.direction ? (
-          <WebGLPageCurl
-            page={page}
-            direction={turn.direction}
-            progress={turn.progress}
-            segmentsX={segmentsX}
-            segmentsY={segmentsY}
-          />
-        ) : null}
       </div>
+    </div>
+  );
+}
+
+type MenuSpreadProps = {
+  leftPageIndex: number;
+  layout: Layout;
+  itemQuantities: Record<string, number>;
+  onChangeQuantity: (pageIndex: number, delta: number) => void;
+};
+
+function MenuSpread({
+  leftPageIndex,
+  layout,
+  itemQuantities,
+  onChangeQuantity,
+}: MenuSpreadProps) {
+  const leftPage = getMenuBookPage(leftPageIndex);
+  const rightPage = layout.isMobile
+    ? null
+    : (MENU_BOOK_PAGES[leftPageIndex + 1] ?? null);
+
+  return (
+    <div className={styles.spread}>
+      <MenuPage
+        page={leftPage}
+        variant={layout.isMobile ? "single" : "left"}
+        quantity={leftPage.id ? (itemQuantities[leftPage.id] ?? 0) : 0}
+        onIncrement={() => onChangeQuantity(leftPageIndex, 1)}
+        onDecrement={() => onChangeQuantity(leftPageIndex, -1)}
+      />
+      {!layout.isMobile ? (
+        <MenuPage
+          page={rightPage ?? leftPage}
+          variant="right"
+          empty={!rightPage}
+          quantity={rightPage?.id ? (itemQuantities[rightPage.id] ?? 0) : 0}
+          onIncrement={() => onChangeQuantity(leftPageIndex + 1, 1)}
+          onDecrement={() => onChangeQuantity(leftPageIndex + 1, -1)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+type TransitionLayerProps = MenuSpreadProps & {
+  role: "outgoing" | "incoming";
+  direction: PageDirection;
+};
+
+function TransitionLayer({
+  role,
+  direction,
+  leftPageIndex,
+  layout,
+  itemQuantities,
+  onChangeQuantity,
+}: TransitionLayerProps) {
+  return (
+    <div
+      className={styles.spreadLayer}
+      data-role={role}
+      data-direction={direction}
+    >
+      <span className={styles.pageTransitionShadow} aria-hidden />
+      <span className={styles.pageTransitionEdge} aria-hidden />
+      <MenuSpread
+        leftPageIndex={leftPageIndex}
+        layout={layout}
+        itemQuantities={itemQuantities}
+        onChangeQuantity={onChangeQuantity}
+      />
     </div>
   );
 }
@@ -288,24 +284,19 @@ export default function MenuBook() {
   const bookViewRef = useRef<HTMLDivElement>(null);
   const dragStartXRef = useRef(0);
   const activePointerIdRef = useRef<number | null>(null);
-  const pendingDragOffsetRef = useRef<number | null>(null);
-  const dragRafRef = useRef<number | null>(null);
-  const snapBackTimerRef = useRef<number | null>(null);
-  const snapBackAnimRef = useRef<number | null>(null);
-  const completeTurnTimerRef = useRef<number | null>(null);
-  const dragOffsetRef = useRef(0);
-  const snapBackDirectionRef = useRef<DragDirection>(null);
-  const completeTurnDirectionRef = useRef<DragDirection>(null);
   const dragVelocityRef = useRef(0);
-  const lastDragSampleRef = useRef({ offset: 0, time: 0 });
+  const lastDragSampleRef = useRef({ x: 0, time: 0 });
+  const transitionTimerRef = useRef<number | null>(null);
   const toastTimerRef = useRef<number | null>(null);
 
   const [layout, setLayout] = useState<Layout>(DEFAULT_LAYOUT);
   const [currentPage, setCurrentPage] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isSnapBack, setIsSnapBack] = useState(false);
-  const [isCompletingTurn, setIsCompletingTurn] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionDirection, setTransitionDirection] =
+    useState<PageDirection | null>(null);
+  const [transitionTargetPage, setTransitionTargetPage] = useState<number | null>(
+    null,
+  );
   const [cartSummary, setCartSummary] = useState({ count: 0, amount: 0 });
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>(
@@ -325,7 +316,6 @@ export default function MenuBook() {
       const footerHeight = isMobile ? 210 : 236;
       const metaHeight = 52;
       const verticalPadding = isMobile ? 16 : 24;
-      const bookShellExtra = 56;
       const horizontalPadding = 28;
       const maxPageWidth = isMobile ? 380 : 360;
 
@@ -379,25 +369,9 @@ export default function MenuBook() {
   }, [applyDraftUpdate]);
 
   useEffect(() => {
-    dragOffsetRef.current = dragOffset;
-  }, [dragOffset]);
-
-  useEffect(() => {
     return () => {
-      if (dragRafRef.current !== null) {
-        cancelAnimationFrame(dragRafRef.current);
-      }
-
-      if (snapBackTimerRef.current !== null) {
-        window.clearTimeout(snapBackTimerRef.current);
-      }
-
-      if (snapBackAnimRef.current !== null) {
-        cancelAnimationFrame(snapBackAnimRef.current);
-      }
-
-      if (completeTurnTimerRef.current !== null) {
-        window.clearTimeout(completeTurnTimerRef.current);
+      if (transitionTimerRef.current !== null) {
+        window.clearTimeout(transitionTimerRef.current);
       }
 
       if (toastTimerRef.current !== null) {
@@ -405,35 +379,6 @@ export default function MenuBook() {
       }
     };
   }, []);
-
-  const flushDragOffset = useCallback(() => {
-    dragRafRef.current = null;
-
-    if (pendingDragOffsetRef.current !== null) {
-      setDragOffset(pendingDragOffsetRef.current);
-      pendingDragOffsetRef.current = null;
-    }
-  }, []);
-
-  const scheduleDragOffset = useCallback(
-    (offset: number) => {
-      const now = performance.now();
-      const last = lastDragSampleRef.current;
-      const elapsed = now - last.time;
-
-      if (elapsed > 0) {
-        dragVelocityRef.current = (offset - last.offset) / elapsed;
-      }
-
-      lastDragSampleRef.current = { offset, time: now };
-      pendingDragOffsetRef.current = offset;
-
-      if (dragRafRef.current === null) {
-        dragRafRef.current = requestAnimationFrame(flushDragOffset);
-      }
-    },
-    [flushDragOffset],
-  );
 
   const maxLeftPage = getMaxLeftPage(layout.isMobile);
   const isFirstPage = currentPage <= 0;
@@ -520,218 +465,116 @@ export default function MenuBook() {
     [changePageQuantity],
   );
 
-  const goPrev = useCallback(() => {
-    setCurrentPage((page) => {
-      const step = layout.isMobile ? 1 : 2;
-      return Math.max(0, page - step);
-    });
-  }, [layout.isMobile]);
-
-  const goNext = useCallback(() => {
-    setCurrentPage((page) => {
-      const step = layout.isMobile ? 1 : 2;
-      const maxPage = getMaxLeftPage(layout.isMobile);
-      return Math.min(maxPage, page + step);
-    });
-  }, [layout.isMobile]);
-
-  const beginSnapBack = useCallback((direction: DragDirection) => {
-    if (snapBackAnimRef.current !== null) {
-      cancelAnimationFrame(snapBackAnimRef.current);
-      snapBackAnimRef.current = null;
-    }
-
-    if (!direction) {
-      setDragOffset(0);
-      return;
-    }
-
-    snapBackDirectionRef.current = direction;
-    setIsSnapBack(true);
-
-    if (snapBackTimerRef.current !== null) {
-      window.clearTimeout(snapBackTimerRef.current);
-    }
-
-    const startOffset = dragOffsetRef.current;
-    const startTime = performance.now();
-
-    const tick = (now: number) => {
-      const elapsed = now - startTime;
-      const t = Math.min(1, elapsed / SNAPBACK_MS);
-      const eased = turnAnimationEase(t);
-      setDragOffset(startOffset * (1 - eased));
-
-      if (t < 1) {
-        snapBackAnimRef.current = requestAnimationFrame(tick);
+  const startTransition = useCallback(
+    (direction: PageDirection) => {
+      if (isTransitioning) {
         return;
       }
 
-      snapBackAnimRef.current = null;
-      setDragOffset(0);
-      setIsSnapBack(false);
-      snapBackDirectionRef.current = null;
-    };
-
-    snapBackAnimRef.current = requestAnimationFrame(tick);
-  }, []);
-
-  const beginCompleteTurn = useCallback(
-    (direction: DragDirection) => {
-      if (!direction) {
+      if (direction === "next" && !canGoNext) {
         return;
       }
 
-      if (snapBackAnimRef.current !== null) {
-        cancelAnimationFrame(snapBackAnimRef.current);
-        snapBackAnimRef.current = null;
+      if (direction === "prev" && !canGoPrev) {
+        return;
       }
 
-      completeTurnDirectionRef.current = direction;
-      setIsCompletingTurn(true);
+      const targetPage = getTargetPageIndex(
+        currentPage,
+        direction,
+        layout.isMobile,
+      );
 
-      const startOffset = dragOffsetRef.current;
-      const targetOffset = direction === "next" ? -MAX_DRAG : MAX_DRAG;
-      const startTime = performance.now();
+      if (targetPage === currentPage) {
+        return;
+      }
 
-      const tick = (now: number) => {
-        const elapsed = now - startTime;
-        const t = Math.min(1, elapsed / COMPLETE_TURN_MS);
-        const eased = turnAnimationEase(t);
-        setDragOffset(startOffset + (targetOffset - startOffset) * eased);
+      setTransitionDirection(direction);
+      setTransitionTargetPage(targetPage);
+      setIsTransitioning(true);
 
-        if (t < 1) {
-          snapBackAnimRef.current = requestAnimationFrame(tick);
-          return;
-        }
+      if (transitionTimerRef.current !== null) {
+        window.clearTimeout(transitionTimerRef.current);
+      }
 
-        snapBackAnimRef.current = null;
-
-        if (completeTurnTimerRef.current !== null) {
-          window.clearTimeout(completeTurnTimerRef.current);
-        }
-
-        completeTurnTimerRef.current = window.setTimeout(() => {
-          completeTurnDirectionRef.current = null;
-          setIsCompletingTurn(false);
-          setDragOffset(0);
-
-          if (direction === "next") {
-            goNext();
-          } else {
-            goPrev();
-          }
-
-          completeTurnTimerRef.current = null;
-        }, 80);
-      };
-
-      snapBackAnimRef.current = requestAnimationFrame(tick);
+      transitionTimerRef.current = window.setTimeout(() => {
+        setCurrentPage(targetPage);
+        setIsTransitioning(false);
+        setTransitionDirection(null);
+        setTransitionTargetPage(null);
+        transitionTimerRef.current = null;
+      }, PAGE_TRANSITION_MS);
     },
-    [goNext, goPrev],
+    [canGoNext, canGoPrev, currentPage, isTransitioning, layout.isMobile],
   );
 
-  const finishDrag = useCallback(
+  const finishPointer = useCallback(
     (offsetX: number, clientX: number) => {
       activePointerIdRef.current = null;
 
-      if (dragRafRef.current !== null) {
-        cancelAnimationFrame(dragRafRef.current);
-        dragRafRef.current = null;
-      }
-
-      if (pendingDragOffsetRef.current !== null) {
-        setDragOffset(pendingDragOffsetRef.current);
-        pendingDragOffsetRef.current = null;
-      }
-
-      setIsDragging(false);
-      setIsSnapBack(false);
-
-      const direction = getDragDirection(offsetX);
-      const progress = getDragProgress(offsetX);
-      const velocity = dragVelocityRef.current;
-      const shouldTurn =
-        direction === "next"
-          ? canGoNext &&
-            (progress >= TURN_THRESHOLD || velocity <= -VELOCITY_THRESHOLD)
-          : direction === "prev"
-            ? canGoPrev &&
-              (progress >= TURN_THRESHOLD || velocity >= VELOCITY_THRESHOLD)
-            : false;
-
+      const direction = resolveSwipeDirection(offsetX, dragVelocityRef.current);
       dragVelocityRef.current = 0;
-      lastDragSampleRef.current = { offset: 0, time: 0 };
+      lastDragSampleRef.current = { x: 0, time: 0 };
 
-      if (shouldTurn && direction) {
-        beginCompleteTurn(direction);
+      if (direction === "next" && canGoNext) {
+        startTransition("next");
+        return;
+      }
+
+      if (direction === "prev" && canGoPrev) {
+        startTransition("prev");
         return;
       }
 
       if (Math.abs(offsetX) < TAP_THRESHOLD) {
         addPageToCart(resolveTappedPageIndex(clientX));
-        setDragOffset(0);
-        return;
       }
-
-      beginSnapBack(direction);
     },
     [
       addPageToCart,
-      beginCompleteTurn,
-      beginSnapBack,
       canGoNext,
       canGoPrev,
       resolveTappedPageIndex,
+      startTransition,
     ],
   );
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.button > 0 || isCompletingTurn) {
+    if (event.button > 0 || isTransitioning) {
       return;
     }
-
-    if (dragRafRef.current !== null) {
-      cancelAnimationFrame(dragRafRef.current);
-      dragRafRef.current = null;
-    }
-
-    if (snapBackAnimRef.current !== null) {
-      cancelAnimationFrame(snapBackAnimRef.current);
-      snapBackAnimRef.current = null;
-    }
-
-    pendingDragOffsetRef.current = null;
-    setIsSnapBack(false);
-    snapBackDirectionRef.current = null;
-    dragVelocityRef.current = 0;
-    lastDragSampleRef.current = { offset: 0, time: performance.now() };
 
     event.currentTarget.setPointerCapture(event.pointerId);
     activePointerIdRef.current = event.pointerId;
     dragStartXRef.current = event.clientX;
-    setIsDragging(true);
-    setDragOffset(0);
+    dragVelocityRef.current = 0;
+    lastDragSampleRef.current = {
+      x: event.clientX,
+      time: performance.now(),
+    };
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (
       activePointerIdRef.current !== event.pointerId ||
-      isCompletingTurn
+      isTransitioning
     ) {
       return;
     }
 
-    const offset = clampDragOffset(
-      event.clientX - dragStartXRef.current,
-      canGoPrev,
-      canGoNext,
-    );
-    scheduleDragOffset(offset);
-  };
+    const now = performance.now();
+    const elapsed = now - lastDragSampleRef.current.time;
 
-  const getReleaseOffset = (clientX: number) =>
-    clampDragOffset(clientX - dragStartXRef.current, canGoPrev, canGoNext);
+    if (elapsed > 0) {
+      dragVelocityRef.current =
+        (event.clientX - lastDragSampleRef.current.x) / elapsed;
+    }
+
+    lastDragSampleRef.current = {
+      x: event.clientX,
+      time: now,
+    };
+  };
 
   const endPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (activePointerIdRef.current !== event.pointerId) {
@@ -742,50 +585,12 @@ export default function MenuBook() {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
 
-    finishDrag(getReleaseOffset(event.clientX), event.clientX);
-  };
-
-  const rightPage = layout.isMobile
-    ? null
-    : MENU_BOOK_PAGES[currentPage + 1] ?? null;
-  const hasRightPage = Boolean(rightPage);
-  const dragDirection = getDragDirection(dragOffset);
-  const activeDirection = isCompletingTurn
-    ? completeTurnDirectionRef.current
-    : isSnapBack
-      ? snapBackDirectionRef.current
-      : dragDirection;
-  const dragProgress = getDragProgress(dragOffset);
-  const meshSegmentsX = layout.isMobile
-    ? MESH_SEGMENTS_X_MOBILE
-    : MESH_SEGMENTS_X_DESKTOP;
-  const meshSegmentsY = layout.isMobile
-    ? MESH_SEGMENTS_Y_MOBILE
-    : MESH_SEGMENTS_Y_DESKTOP;
-
-  const buildTurnState = (
-    variant: "left" | "right" | "single",
-  ): PageTurnState => {
-    const isTarget = isPageTurnTarget(
-      variant,
-      activeDirection,
-      layout.isMobile,
-      hasRightPage,
-    );
-
-    return {
-      progress: isTarget ? dragProgress : 0,
-      direction: isTarget ? activeDirection : null,
-      dragging: isDragging && isTarget,
-      settling: (isSnapBack || isCompletingTurn) && isTarget,
-      isTarget,
-    };
+    finishPointer(event.clientX - dragStartXRef.current, event.clientX);
   };
 
   const bookViewClassName = [
     styles.bookView,
     layout.isMobile ? styles.bookViewSingle : styles.bookViewSpread,
-    isDragging ? styles.bookViewDragging : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -801,6 +606,12 @@ export default function MenuBook() {
     }
   };
 
+  const spreadProps = {
+    layout,
+    itemQuantities,
+    onChangeQuantity: changePageQuantity,
+  };
+
   return (
     <main className={styles.wrap}>
       <BrandLogo />
@@ -813,64 +624,99 @@ export default function MenuBook() {
 
       <div className={styles.stage}>
         <div className={styles.bookColumn}>
-          <div
-            className={styles.bookShell}
-            style={{ width: layout.spreadWidth + 56 }}
-          >
-            <span className={styles.metalCorner} data-corner="tl" aria-hidden />
-            <span className={styles.metalCorner} data-corner="tr" aria-hidden />
-            <span className={styles.metalCorner} data-corner="bl" aria-hidden />
-            <span className={styles.metalCorner} data-corner="br" aria-hidden />
-            <span className={styles.bookStitch} aria-hidden />
-            <span className={styles.bookCoverEdge} aria-hidden />
-            <div
-              ref={bookViewRef}
-              className={bookViewClassName}
-              style={{ width: layout.spreadWidth }}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={endPointer}
-              onPointerCancel={endPointer}
+          <div className={styles.bookRow}>
+            <button
+              type="button"
+              className={styles.pageNavBtn}
+              aria-label="前のページ"
+              disabled={!canGoPrev || isTransitioning}
+              onClick={() => startTransition("prev")}
             >
-              <div className={styles.spread}>
-                <MenuPage
-                  page={getMenuBookPage(currentPage)}
-                  variant={layout.isMobile ? "single" : "left"}
-                  turn={buildTurnState(layout.isMobile ? "single" : "left")}
-                  quantity={
-                    getMenuBookPage(currentPage).id
-                      ? (itemQuantities[getMenuBookPage(currentPage).id!] ?? 0)
-                      : 0
-                  }
-                  onIncrement={() => changePageQuantity(currentPage, 1)}
-                  onDecrement={() => changePageQuantity(currentPage, -1)}
-                  segmentsX={meshSegmentsX}
-                  segmentsY={meshSegmentsY}
-                />
+              ‹
+            </button>
 
-                {!layout.isMobile && (
-                  <MenuPage
-                    page={rightPage ?? getMenuBookPage(currentPage)}
-                    variant="right"
-                    empty={!rightPage}
-                    turn={buildTurnState("right")}
-                    quantity={
-                      rightPage?.id ? (itemQuantities[rightPage.id] ?? 0) : 0
-                    }
-                    onIncrement={() => changePageQuantity(currentPage + 1, 1)}
-                    onDecrement={() =>
-                      changePageQuantity(currentPage + 1, -1)
-                    }
-                    segmentsX={meshSegmentsX}
-                    segmentsY={meshSegmentsY}
-                  />
-                )}
+            <div
+              className={styles.bookShell}
+              style={{ width: layout.spreadWidth + 56 }}
+            >
+              <span
+                className={styles.metalCorner}
+                data-corner="tl"
+                aria-hidden
+              />
+              <span
+                className={styles.metalCorner}
+                data-corner="tr"
+                aria-hidden
+              />
+              <span
+                className={styles.metalCorner}
+                data-corner="bl"
+                aria-hidden
+              />
+              <span
+                className={styles.metalCorner}
+                data-corner="br"
+                aria-hidden
+              />
+              <span className={styles.bookStitch} aria-hidden />
+              <span className={styles.bookCoverEdge} aria-hidden />
+              <div
+                ref={bookViewRef}
+                className={bookViewClassName}
+                style={{ width: layout.spreadWidth }}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={endPointer}
+                onPointerCancel={endPointer}
+              >
+                <div
+                  className={styles.spreadStage}
+                  data-transitioning={isTransitioning ? "true" : undefined}
+                  style={{
+                    aspectRatio: layout.isMobile ? "1 / 1" : "2 / 1",
+                  }}
+                >
+                  {isTransitioning &&
+                  transitionDirection &&
+                  transitionTargetPage !== null ? (
+                    <>
+                      <TransitionLayer
+                        role="outgoing"
+                        direction={transitionDirection}
+                        leftPageIndex={currentPage}
+                        {...spreadProps}
+                      />
+                      <TransitionLayer
+                        role="incoming"
+                        direction={transitionDirection}
+                        leftPageIndex={transitionTargetPage}
+                        {...spreadProps}
+                      />
+                    </>
+                  ) : (
+                    <MenuSpread
+                      leftPageIndex={currentPage}
+                      {...spreadProps}
+                    />
+                  )}
+                </div>
               </div>
+              {!layout.isMobile ? (
+                <span className={styles.bookSpineGlow} aria-hidden />
+              ) : null}
+              <span className={styles.bookFloorShadow} aria-hidden />
             </div>
-            {!layout.isMobile ? (
-              <span className={styles.bookSpineGlow} aria-hidden />
-            ) : null}
-            <span className={styles.bookFloorShadow} aria-hidden />
+
+            <button
+              type="button"
+              className={styles.pageNavBtn}
+              aria-label="次のページ"
+              disabled={!canGoNext || isTransitioning}
+              onClick={() => startTransition("next")}
+            >
+              ›
+            </button>
           </div>
 
           <div className={styles.pageMeta}>
