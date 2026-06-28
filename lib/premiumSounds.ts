@@ -19,7 +19,7 @@ export const GO_TO_DATETIME_SOUND_VERSION = 2;
 
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
 export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
-export const VOICE_PLAYBACK_RATE = 1.17;
+export const VOICE_PLAYBACK_RATE = 1.15;
 
 export const GO_TO_DATETIME_MIN_NAV_DELAY_MS = 900;
 export const ORDER_RECEIVED_NAV_DELAY_MS = GO_TO_DATETIME_MIN_NAV_DELAY_MS;
@@ -68,17 +68,17 @@ export const PREMIUM_SOUNDS: Record<
   },
   cartThanks: {
     src: versionedSoundSrc("/sounds/cart-thanks.mp3"),
-    volume: 0.45,
+    volume: 0.5,
     playbackRate: VOICE_PLAYBACK_RATE,
   },
   goToDatetime: {
-    src: versionedSoundSrc("/sounds/go-to-datetime.m4a", GO_TO_DATETIME_SOUND_VERSION),
-    volume: 0.5,
+    src: versionedSoundSrc("/sounds/go-to-datetime.mp3", GO_TO_DATETIME_SOUND_VERSION),
+    volume: 0.52,
     playbackRate: VOICE_PLAYBACK_RATE,
   },
   reservationThanks: {
     src: versionedSoundSrc("/sounds/reservation-thanks.mp3"),
-    volume: 0.55,
+    volume: 0.52,
     playbackRate: VOICE_PLAYBACK_RATE,
   },
   bookClose: {
