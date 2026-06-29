@@ -21,9 +21,9 @@ export const GO_TO_DATETIME_SOUND_VERSION = 6;
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
 export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
 export const VOICE_PLAYBACK_RATE = 1.15;
+export const VOICE_PLAYBACK_DELAY_SEC = 0.2;
 
 export const GO_TO_DATETIME_MIN_NAV_DELAY_MS = 900;
-export const GO_TO_DATETIME_PLAYBACK_DELAY_SEC = 0.1;
 export const ORDER_RECEIVED_NAV_DELAY_MS = GO_TO_DATETIME_MIN_NAV_DELAY_MS;
 export const RESERVE_DATETIME_PATH = "/reserve/datetime";
 export const BOOK_CLOSE_ANIMATION_MS = 900;
@@ -73,17 +73,19 @@ export const PREMIUM_SOUNDS: Record<
     src: versionedSoundSrc("/sounds/cart-thanks.mp3", CART_THANKS_SOUND_VERSION),
     volume: 0.5,
     playbackRate: VOICE_PLAYBACK_RATE,
+    playbackDelaySec: VOICE_PLAYBACK_DELAY_SEC,
   },
   goToDatetime: {
     src: versionedSoundSrc("/sounds/go-to-datetime.mp3", GO_TO_DATETIME_SOUND_VERSION),
     volume: 0.5,
     playbackRate: VOICE_PLAYBACK_RATE,
-    playbackDelaySec: GO_TO_DATETIME_PLAYBACK_DELAY_SEC,
+    playbackDelaySec: VOICE_PLAYBACK_DELAY_SEC,
   },
   reservationThanks: {
     src: versionedSoundSrc("/sounds/reservation-thanks.mp3"),
     volume: 0.5,
     playbackRate: VOICE_PLAYBACK_RATE,
+    playbackDelaySec: VOICE_PLAYBACK_DELAY_SEC,
   },
   bookClose: {
     src: versionedSoundSrc("/sounds/book-close.mp3"),
