@@ -56,31 +56,43 @@ function doPostCore_(e) {
 }
 
 var DEFAULT_RESERVATION_COLUMNS_ = {
-  reservationNo: 0,
-  date: 1,
-  time: 2,
-  name: 3,
-  phone: 4,
-  note: 5,
-  items: 6,
-  totalQty: 7,
-  total: 8,
-  status: 9,
-  submittedAt: 10,
+  savedAt: 0,
+  reservationNo: 1,
+  date: 2,
+  weekday: 3,
+  time: 4,
+  name: 5,
+  phone: 6,
+  userId: 7,
+  status: 8,
+  itemCount: 9,
+  totalQty: 10,
+  total: 11,
+  bentoQty: 12,
+  bentoAmount: 13,
+  extraKaraageQty: 14,
+  extraKaraageAmount: 15,
+  orderLines: 16,
+  items: 17,
+  createdAt: 18,
+  updatedAt: 19,
 };
 
+var RESERVATION_SHEET_NAMES_ = ["reservations", "予約", "Reservations"];
+
 var COLUMN_HEADER_ALIASES_ = {
-  reservationNo: ["受付番号", "reservationno", "reservation_no", "reservation no", "no"],
-  date: ["受取日", "date", "pickupdate", "pickup_date", "日付"],
-  time: ["受取時間", "time", "pickuptime", "pickup_time", "時間"],
-  name: ["氏名", "name", "customername", "customer_name", "お名前"],
-  phone: ["電話", "phone", "tel", "telephone", "電話番号", "mobile"],
-  note: ["備考", "note", "memo"],
-  items: ["注文", "items", "itemsjson", "items_json", "order", "menu"],
-  totalQty: ["数量", "totalqty", "totalquantity", "total_quantity", "qty"],
-  total: ["金額", "total", "totalamount", "total_amount", "amount"],
+  reservationNo: ["予約番号", "受付番号", "reservationno", "reservation_no", "reservation no", "no"],
+  date: ["予約日", "受取日", "date", "pickupdate", "pickup_date", "日付"],
+  time: ["受け取り時間", "受取時間", "time", "pickuptime", "pickup_time", "時間"],
+  name: ["お名前", "氏名", "name", "customername", "customer_name"],
+  phone: ["連絡先", "電話", "phone", "tel", "telephone", "電話番号", "mobile"],
+  userId: ["lineユーザーid", "lineuserid", "userid", "user_id"],
+  items: ["itemsjson", "注文", "items", "items_json", "order", "menu"],
+  totalQty: ["合計個数", "数量", "totalqty", "totalquantity", "total_quantity", "qty"],
+  total: ["注文合計", "金額", "total", "totalamount", "total_amount", "amount"],
   status: ["ステータス", "status", "状態"],
-  submittedAt: ["送信日時", "submittedat", "createdat", "created_at", "timestamp", "日時"],
+  createdAt: ["受付時間", "submittedat", "createdat", "created_at", "timestamp", "日時"],
+  updatedAt: ["更新時間", "updatedat", "updated_at"],
 };
 
 function handleCreateReservation_(body) {
@@ -117,11 +129,12 @@ function handleCreateReservation_(body) {
 }
 
 function handleGetLatestReservation_(body) {
-  const phone = normalizePhone_(
+  const userId = String(body.userId || "").trim();
+  const requestedPhone = normalizePhone_(
     body.phone || body.lookupPhone || body.customerPhone || body.tel || body.telephone,
   );
 
-  if (!phone) {
+  if (!userId && !requestedPhone) {
     return jsonResponse_({
       ok: false,
       found: false,
@@ -130,7 +143,7 @@ function handleGetLatestReservation_(body) {
     });
   }
 
-  const match = findLatestReservationByPhone_(phone);
+  const match = findLatestReservationByPhone_(requestedPhone, userId);
 
   if (!match) {
     return jsonResponse_({
@@ -264,6 +277,30 @@ function phonesMatch_(left, right) {
   return false;
 }
 
+function resolveLookupPhoneFromHistory_(rows, userId, requestedPhone) {
+  const lookupPhone = normalizePhone_(requestedPhone);
+
+  if (lookupPhone || !userId) {
+    return lookupPhone;
+  }
+
+  for (var i = rows.length - 1; i >= 0; i--) {
+    const entry = rows[i];
+    const rowUserId = String(entry.row[entry.columns.userId] || "").trim();
+
+    if (rowUserId !== userId) {
+      continue;
+    }
+
+    const rowPhone = extractPhoneFromRow_(entry.row, entry.columns, entry.display);
+    if (rowPhone) {
+      return rowPhone;
+    }
+  }
+
+  return "";
+}
+
 function looksLikePhone_(value) {
   const phone = normalizePhone_(value);
   return phone.length >= 10 && phone.length <= 11 && phone.charAt(0) === "0";
@@ -342,14 +379,15 @@ function isHeaderRow_(row) {
   return matchedHeaders >= 2;
 }
 
-function extractPhoneFromRow_(row, columns) {
-  const mappedPhone = normalizePhone_(row[columns.phone]);
+function extractPhoneFromRow_(row, columns, display) {
+  const displayRow = display || row;
+  const mappedPhone = normalizePhone_(displayRow[columns.phone] || row[columns.phone]);
   if (looksLikePhone_(mappedPhone)) {
     return mappedPhone;
   }
 
   for (var i = 0; i < row.length; i++) {
-    const candidate = normalizePhone_(row[i]);
+    const candidate = normalizePhone_(displayRow[i] || row[i]);
     if (looksLikePhone_(candidate)) {
       return candidate;
     }
@@ -360,13 +398,14 @@ function extractPhoneFromRow_(row, columns) {
 
 function getSheetRows_(sheet) {
   const lastRow = sheet.getLastRow();
-  const lastColumn = Math.max(sheet.getLastColumn(), 11);
+  const lastColumn = Math.max(sheet.getLastColumn(), 20);
 
   if (lastRow <= 0) {
     return [];
   }
 
   const values = sheet.getRange(1, 1, lastRow, lastColumn).getValues();
+  const displayValues = sheet.getRange(1, 1, lastRow, lastColumn).getDisplayValues();
   const rows = [];
   var startIndex = 0;
   var columns = DEFAULT_RESERVATION_COLUMNS_;
@@ -380,6 +419,7 @@ function getSheetRows_(sheet) {
     rows.push({
       rowNumber: i + 1,
       row: values[i],
+      display: displayValues[i],
       columns: columns,
     });
   }
@@ -387,8 +427,9 @@ function getSheetRows_(sheet) {
   return rows;
 }
 
-function rowToReservation_(row, columns) {
+function rowToReservation_(row, columns, display) {
   const cols = columns || DEFAULT_RESERVATION_COLUMNS_;
+  const displayRow = display || row;
   const itemsRaw = row[cols.items];
   var items = [];
 
@@ -403,20 +444,23 @@ function rowToReservation_(row, columns) {
     items = itemsRaw;
   }
 
-  const reservationNo = String(row[cols.reservationNo] || "").trim();
-  const date = String(row[cols.date] || "").trim();
-  const time = String(row[cols.time] || "").trim();
-  const name = String(row[cols.name] || "").trim();
-  const phone = extractPhoneFromRow_(row, cols);
-  const note = String(row[cols.note] || "").trim();
-  const status = String(row[cols.status] || "受付済み").trim() || "受付済み";
-  const submittedAt = String(row[cols.submittedAt] || "").trim();
+  const reservationNo = String(displayRow[cols.reservationNo] || row[cols.reservationNo] || "").trim();
+  const date = String(displayRow[cols.date] || row[cols.date] || "").trim();
+  const time = String(displayRow[cols.time] || row[cols.time] || "").trim();
+  const name = String(displayRow[cols.name] || row[cols.name] || "").trim();
+  const phone = extractPhoneFromRow_(row, cols, displayRow);
+  const userId = String(displayRow[cols.userId] || row[cols.userId] || "").trim();
+  const status = String(displayRow[cols.status] || row[cols.status] || "受付済み").trim() || "受付済み";
+  const createdAt = String(displayRow[cols.createdAt] || row[cols.createdAt] || "").trim();
+  const source = reservationNo.toUpperCase().indexOf("WEB-") === 0 ? "WEB" : "LINE";
 
   return {
     reservationNo: reservationNo,
     reservation_no: reservationNo,
     receptionNo: reservationNo,
     受付番号: reservationNo,
+    source: source,
+    orderSource: source,
     date: date,
     pickupDate: date,
     pickup_date: date,
@@ -427,16 +471,20 @@ function rowToReservation_(row, columns) {
     customerName: name,
     customer_name: name,
     phone: phone,
-    note: note,
+    userId: userId,
+    status: status,
     items: items,
+    itemsJson: typeof itemsRaw === "string" ? itemsRaw : JSON.stringify(items),
     totalQty: Number(row[cols.totalQty] || 0),
     totalQuantity: Number(row[cols.totalQty] || 0),
     total_quantity: Number(row[cols.totalQty] || 0),
     total: Number(row[cols.total] || 0),
     totalAmount: Number(row[cols.total] || 0),
     total_amount: Number(row[cols.total] || 0),
-    status: status,
-    submittedAt: submittedAt,
+    orderLines: String(displayRow[cols.orderLines] || row[cols.orderLines] || ""),
+    createdAt: createdAt,
+    submittedAt: createdAt,
+    updatedAt: String(displayRow[cols.updatedAt] || row[cols.updatedAt] || "").trim(),
   };
 }
 
@@ -451,36 +499,65 @@ function compareSubmittedAt_(left, right) {
   return String(left || "").localeCompare(String(right || ""));
 }
 
-function findLatestReservationByPhone_(phone) {
-  const normalizedPhone = normalizePhone_(phone);
+function findLatestReservationByPhone_(requestedPhone, userId) {
   const sheets = getReservationSheets_();
   var latest = null;
 
   sheets.forEach(function (sheet) {
     const rows = getSheetRows_(sheet);
+    const lookupPhone = resolveLookupPhoneFromHistory_(rows, userId, requestedPhone);
 
-    rows.forEach(function (entry) {
-      const reservation = rowToReservation_(entry.row, entry.columns);
-      const rowPhone = extractPhoneFromRow_(entry.row, entry.columns);
+    if (lookupPhone) {
+      for (var i = rows.length - 1; i >= 0; i--) {
+        const entry = rows[i];
+        const reservation = rowToReservation_(entry.row, entry.columns, entry.display);
+        const rowPhone = extractPhoneFromRow_(entry.row, entry.columns, entry.display);
 
-      if (!rowPhone || !phonesMatch_(rowPhone, normalizedPhone)) {
-        return;
+        if (!rowPhone || !phonesMatch_(rowPhone, lookupPhone)) {
+          continue;
+        }
+
+        if (isCanceledStatus_(reservation.status)) {
+          continue;
+        }
+
+        if (
+          !latest ||
+          compareSubmittedAt_(
+            latest.reservation.createdAt || latest.reservation.submittedAt,
+            reservation.createdAt || reservation.submittedAt,
+          ) < 0 ||
+          entry.rowNumber > latest.rowNumber
+        ) {
+          latest = {
+            rowNumber: entry.rowNumber,
+            sheetName: sheet.getName(),
+            sheet: sheet,
+            reservation: reservation,
+          };
+        }
       }
 
-      reservation.phone = normalizePhone_(rowPhone);
+      return;
+    }
+
+    if (!userId) {
+      return;
+    }
+
+    for (var j = rows.length - 1; j >= 0; j--) {
+      const entry = rows[j];
+      const reservation = rowToReservation_(entry.row, entry.columns, entry.display);
+
+      if (String(reservation.userId || "").trim() !== userId) {
+        continue;
+      }
 
       if (isCanceledStatus_(reservation.status)) {
-        return;
+        continue;
       }
 
-      if (
-        !latest ||
-        compareSubmittedAt_(latest.reservation.submittedAt, reservation.submittedAt) < 0 ||
-        (
-          compareSubmittedAt_(latest.reservation.submittedAt, reservation.submittedAt) === 0 &&
-          entry.rowNumber > latest.rowNumber
-        )
-      ) {
+      if (!latest || entry.rowNumber > latest.rowNumber) {
         latest = {
           rowNumber: entry.rowNumber,
           sheetName: sheet.getName(),
@@ -488,7 +565,9 @@ function findLatestReservationByPhone_(phone) {
           reservation: reservation,
         };
       }
-    });
+
+      break;
+    }
   });
 
   return latest;
@@ -574,10 +653,15 @@ function getReservationSpreadsheet_() {
 
 function getPrimaryReservationSheet_() {
   const spreadsheet = getReservationSpreadsheet_();
-  const sheet =
-    spreadsheet.getSheetByName("予約") ||
-    spreadsheet.getSheetByName("Reservations") ||
-    spreadsheet.getSheets()[0];
+
+  for (var i = 0; i < RESERVATION_SHEET_NAMES_.length; i++) {
+    const sheet = spreadsheet.getSheetByName(RESERVATION_SHEET_NAMES_[i]);
+    if (sheet) {
+      return sheet;
+    }
+  }
+
+  const sheet = spreadsheet.getSheets()[0];
 
   if (!sheet) {
     throw new Error("Reservation sheet was not found");
@@ -588,11 +672,10 @@ function getPrimaryReservationSheet_() {
 
 function getReservationSheets_() {
   const spreadsheet = getReservationSpreadsheet_();
-  const preferredNames = ["予約", "Reservations", "WEB", "Web", "LINE", "Line"];
   const sheets = [];
   const seen = {};
 
-  preferredNames.forEach(function (name) {
+  RESERVATION_SHEET_NAMES_.forEach(function (name) {
     const sheet = spreadsheet.getSheetByName(name);
     if (sheet && !seen[sheet.getName()]) {
       sheets.push(sheet);
