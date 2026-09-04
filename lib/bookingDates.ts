@@ -1,7 +1,7 @@
 export const REGULAR_CLOSED_WEEKDAYS: number[] = [];
 
-/** 毎月の定休日（日付）。例: [9] = 毎月9日 */
-export const REGULAR_CLOSED_MONTH_DAYS: number[] = [9];
+/** 毎月の定休日（日付）。例: [9, 13] = 毎月9日・13日 */
+export const REGULAR_CLOSED_MONTH_DAYS: number[] = [9, 13];
 
 export function isClosedDate(ymd: string): boolean {
   const match = String(ymd || "").trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
