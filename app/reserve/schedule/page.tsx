@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import ReserveStepNav from "../../../components/ReserveStepNav";
 import reserveStyles from "../../../components/reserve.module.css";
+import { generateBookableDates } from "../../../lib/bookingDates";
 
 type CartItem = {
   id: string;
@@ -54,12 +55,6 @@ function pad2(value: number) {
   return String(value).padStart(2, "0");
 }
 
-function formatDateToYmd(date: Date) {
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(
-    date.getDate()
-  )}`;
-}
-
 function formatDateLabel(ymd: string) {
   const date = new Date(`${ymd}T00:00:00`);
 
@@ -68,19 +63,6 @@ function formatDateLabel(ymd: string) {
     day: "numeric",
     weekday: "short",
   }).format(date);
-}
-
-function generateDates(count: number) {
-  const dates: string[] = [];
-  const today = new Date();
-
-  for (let i = 0; i < count; i += 1) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    dates.push(formatDateToYmd(date));
-  }
-
-  return dates;
 }
 
 function generateTimeSlots() {
@@ -284,13 +266,13 @@ export default function ReserveSchedulePage() {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
 
-  const availableDates = useMemo(() => generateDates(10), []);
+  const availableDates = useMemo(() => generateBookableDates(10), []);
   const availableTimes = useMemo(() => generateTimeSlots(), []);
 
   useEffect(() => {
     const loadDraft = () => {
       const currentDraft = readDraft();
-      const firstDate = generateDates(10)[0] || "";
+      const firstDate = generateBookableDates(10)[0] || "";
 
       setDraft(currentDraft);
       setSelectedDate(currentDraft.pickupDate || firstDate);

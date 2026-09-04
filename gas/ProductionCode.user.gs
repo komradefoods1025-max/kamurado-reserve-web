@@ -30,6 +30,7 @@ const STORE_NOTIFY_LINE_ID =
 const RESERVATION_DEADLINE_HOUR = 22;
 const DEFAULT_BOOKABLE_DATE_COUNT = 31;
 const REGULAR_CLOSED_WEEKDAYS = [];
+const REGULAR_CLOSED_MONTH_DAYS = [9];
 const TIME_ZONE = 'Asia/Tokyo';
 
 const EXTRA_KARAAGE_KEY = 'extra_karaage';
@@ -1303,6 +1304,8 @@ function validateReservationData_(reservation) {
   if (!Array.isArray(reservation.items) || reservation.items.length === 0) {
     throw new Error('items is required');
   }
+
+  assertBookableDate_(reservation.date);
 }
 
 function summarizeReservationItems_(items) {
@@ -1550,14 +1553,38 @@ function getEarliestBookableDate_() {
 }
 
 function isClosedDate_(ymd, specificClosedDates) {
-  const date = ymdToDate_(ymd);
+  const normalized = normalizeDateString_(ymd);
+  const dayMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (dayMatch && REGULAR_CLOSED_MONTH_DAYS.includes(Number(dayMatch[3]))) {
+    return true;
+  }
+
+  const date = ymdToDate_(normalized);
   const weekday = date.getDay();
 
   if (REGULAR_CLOSED_WEEKDAYS.includes(weekday)) {
     return true;
   }
 
-  return specificClosedDates.has(ymd);
+  return specificClosedDates.has(normalized);
+}
+
+function getClosedDateContext_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const closedSheet = ss.getSheetByName(CLOSED_DAYS_SHEET_NAME);
+  return closedSheet ? getSpecificClosedDateSet_(closedSheet) : new Set();
+}
+
+function assertBookableDate_(dateStr) {
+  const normalized = normalizeDateString_(dateStr);
+  if (!normalized) {
+    throw new Error('date is required');
+  }
+
+  if (isClosedDate_(normalized, getClosedDateContext_())) {
+    throw new Error('date is not available for booking');
+  }
 }
 
 function getSpecificClosedDateSet_(sheet) {

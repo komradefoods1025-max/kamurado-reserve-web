@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
+import { generateBookableDates } from "../../../lib/bookingDates";
 
 type MenuItemType = "bento" | "drink" | "extra";
 
@@ -145,25 +146,6 @@ const MENU_CATALOG: MenuCatalogItem[] = [
 
 function pad2(value: number) {
   return String(value).padStart(2, "0");
-}
-
-function formatDateToYmd(date: Date) {
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(
-    date.getDate()
-  )}`;
-}
-
-function generateDates(count: number) {
-  const dates: string[] = [];
-  const today = new Date();
-
-  for (let i = 0; i < count; i += 1) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    dates.push(formatDateToYmd(date));
-  }
-
-  return dates;
 }
 
 function generateTimeSlots() {
@@ -456,7 +438,7 @@ export default function ReserveCheckPage() {
   const [editTime, setEditTime] = useState("");
   const [editItems, setEditItems] = useState<EditableOrderItem[]>([]);
 
-  const availableDates = useMemo(() => generateDates(31), []);
+  const availableDates = useMemo(() => generateBookableDates(31), []);
   const availableTimes = useMemo(() => generateTimeSlots(), []);
 
   const items = useMemo(() => parseItems(reservation), [reservation]);
