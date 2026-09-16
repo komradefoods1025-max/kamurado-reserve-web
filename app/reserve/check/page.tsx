@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
-import { generateBookableDates } from "../../../lib/bookingDates";
+import MonthDatePicker from "../../../components/MonthDatePicker";
+import {
+  generateBookableDates,
+  getTodayYmdJst,
+} from "../../../lib/bookingDates";
 
 type MenuItemType = "bento" | "drink" | "extra";
 
@@ -438,7 +442,11 @@ export default function ReserveCheckPage() {
   const [editTime, setEditTime] = useState("");
   const [editItems, setEditItems] = useState<EditableOrderItem[]>([]);
 
-  const availableDates = useMemo(() => generateBookableDates(31), []);
+  const minYmd = useMemo(() => getTodayYmdJst(), []);
+  const defaultBookableDate = useMemo(
+    () => generateBookableDates(1, 0, minYmd)[0] || "",
+    [minYmd],
+  );
   const availableTimes = useMemo(() => generateTimeSlots(), []);
 
   const items = useMemo(() => parseItems(reservation), [reservation]);
@@ -573,7 +581,7 @@ export default function ReserveCheckPage() {
   function handleStartEdit() {
     if (!reservation) return;
 
-    setEditDate(pickupDateYmd || availableDates[0] || "");
+    setEditDate(pickupDateYmd || defaultBookableDate);
     setEditTime(pickupTime || "");
     setEditItems(normalizeEditableItems(items));
     setEditMode(true);
@@ -1081,38 +1089,12 @@ export default function ReserveCheckPage() {
                       受取日
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                      {availableDates.map((date) => {
-                        const active = editDate === date;
-
-                        return (
-                          <button
-                            key={date}
-                            type="button"
-                            onClick={() => setEditDate(date)}
-                            disabled={updating}
-                            className={[
-                              "rounded-2xl border px-4 py-4 text-left transition disabled:cursor-not-allowed disabled:opacity-50",
-                              active
-                                ? "border-amber-800 bg-amber-900 text-white"
-                                : "border-stone-200 bg-stone-50 hover:bg-stone-100",
-                            ].join(" ")}
-                          >
-                            <div className="text-sm font-medium">
-                              {formatDateLabel(date)}
-                            </div>
-                            <div
-                              className={[
-                                "mt-1 text-xs",
-                                active ? "text-amber-100" : "text-stone-500",
-                              ].join(" ")}
-                            >
-                              {date}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <MonthDatePicker
+                      value={editDate}
+                      onChange={setEditDate}
+                      minYmd={minYmd}
+                      disabled={updating}
+                    />
                   </div>
 
                   <div className="mt-5">

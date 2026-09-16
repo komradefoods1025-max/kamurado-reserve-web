@@ -31,6 +31,19 @@ const RESERVATION_DEADLINE_HOUR = 22;
 const DEFAULT_BOOKABLE_DATE_COUNT = 31;
 const REGULAR_CLOSED_WEEKDAYS = [];
 const REGULAR_CLOSED_MONTH_DAYS = [9, 13];
+const MONTH_WEEKDAY_RULES = [
+  { month: 10, allowedWeekdays: [1, 3] }
+];
+const CLOSED_HOLIDAY_DATES = [
+  '2026-01-01', '2026-01-12', '2026-02-11', '2026-02-23', '2026-03-20',
+  '2026-04-29', '2026-05-03', '2026-05-04', '2026-05-05', '2026-05-06',
+  '2026-07-20', '2026-08-11', '2026-09-21', '2026-09-22', '2026-09-23',
+  '2026-10-12', '2026-11-03', '2026-11-23',
+  '2027-01-01', '2027-01-11', '2027-02-11', '2027-02-23', '2027-03-21',
+  '2027-03-22', '2027-04-29', '2027-05-03', '2027-05-04', '2027-05-05',
+  '2027-07-19', '2027-08-11', '2027-09-20', '2027-09-23', '2027-10-11',
+  '2027-11-03', '2027-11-23'
+];
 const TIME_ZONE = 'Asia/Tokyo';
 
 const EXTRA_KARAAGE_KEY = 'extra_karaage';
@@ -1552,6 +1565,31 @@ function getEarliestBookableDate_() {
   return addDaysToYmd_(today, 1);
 }
 
+function isPublicHoliday_(ymd) {
+  const normalized = normalizeDateString_(ymd);
+  return CLOSED_HOLIDAY_DATES.indexOf(normalized) >= 0;
+}
+
+function isBlockedByMonthWeekdayRule_(ymd) {
+  const normalized = normalizeDateString_(ymd);
+  const dayMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!dayMatch) return false;
+
+  const year = Number(dayMatch[1]);
+  const month = Number(dayMatch[2]);
+  const date = ymdToDate_(normalized);
+  const weekday = date.getDay();
+
+  for (var i = 0; i < MONTH_WEEKDAY_RULES.length; i++) {
+    const rule = MONTH_WEEKDAY_RULES[i];
+    if (rule.month !== month) continue;
+    if (rule.year && rule.year !== year) continue;
+    return rule.allowedWeekdays.indexOf(weekday) < 0;
+  }
+
+  return false;
+}
+
 function isClosedDate_(ymd, specificClosedDates) {
   const normalized = normalizeDateString_(ymd);
   const dayMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -1560,10 +1598,18 @@ function isClosedDate_(ymd, specificClosedDates) {
     return true;
   }
 
+  if (isPublicHoliday_(normalized)) {
+    return true;
+  }
+
   const date = ymdToDate_(normalized);
   const weekday = date.getDay();
 
   if (REGULAR_CLOSED_WEEKDAYS.includes(weekday)) {
+    return true;
+  }
+
+  if (isBlockedByMonthWeekdayRule_(normalized)) {
     return true;
   }
 

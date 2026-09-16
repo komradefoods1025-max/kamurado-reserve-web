@@ -4,8 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import ReserveStepNav from "../../../components/ReserveStepNav";
+import MonthDatePicker from "../../../components/MonthDatePicker";
 import reserveStyles from "../../../components/reserve.module.css";
-import { generateBookableDates } from "../../../lib/bookingDates";
+import {
+  formatDateLabel,
+  generateBookableDates,
+  getTodayYmdJst,
+} from "../../../lib/bookingDates";
 
 type CartItem = {
   id: string;
@@ -53,16 +58,6 @@ const DRAFT_KEYS = [
 
 function pad2(value: number) {
   return String(value).padStart(2, "0");
-}
-
-function formatDateLabel(ymd: string) {
-  const date = new Date(`${ymd}T00:00:00`);
-
-  return new Intl.DateTimeFormat("ja-JP", {
-    month: "numeric",
-    day: "numeric",
-    weekday: "short",
-  }).format(date);
 }
 
 function generateTimeSlots() {
@@ -266,13 +261,12 @@ export default function ReserveSchedulePage() {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
 
-  const availableDates = useMemo(() => generateBookableDates(10), []);
-  const availableTimes = useMemo(() => generateTimeSlots(), []);
+  const minYmd = useMemo(() => getTodayYmdJst(), []);
 
   useEffect(() => {
     const loadDraft = () => {
       const currentDraft = readDraft();
-      const firstDate = generateBookableDates(10)[0] || "";
+      const firstDate = generateBookableDates(1, 0, minYmd)[0] || "";
 
       setDraft(currentDraft);
       setSelectedDate(currentDraft.pickupDate || firstDate);
@@ -294,8 +288,9 @@ export default function ReserveSchedulePage() {
       window.removeEventListener("pageshow", loadDraft);
       window.removeEventListener("focus", loadDraft);
     };
-  }, []);
+  }, [minYmd]);
 
+  const availableTimes = useMemo(() => generateTimeSlots(), []);
   const cartCount = useMemo(() => getCartQuantity(draft), [draft]);
 
   function handleSelectDate(date: string) {
@@ -389,36 +384,12 @@ export default function ReserveSchedulePage() {
             ご希望の日付を選択してください。
           </p>
 
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {availableDates.map((date) => {
-              const active = selectedDate === date;
-
-              return (
-                <button
-                  key={date}
-                  type="button"
-                  onClick={() => handleSelectDate(date)}
-                  className={[
-                    "rounded-2xl border px-4 py-4 text-left transition",
-                    active
-                      ? "border-amber-800 bg-amber-900 text-white"
-                      : "border-stone-200 bg-stone-50 hover:bg-stone-100",
-                  ].join(" ")}
-                >
-                  <div className="text-sm font-medium">
-                    {formatDateLabel(date)}
-                  </div>
-                  <div
-                    className={[
-                      "mt-1 text-xs",
-                      active ? "text-amber-100" : "text-stone-500",
-                    ].join(" ")}
-                  >
-                    {date}
-                  </div>
-                </button>
-              );
-            })}
+          <div className="mt-4">
+            <MonthDatePicker
+              value={selectedDate}
+              onChange={handleSelectDate}
+              minYmd={minYmd}
+            />
           </div>
         </section>
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
+const { isBookableDate, filterBookableDates } = require('./lib/bookingDates.js');
 
 const app = express();
 
@@ -11,7 +12,7 @@ const RESERVATION_SAVE_URL = process.env.RESERVATION_SAVE_URL || '';
 const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
-const APP_VERSION = '2026-08-07-multi-reservations-01';
+const APP_VERSION = '2026-09-16-booking-rules-01';
 
 const STORE_NAME = 'かむらど';
 const STORE_CODE = 'KMR';
@@ -1639,7 +1640,22 @@ function buildEffectiveAvailableDates(rawDates, now = new Date()) {
     mergedDateSet.add(todayJst);
   }
 
-  return filterAvailableDatesByPickupTime(Array.from(mergedDateSet), now).sort();
+  return filterBookableDates(
+    filterAvailableDatesByPickupTime(Array.from(mergedDateSet), now),
+    ORDER_START_DATE
+  ).sort();
+}
+
+function rejectUnavailableDateMessage() {
+  return textMessage(
+    '選択された日付は現在ご予約いただけません。\n' +
+      '10月は月曜・水曜のみ、祝日・定休日（毎月9日・13日）は受付しておりません。\n' +
+      'もう一度お選びください。'
+  );
+}
+
+function assertSelectedDateIsBookable_(normalizedDate) {
+  return isBookableDate(normalizedDate, ORDER_START_DATE);
 }
 
 function buildTimeMessage(dateText) {
@@ -2536,6 +2552,7 @@ function isReservationComplete(session) {
     session &&
     session.date &&
     session.time &&
+    assertSelectedDateIsBookable_(normalizeYmdDate(session.date)) &&
     Array.isArray(session.items) &&
     session.items.length &&
     session.name &&
@@ -2810,10 +2827,10 @@ async function handleSelectedDate(replyToken, userId, session, selectedDate) {
     ? currentSession.availableDates
     : [];
 
-  if (availableDates.length && !availableDates.includes(normalizedDate)) {
+  if (!assertSelectedDateIsBookable_(normalizedDate)) {
     await savePendingSession(userId, currentSession);
     await replyMessage(replyToken, [
-      textMessage('選択された日付は現在ご利用いただけません。もう一度お選びください。'),
+      rejectUnavailableDateMessage(),
       createDateSelectMessage()
     ]);
     return;
@@ -2860,11 +2877,11 @@ async function handleSelectedDateTime(replyToken, userId, session, selectedDate,
     ? currentSession.availableDates
     : [];
 
-  if (availableDates.length && !availableDates.includes(normalizedDate)) {
+  if (!assertSelectedDateIsBookable_(normalizedDate)) {
     currentSession.step = 'waiting_date';
     await savePendingSession(userId, currentSession);
     await replyMessage(replyToken, [
-      textMessage('選択された日付は現在ご利用いただけません。もう一度お選びください。'),
+      rejectUnavailableDateMessage(),
       createDateSelectMessage()
     ]);
     return;
@@ -3678,6 +3695,11 @@ async function handleReservationChangeConfirm(replyToken, userId, session) {
 
   if (!reservationNo) {
     await replyMessage(replyToken, [textMessage('変更対象の予約番号が見つかりませんでした。')]);
+    return;
+  }
+
+  if (!assertSelectedDateIsBookable_(normalizeYmdDate(currentSession.date))) {
+    await replyMessage(replyToken, [rejectUnavailableDateMessage()]);
     return;
   }
 
