@@ -1,0 +1,89 @@
+.root {
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.navBtn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 253, 249, 0.96);
+  color: #4e4338;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.navBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.weekday {
+  padding: 0.25rem 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #85796d;
+  text-align: center;
+}
+
+.cell,
+.cellEmpty {
+  min-height: 52px;
+}
+
+.dayBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 0.5rem 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255, 252, 246, 0.92);
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-soft);
+}
+
+.dayBtn:hover:not(:disabled) {
+  background: rgba(255, 248, 236, 0.98);
+}
+
+.dayBtnActive {
+  border-color: rgba(110, 75, 42, 0.85);
+  background: linear-gradient(135deg, #6f4a2b 0%, #8a6240 100%);
+  color: #fff;
+}
+
+.note {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: #85796d;
+}

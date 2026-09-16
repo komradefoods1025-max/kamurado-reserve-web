@@ -10,6 +10,7 @@ import {
   getWeekdayLabels,
   shiftMonth,
 } from "../lib/bookingDates";
+import styles from "./monthDatePicker.module.css";
 
 type MonthDatePickerProps = {
   value: string;
@@ -67,19 +68,19 @@ export default function MonthDatePicker({
   }
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <div className={styles.root}>
+      <div className={styles.header}>
         <button
           type="button"
           onClick={goPrevMonth}
           disabled={!canGoPrev || disabled}
-          className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className={styles.navBtn}
           aria-label="前の月"
         >
           ◀
         </button>
 
-        <div className="text-base font-semibold text-stone-800">
+        <div className={styles.title}>
           {formatMonthTitle(viewYear, viewMonth)}
         </div>
 
@@ -87,30 +88,29 @@ export default function MonthDatePicker({
           type="button"
           onClick={goNextMonth}
           disabled={disabled}
-          className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className={styles.navBtn}
           aria-label="次の月"
         >
           ▶
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
+      <div className={styles.grid}>
         {getWeekdayLabels().map((label) => (
-          <div
-            key={label}
-            className="py-1 text-center text-xs font-semibold text-stone-500"
-          >
+          <div key={label} className={styles.weekday}>
             {label}
           </div>
         ))}
 
         {calendarCells.map((cell, index) => {
           if (!cell) {
-            return <div key={`empty-${index}`} className="min-h-[52px]" />;
+            return <div key={`empty-${index}`} className={styles.cellEmpty} />;
           }
 
           if (!cell.bookable) {
-            return <div key={cell.ymd} className="min-h-[52px]" aria-hidden="true" />;
+            return (
+              <div key={cell.ymd} className={styles.cellEmpty} aria-hidden="true" />
+            );
           }
 
           const active = value === cell.ymd;
@@ -121,20 +121,15 @@ export default function MonthDatePicker({
               type="button"
               onClick={() => !disabled && onChange(cell.ymd)}
               disabled={disabled}
-              className={[
-                "min-h-[52px] rounded-2xl border px-1 py-2 text-sm transition",
-                active
-                  ? "border-amber-800 bg-amber-900 text-white"
-                  : "border-stone-200 bg-stone-50 text-stone-800 hover:bg-stone-100",
-              ].join(" ")}
+              className={`${styles.dayBtn} ${active ? styles.dayBtnActive : ""}`}
             >
-              <div className="font-medium">{cell.day}</div>
+              {cell.day}
             </button>
           );
         })}
       </div>
 
-      <p className="mt-3 text-xs leading-6 text-stone-500">
+      <p className={styles.note}>
         表示されている日のみ予約できます。祝日・定休日（毎月9日・13日）は表示されません。
         {viewMonth === 10 ? " 10月は月曜・水曜のみ受付です。" : ""}
         {" "}受付曜日は月ごとに変更になる場合があります。
