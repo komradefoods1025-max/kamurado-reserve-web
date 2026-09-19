@@ -14,10 +14,10 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
   {
     pageNumber: 1,
     id: "aji_fry_teishoku",
-    name: "アジフライ定食",
+    name: "アジフライ弁当",
     price: 880,
     image: "/menu/12.jpg",
-    alt: "アジフライ定食（期間限定）",
+    alt: "アジフライ弁当（期間限定）",
     orderable: true,
     itemType: "bento",
   },

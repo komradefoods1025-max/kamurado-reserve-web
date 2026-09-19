@@ -1,0 +1,9 @@
+# LINE bot (Express). Web (Next.js) is usually deployed separately (e.g. Vercel).
+services:
+  - type: web
+    name: line-bento-bot
+    runtime: node
+    buildCommand: ""
+    startCommand: node server.js
+    healthCheckPath: /health
+    autoDeploy: true

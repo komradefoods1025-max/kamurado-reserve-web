@@ -12,7 +12,7 @@ const RESERVATION_SAVE_URL = process.env.RESERVATION_SAVE_URL || '';
 const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
-const APP_VERSION = '2026-09-19-aji-fry-limited-01';
+const APP_VERSION = '2026-09-19-aji-fry-line-03';
 
 const STORE_NAME = 'かむらど';
 const STORE_CODE = 'KMR';
@@ -101,15 +101,18 @@ const DEFAULT_DAILY_MENU = {
 
 const PUBLIC_MENU_ASSET_ORIGIN =
   process.env.PUBLIC_MENU_ASSET_ORIGIN || 'https://line-bento-bot.onrender.com';
+const LIMITED_AJI_FRY_MENU_KEY = 'aji_fry_teishoku';
+const LIMITED_AJI_FRY_IMAGE_URL = `${PUBLIC_MENU_ASSET_ORIGIN}/menu/12.jpg?v=20260919`;
 
 const MENUS = {
-  aji_fry_teishoku: {
-    name: 'アジフライ定食',
+  [LIMITED_AJI_FRY_MENU_KEY]: {
+    name: 'アジフライ弁当',
     price: 880,
     description:
-      '脂ののった新鮮なアジをサクッとフライに。期間限定・数量限定（その日の入荷分のみ）',
-    imageUrl: `${PUBLIC_MENU_ASSET_ORIGIN}/menu/12.jpg`,
-    allowLargeRice: true
+      'サクッとふっくら！アジの旨みをぜひお楽しみください。期間限定・数量限定（その日の入荷分のみ）',
+    imageUrl: LIMITED_AJI_FRY_IMAGE_URL,
+    allowLargeRice: true,
+    visible: true
   },
   karaage: {
     name: 'からあげ弁当',
@@ -275,6 +278,8 @@ app.get('/health', (_req, res) => {
   res.status(200).json({
     ok: true,
     version: APP_VERSION,
+    menuKeys: Object.keys(MENUS),
+    limitedAjiFryImageUrl: LIMITED_AJI_FRY_IMAGE_URL,
     file: __filename,
     cwd: process.cwd()
   });
@@ -1800,6 +1805,17 @@ function buildMenuBubble(itemKey, menu) {
       wrap: true
     }
   ];
+
+  if (itemKey === LIMITED_AJI_FRY_MENU_KEY) {
+    bodyContents.push({
+      type: 'text',
+      text: '期間限定・数量限定',
+      size: 'xs',
+      weight: 'bold',
+      color: '#DC2626',
+      wrap: true
+    });
+  }
 
   if (menu.allowLargeRice) {
     bodyContents.push({

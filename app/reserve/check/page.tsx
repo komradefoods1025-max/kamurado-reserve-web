@@ -92,7 +92,7 @@ const RICE_SIZE_OPTIONS = ["小盛り", "普通", "大盛り"];
 const BENTO_MENUS: MenuCatalogItem[] = [
   {
     id: "aji_fry_teishoku",
-    name: "アジフライ定食",
+    name: "アジフライ弁当",
     price: 880,
     itemType: "bento",
     label: "期間限定",
