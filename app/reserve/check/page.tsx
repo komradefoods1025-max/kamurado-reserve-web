@@ -91,6 +91,13 @@ const RICE_SIZE_OPTIONS = ["小盛り", "普通", "大盛り"];
 
 const BENTO_MENUS: MenuCatalogItem[] = [
   {
+    id: "aji_fry_teishoku",
+    name: "アジフライ定食",
+    price: 880,
+    itemType: "bento",
+    label: "期間限定",
+  },
+  {
     id: "karaage_bento",
     name: "からあげ弁当",
     price: 700,
@@ -337,7 +344,7 @@ function normalizeMenuType(value: unknown, name: string): MenuItemType {
     return value;
   }
 
-  if (name.includes("弁当")) return "bento";
+  if (name.includes("弁当") || name.includes("定食")) return "bento";
   if (name.includes("からあげ") || name.includes("唐揚げ")) return "extra";
   if (
     name.includes("いろはす") ||
@@ -362,7 +369,11 @@ function findCatalogItem(menuKey: string, menuName: string) {
 
 function isBentoItem(item: { itemType?: string; menuName?: string; name?: string }) {
   const name = getText(item.menuName, item.name);
-  return item.itemType === "bento" || name.includes("弁当");
+  return (
+    item.itemType === "bento" ||
+    name.includes("弁当") ||
+    name.includes("定食")
+  );
 }
 
 function normalizeEditableItems(items: ReservationItem[]): EditableOrderItem[] {

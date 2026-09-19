@@ -12,7 +12,7 @@ const RESERVATION_SAVE_URL = process.env.RESERVATION_SAVE_URL || '';
 const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
-const APP_VERSION = '2026-09-16-booking-rules-01';
+const APP_VERSION = '2026-09-19-aji-fry-limited-01';
 
 const STORE_NAME = 'かむらど';
 const STORE_CODE = 'KMR';
@@ -99,7 +99,18 @@ const DEFAULT_DAILY_MENU = {
   allowLargeRice: true
 };
 
+const PUBLIC_MENU_ASSET_ORIGIN =
+  process.env.PUBLIC_MENU_ASSET_ORIGIN || 'https://line-bento-bot.onrender.com';
+
 const MENUS = {
+  aji_fry_teishoku: {
+    name: 'アジフライ定食',
+    price: 880,
+    description:
+      '脂ののった新鮮なアジをサクッとフライに。期間限定・数量限定（その日の入荷分のみ）',
+    imageUrl: `${PUBLIC_MENU_ASSET_ORIGIN}/menu/12.jpg`,
+    allowLargeRice: true
+  },
   karaage: {
     name: 'からあげ弁当',
     price: 700,

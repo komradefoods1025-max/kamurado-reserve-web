@@ -9,10 +9,20 @@ export type MenuBookItem = {
   itemType: "bento" | "drink" | "extra";
 };
 
-/** public/menu/01.jpg〜11.jpg。各 jpg の写真内容と商品データを1対1で対応 */
+/** public/menu/01.jpg〜11.jpg + 期間限定 12.jpg。各 jpg の写真内容と商品データを1対1で対応 */
 export const MENU_BOOK_PAGES: MenuBookItem[] = [
   {
     pageNumber: 1,
+    id: "aji_fry_teishoku",
+    name: "アジフライ定食",
+    price: 880,
+    image: "/menu/12.jpg",
+    alt: "アジフライ定食（期間限定）",
+    orderable: true,
+    itemType: "bento",
+  },
+  {
+    pageNumber: 2,
     id: "oroshi_ponzu_hamburg_bento",
     name: "おろしポン酢ハンバーグ弁当",
     price: 850,
@@ -22,7 +32,7 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
     itemType: "bento",
   },
   {
-    pageNumber: 2,
+    pageNumber: 3,
     id: "nanban_bento",
     name: "チキン南蛮弁当",
     price: 900,
@@ -32,7 +42,7 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
     itemType: "bento",
   },
   {
-    pageNumber: 3,
+    pageNumber: 4,
     id: "chicken_katsu_tartar_bento",
     name: "チキンカツタルタルソースがけ",
     price: 750,
@@ -42,7 +52,7 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
     itemType: "bento",
   },
   {
-    pageNumber: 4,
+    pageNumber: 5,
     id: "shogayaki_bento",
     name: "生姜焼き弁当",
     price: 700,
@@ -52,7 +62,7 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
     itemType: "bento",
   },
   {
-    pageNumber: 5,
+    pageNumber: 6,
     id: "demiglace_hamburg_bento",
     name: "デミグラスハンバーグ弁当",
     price: 850,
@@ -62,7 +72,7 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
     itemType: "bento",
   },
   {
-    pageNumber: 6,
+    pageNumber: 7,
     id: "chicken_katsu_oroshi_ponzu_bento",
     name: "チキンカツおろしポン酢弁当",
     price: 750,
@@ -72,7 +82,7 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
     itemType: "bento",
   },
   {
-    pageNumber: 7,
+    pageNumber: 8,
     id: "chicken_katsu_bento",
     name: "チキンカツ弁当",
     price: 700,
@@ -82,7 +92,7 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
     itemType: "bento",
   },
   {
-    pageNumber: 8,
+    pageNumber: 9,
     id: "cheese_hamburg_bento",
     name: "チーズハンバーグ弁当",
     price: 850,
@@ -92,7 +102,7 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
     itemType: "bento",
   },
   {
-    pageNumber: 9,
+    pageNumber: 10,
     id: "karaage_bento",
     name: "からあげ弁当",
     price: 700,
@@ -102,7 +112,7 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
     itemType: "bento",
   },
   {
-    pageNumber: 10,
+    pageNumber: 11,
     id: "original_hamburg_bento",
     name: "オリジナルハンバーグ弁当",
     price: 800,
@@ -112,7 +122,7 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
     itemType: "bento",
   },
   {
-    pageNumber: 11,
+    pageNumber: 12,
     id: "extra_karaage",
     name: "追加唐揚げ",
     price: 80,
