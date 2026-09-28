@@ -12,7 +12,7 @@ const RESERVATION_SAVE_URL = process.env.RESERVATION_SAVE_URL || '';
 const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
-const APP_VERSION = '2026-09-28-closed-day-5-01';
+const APP_VERSION = '2026-09-28-closed-day-5-02';
 
 const STORE_NAME = 'かむらど';
 const STORE_CODE = 'KMR';
@@ -1616,7 +1616,12 @@ function getAvailablePickupTimesForDate(dateStr, now = new Date()) {
   const normalizedDate = normalizeYmdDate(dateStr);
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedDate)) {
-    return PICKUP_TIMES;
+    return [];
+  }
+
+  // 個別休業日は受取時間を返さない
+  if (CLOSED_DATES.includes(normalizedDate)) {
+    return [];
   }
 
   if (normalizedDate < ORDER_START_DATE) {
