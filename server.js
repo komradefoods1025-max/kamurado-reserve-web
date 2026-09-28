@@ -1688,6 +1688,10 @@ function rejectUnavailableDateMessage() {
 }
 
 function assertSelectedDateIsBookable_(normalizedDate) {
+  if (CLOSED_DATES.includes(normalizedDate)) {
+    return false;
+  }
+
   return isBookableDate(normalizedDate, ORDER_START_DATE);
 }
 
