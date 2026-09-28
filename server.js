@@ -12,7 +12,7 @@ const RESERVATION_SAVE_URL = process.env.RESERVATION_SAVE_URL || '';
 const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
-const APP_VERSION = '2026-09-19-aji-fry-line-03';
+const APP_VERSION = '2026-09-28-closed-day-5-01';
 
 const STORE_NAME = 'かむらど';
 const STORE_CODE = 'KMR';
@@ -1665,7 +1665,7 @@ function buildEffectiveAvailableDates(rawDates, now = new Date()) {
 function rejectUnavailableDateMessage() {
   return textMessage(
     '選択された日付は現在ご予約いただけません。\n' +
-      '10月は月曜・水曜のみ、祝日・定休日（毎月9日・13日）は受付しておりません。\n' +
+      '10月は月曜・水曜のみ、祝日・定休日（毎月5日・9日・13日）は受付しておりません。\n' +
       'もう一度お選びください。'
   );
 }

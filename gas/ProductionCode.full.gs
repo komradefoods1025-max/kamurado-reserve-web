@@ -30,10 +30,11 @@ const STORE_NOTIFY_LINE_ID =
 const RESERVATION_DEADLINE_HOUR = 22;
 const DEFAULT_BOOKABLE_DATE_COUNT = 31;
 const REGULAR_CLOSED_WEEKDAYS = [];
-const REGULAR_CLOSED_MONTH_DAYS = [9, 13];
+const REGULAR_CLOSED_MONTH_DAYS = [5, 9, 13];
 const MONTH_WEEKDAY_RULES = [
   { month: 10, allowedWeekdays: [1, 3] }
 ];
+const HOLIDAY_BOOKABLE_MONTHS = [9];
 const CLOSED_HOLIDAY_DATES = [
   '2026-01-01', '2026-01-12', '2026-02-11', '2026-02-23', '2026-03-20',
   '2026-04-29', '2026-05-03', '2026-05-04', '2026-05-05', '2026-05-06',
@@ -1651,6 +1652,17 @@ function isPublicHoliday_(ymd) {
   return CLOSED_HOLIDAY_DATES.indexOf(normalized) >= 0;
 }
 
+function isHolidayClosedForBooking_(ymd) {
+  const normalized = normalizeDateString_(ymd);
+  if (!isPublicHoliday_(normalized)) return false;
+
+  const dayMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!dayMatch) return true;
+
+  const month = Number(dayMatch[2]);
+  return HOLIDAY_BOOKABLE_MONTHS.indexOf(month) < 0;
+}
+
 function isBlockedByMonthWeekdayRule_(ymd) {
   const normalized = normalizeDateString_(ymd);
   const dayMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -1679,7 +1691,7 @@ function isClosedDate_(ymd, specificClosedDates) {
     return true;
   }
 
-  if (isPublicHoliday_(normalized)) {
+  if (isHolidayClosedForBooking_(normalized)) {
     return true;
   }
 

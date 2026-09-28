@@ -1,9 +1,10 @@
 {
   "REGULAR_CLOSED_WEEKDAYS": [],
-  "REGULAR_CLOSED_MONTH_DAYS": [9, 13],
+  "REGULAR_CLOSED_MONTH_DAYS": [5, 9, 13],
   "MONTH_WEEKDAY_RULES": [
     { "month": 10, "allowedWeekdays": [1, 3] }
   ],
+  "HOLIDAY_BOOKABLE_MONTHS": [9],
   "CLOSED_HOLIDAYS_BY_YEAR": {
     "2026": [
       "2026-01-01",

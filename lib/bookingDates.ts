@@ -1,5 +1,6 @@
 import {
   CLOSED_HOLIDAYS_BY_YEAR,
+  HOLIDAY_BOOKABLE_MONTHS,
   MONTH_WEEKDAY_RULES,
   REGULAR_CLOSED_MONTH_DAYS,
   REGULAR_CLOSED_WEEKDAYS,
@@ -8,6 +9,7 @@ import {
 
 export {
   CLOSED_HOLIDAYS_BY_YEAR,
+  HOLIDAY_BOOKABLE_MONTHS,
   MONTH_WEEKDAY_RULES,
   REGULAR_CLOSED_MONTH_DAYS,
   REGULAR_CLOSED_WEEKDAYS,
@@ -27,8 +29,21 @@ const CLOSED_HOLIDAY_SET = new Set(
   Object.values(CLOSED_HOLIDAYS_BY_YEAR).flat(),
 );
 
+const HOLIDAY_BOOKABLE_MONTH_SET = new Set(HOLIDAY_BOOKABLE_MONTHS);
+
 export function isPublicHoliday(ymd: string): boolean {
   return CLOSED_HOLIDAY_SET.has(String(ymd || "").trim());
+}
+
+function isHolidayClosedForBooking(ymd: string): boolean {
+  if (!isPublicHoliday(ymd)) return false;
+  const match = String(ymd || "")
+    .trim()
+    .match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return true;
+  const month = Number(match[2]);
+  if (HOLIDAY_BOOKABLE_MONTH_SET.has(month)) return false;
+  return true;
 }
 
 export function getTodayYmdJst(now = new Date()): string {
@@ -70,7 +85,7 @@ export function isClosedDate(ymd: string): boolean {
     .match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return false;
 
-  if (isPublicHoliday(match[0])) {
+  if (isHolidayClosedForBooking(match[0])) {
     return true;
   }
 
