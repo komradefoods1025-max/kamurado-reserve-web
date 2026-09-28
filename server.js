@@ -19,6 +19,12 @@ const STORE_CODE = 'KMR';
 const TIME_ZONE = 'Asia/Tokyo';
 const BOOKABLE_DATE_COUNT = 31;
 const ORDER_START_DATE = '2026-04-02';
+
+// 臨時休業日
+const CLOSED_DATES = [
+  '2026-10-05'
+];
+
 const MENU_IMAGE_URL = 'https://teppanyaki-toda.com/wp-content/uploads/2026/06/menu1.png';
 
 const PENDING_REMINDER_MINUTES = Number(process.env.PENDING_REMINDER_MINUTES || 5);
@@ -1644,22 +1650,33 @@ function buildEffectiveAvailableDates(rawDates, now = new Date()) {
   const normalized = (rawDates || [])
     .map((date) => normalizeYmdDate(date))
     .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
-    .filter((date) => date >= ORDER_START_DATE);
+    .filter((date) => date >= ORDER_START_DATE)
+
+    // 臨時休業日を除外
+    .filter((date) => !CLOSED_DATES.includes(date));
 
   const mergedDateSet = new Set(normalized);
   const todayJst = getNowJstDateLabel(now);
 
   if (
     todayJst >= ORDER_START_DATE &&
+    !CLOSED_DATES.includes(todayJst) &&
     getAvailablePickupTimesForDate(todayJst, now).length > 0
   ) {
     mergedDateSet.add(todayJst);
   }
 
   return filterBookableDates(
-    filterAvailableDatesByPickupTime(Array.from(mergedDateSet), now),
+    filterAvailableDatesByPickupTime(
+      Array.from(mergedDateSet).filter(
+        (date) => !CLOSED_DATES.includes(date)
+      ),
+      now
+    ),
     ORDER_START_DATE
-  ).sort();
+  )
+    .filter((date) => !CLOSED_DATES.includes(date))
+    .sort();
 }
 
 function rejectUnavailableDateMessage() {
