@@ -17,8 +17,18 @@ export type MonthWeekdayRule = {
   allowedWeekdays: number[];
 };
 
+export type MonthOpenDaysRule = {
+  month: number;
+  year?: number;
+  days: number[];
+};
+
 export const MONTH_WEEKDAY_RULES: MonthWeekdayRule[] =
   rules.MONTH_WEEKDAY_RULES;
+
+export const MONTH_OPEN_DAYS_RULES: MonthOpenDaysRule[] =
+  (rules as { MONTH_OPEN_DAYS_RULES?: MonthOpenDaysRule[] })
+    .MONTH_OPEN_DAYS_RULES ?? [];
 
 /** 祝日でも予約可能にする月（例: 9 = 9月の祝日は受付可。10月以降の祝日は従来どおり不可） */
 export const HOLIDAY_BOOKABLE_MONTHS: number[] =

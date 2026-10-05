@@ -34,6 +34,9 @@ const REGULAR_CLOSED_MONTH_DAYS = [5, 9, 13];
 const MONTH_WEEKDAY_RULES = [
   { month: 10, allowedWeekdays: [1, 3] }
 ];
+const MONTH_OPEN_DAYS_RULES = [
+  { year: 2026, month: 10, days: [6, 7, 9, 11, 12, 14, 15] }
+];
 const HOLIDAY_BOOKABLE_MONTHS = [9];
 const CLOSED_HOLIDAY_DATES = [
   '2026-01-01', '2026-01-12', '2026-02-11', '2026-02-23', '2026-03-20',
@@ -1582,6 +1585,16 @@ function isHolidayClosedForBooking_(ymd) {
   return HOLIDAY_BOOKABLE_MONTHS.indexOf(month) < 0;
 }
 
+function findMonthOpenDaysRule_(year, month) {
+  for (var i = 0; i < MONTH_OPEN_DAYS_RULES.length; i++) {
+    const rule = MONTH_OPEN_DAYS_RULES[i];
+    if (rule.month !== month) continue;
+    if (rule.year && rule.year !== year) continue;
+    return rule;
+  }
+  return null;
+}
+
 function isBlockedByMonthWeekdayRule_(ymd) {
   const normalized = normalizeDateString_(ymd);
   const dayMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -1605,6 +1618,16 @@ function isBlockedByMonthWeekdayRule_(ymd) {
 function isClosedDate_(ymd, specificClosedDates) {
   const normalized = normalizeDateString_(ymd);
   const dayMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (dayMatch) {
+    const year = Number(dayMatch[1]);
+    const month = Number(dayMatch[2]);
+    const day = Number(dayMatch[3]);
+    const openDaysRule = findMonthOpenDaysRule_(year, month);
+    if (openDaysRule) {
+      return openDaysRule.days.indexOf(day) < 0;
+    }
+  }
 
   if (dayMatch && REGULAR_CLOSED_MONTH_DAYS.includes(Number(dayMatch[3]))) {
     return true;

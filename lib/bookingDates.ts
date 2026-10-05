@@ -1,18 +1,22 @@
 import {
   CLOSED_HOLIDAYS_BY_YEAR,
   HOLIDAY_BOOKABLE_MONTHS,
+  MONTH_OPEN_DAYS_RULES,
   MONTH_WEEKDAY_RULES,
   REGULAR_CLOSED_MONTH_DAYS,
   REGULAR_CLOSED_WEEKDAYS,
+  type MonthOpenDaysRule,
   type MonthWeekdayRule,
 } from "./bookingRules.config";
 
 export {
   CLOSED_HOLIDAYS_BY_YEAR,
   HOLIDAY_BOOKABLE_MONTHS,
+  MONTH_OPEN_DAYS_RULES,
   MONTH_WEEKDAY_RULES,
   REGULAR_CLOSED_MONTH_DAYS,
   REGULAR_CLOSED_WEEKDAYS,
+  type MonthOpenDaysRule,
   type MonthWeekdayRule,
 } from "./bookingRules.config";
 
@@ -60,6 +64,18 @@ export function getWeekdayJst(ymd: string): number {
   return date.getUTCDay();
 }
 
+function findMonthOpenDaysRule(
+  year: number,
+  month: number,
+): MonthOpenDaysRule | null {
+  for (const rule of MONTH_OPEN_DAYS_RULES) {
+    if (rule.month !== month) continue;
+    if (rule.year !== undefined && rule.year !== year) continue;
+    return rule;
+  }
+  return null;
+}
+
 function isBlockedByMonthWeekdayRule(ymd: string): boolean {
   const match = String(ymd || "")
     .trim()
@@ -85,11 +101,18 @@ export function isClosedDate(ymd: string): boolean {
     .match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return false;
 
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const dayOfMonth = Number(match[3]);
+  const openDaysRule = findMonthOpenDaysRule(year, month);
+  if (openDaysRule) {
+    return !openDaysRule.days.includes(dayOfMonth);
+  }
+
   if (isHolidayClosedForBooking(match[0])) {
     return true;
   }
 
-  const dayOfMonth = Number(match[3]);
   if (REGULAR_CLOSED_MONTH_DAYS.includes(dayOfMonth)) {
     return true;
   }

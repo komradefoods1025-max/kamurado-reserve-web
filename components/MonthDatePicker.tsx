@@ -131,7 +131,7 @@ export default function MonthDatePicker({
 
       <p className={styles.note}>
         表示されている日のみ予約できます。祝日・定休日（毎月5日・9日・13日）は表示されません。
-        {viewMonth === 10 ? " 10月は月曜・水曜のみ受付です。" : ""}
+        {viewMonth === 10 ? " 10月は指定営業日のみ受付です。" : ""}
         {" "}受付曜日は月ごとに変更になる場合があります。
       </p>
     </div>
