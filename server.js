@@ -335,7 +335,7 @@ function sendReservationMaintenanceHtml(res) {
     .status(200)
     .type('html')
     .send(
-      `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>メンテナンス中</title></head><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f5f4;font-family:system-ui,sans-serif;padding:24px;"><div style="max-width:420px;background:#fff;border-radius:24px;padding:32px;text-align:center;border:1px solid #e7e5e4;">${htmlLines}</div></body></html>`
+      `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>メンテナンス中</title></head><body style="margin:0;min-height:100vh;background:#f5f5f4;font-family:system-ui,sans-serif;padding:24px;"><div style="max-width:420px;margin:0 auto;background:#fff;border-radius:24px;padding:32px;text-align:left;border:1px solid #e7e5e4;">${htmlLines}</div></body></html>`
     );
 }
 
