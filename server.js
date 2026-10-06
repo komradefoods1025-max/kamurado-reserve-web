@@ -12,7 +12,7 @@ const RESERVATION_SAVE_URL = process.env.RESERVATION_SAVE_URL || '';
 const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
-const APP_VERSION = '2026-10-06-reservation-maintenance-01';
+const APP_VERSION = '2026-10-06-reservation-maintenance-02';
 const GAS_BOOKING_RULES_VERSION_EXPECTED = '2026-10-06-open-days-02';
 
 /** false にする場合: Render の RESERVATION_MAINTENANCE=false */
@@ -379,6 +379,7 @@ function getRichMenuIntentFromEvent(event) {
 
     if (isReservationViewText(text)) return 'view';
     if (isReservationChangeText(text)) return 'change';
+    if (isStartReservationText(text)) return 'start';
     return '';
   }
 
@@ -411,9 +412,25 @@ function getRichMenuIntentFromEvent(event) {
       return 'change';
     }
 
+    if (
+      [
+        'reserve_start',
+        'restart',
+        'reservation_start',
+        'begin_reservation',
+        'start_reservation',
+        'begin_reserve',
+        'new_reservation',
+        'start_order_from_menu_image'
+      ].includes(action)
+    ) {
+      return 'start';
+    }
+
     if (displayText) {
       if (isReservationViewText(displayText)) return 'view';
       if (isReservationChangeText(displayText)) return 'change';
+      if (isStartReservationText(displayText)) return 'start';
     }
   }
 
@@ -424,6 +441,11 @@ async function handleRichMenuEntry(event, replyToken, userId) {
   const intent = getRichMenuIntentFromEvent(event);
 
   if (!intent || !userId) return false;
+
+  if (intent === 'start') {
+    await handleStartReservationEntry(replyToken, userId);
+    return true;
+  }
 
   if (intent === 'view') {
     await startLineLoading(userId, 5);
@@ -508,7 +530,12 @@ async function handleEvent(event) {
       return;
     }
 
-    if (isStartReservationText(text) || isResetText(text)) {
+    if (isStartReservationText(text)) {
+      await handleStartReservationEntry(replyToken, userId, session);
+      return;
+    }
+
+    if (isResetText(text)) {
   if (isStartTapLocked(userId)) {
     return;
   }
@@ -757,36 +784,14 @@ async function handleEvent(event) {
     }
 
     if (data.action === 'reserve_start' || data.action === 'restart') {
-  if (isStartTapLocked(userId)) {
-    return;
-  }
-
-  if (hasActiveSession(session)) {
-    await clearPendingSession(userId);
-    clearSession(userId);
-  }
-
-  await startLineLoading(userId, 10);
-  await sleep(1200);
-  await beginReservationFlow(replyToken, userId);
-  return;
-}
+      await handleStartReservationEntry(replyToken, userId, session);
+      return;
+    }
 
     if (data.action === 'start_order_from_menu_image') {
-  if (isStartTapLocked(userId)) {
-    return;
-  }
-
-  if (hasActiveSession(session)) {
-    await clearPendingSession(userId);
-    clearSession(userId);
-  }
-
-  await startLineLoading(userId, 10);
-  await sleep(1200);
-  await beginReservationFlow(replyToken, userId);
-  return;
-}
+      await handleStartReservationEntry(replyToken, userId, session);
+      return;
+    }
 
     if (data.action === 'begin_change') {
       await beginReservationChangeFlow(replyToken, userId);
@@ -1200,6 +1205,11 @@ async function handleEvent(event) {
     }
 
     if (data.action === 'review_order') {
+  if (isReservationMaintenanceActive()) {
+    await replyMessage(replyToken, [buildReservationMaintenanceMessage()]);
+    return;
+  }
+
   if (!session.items.length) {
     await savePendingSession(userId, session);
     await replyMessage(replyToken, [
@@ -1385,6 +1395,26 @@ function buildReservationMaintenanceMessage() {
       'お手数ですがお電話にてご予約お願いします！\n' +
       `TEL ${RESERVATION_MAINTENANCE_TEL}`
   );
+}
+
+async function handleStartReservationEntry(replyToken, userId, session) {
+  if (isStartTapLocked(userId)) {
+    return;
+  }
+
+  if (hasActiveSession(session)) {
+    await clearPendingSession(userId);
+    clearSession(userId);
+  }
+
+  if (isReservationMaintenanceActive()) {
+    await replyMessage(replyToken, [buildReservationMaintenanceMessage()]);
+    return;
+  }
+
+  await startLineLoading(userId, 10);
+  await sleep(1200);
+  await beginReservationFlow(replyToken, userId);
 }
 
 async function prepareReservationFlow(userId) {
@@ -4583,13 +4613,24 @@ function isStartReservationText(text) {
       '予約する',
       '弁当予約',
       'ランチ予約',
-      'テイクアウト予約'
+      'テイクアウト予約',
+      'ご予約を始める',
+      'ご予約をはじめる',
+      'ご予約を開始',
+      'ご予約を始めます',
+      'ご予約に進む',
+      '予約へ進む',
+      '予約を始める'
     ].includes(t)
   ) {
     return true;
   }
 
   if (t.includes('ご予約に進みます')) {
+    return true;
+  }
+
+  if (/ご予約を(始|はじ)め/.test(t)) {
     return true;
   }
 
