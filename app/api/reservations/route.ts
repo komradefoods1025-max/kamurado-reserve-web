@@ -4,6 +4,10 @@ import {
   getReservationSaveUrlDebugInfo,
   missingReservationSaveUrlMessage,
 } from "../../../lib/reservationEndpoint";
+import {
+  isWebReservationMaintenance,
+  reservationMaintenanceMessageText,
+} from "../../../lib/reservationMaintenance";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -544,6 +548,16 @@ export async function POST(req: NextRequest) {
 
     if (action === "cancelReservation") {
       return handleCancelReservation(body);
+    }
+
+    if (isWebReservationMaintenance()) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: reservationMaintenanceMessageText(),
+        },
+        { status: 503 }
+      );
     }
 
     return handleCreateReservation(body);

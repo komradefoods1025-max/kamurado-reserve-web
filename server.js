@@ -12,13 +12,22 @@ const RESERVATION_SAVE_URL = process.env.RESERVATION_SAVE_URL || '';
 const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
-const APP_VERSION = '2026-10-06-reservation-maintenance-02';
+const APP_VERSION = '2026-10-06-reservation-maintenance-03';
 const GAS_BOOKING_RULES_VERSION_EXPECTED = '2026-10-06-open-days-02';
 
-/** false にする場合: Render の RESERVATION_MAINTENANCE=false */
+/** 予約再開: Render で RESERVATION_MAINTENANCE=false */
 const RESERVATION_MAINTENANCE =
-  String(process.env.RESERVATION_MAINTENANCE || 'true').toLowerCase() !== 'false';
+  String(process.env.RESERVATION_MAINTENANCE || 'true').toLowerCase() !== 'false' &&
+  String(process.env.RESERVATION_MAINTENANCE || 'true').toLowerCase() !== '0';
 const RESERVATION_MAINTENANCE_TEL = '048-441-5517';
+const WEB_RESERVE_MAINTENANCE_PATHS = [
+  '/menu',
+  '/reserve/menu',
+  '/reserve/schedule',
+  '/reserve/cart',
+  '/reserve/customer',
+  '/reserve/datetime'
+];
 
 const STORE_NAME = 'かむらど';
 const STORE_CODE = 'KMR';
@@ -239,6 +248,22 @@ const START_TAP_LOCK_MS = 3000;
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/liff-config', async (_req, res) => {
+  if (isReservationMaintenanceActive()) {
+    return res.json({
+      liffId: LIFF_ID,
+      bookableDateCount: BOOKABLE_DATE_COUNT,
+      storeName: STORE_NAME,
+      availableDates: [],
+      pickupTimes: PICKUP_TIMES,
+      pickupTimesByDate: {},
+      sameDayLeadMinutes: SAME_DAY_LEAD_MINUTES,
+      todayJst: getNowJstDateLabel(),
+      version: APP_VERSION,
+      reservationMaintenance: true,
+      maintenanceMessage: buildReservationMaintenanceMessageText()
+    });
+  }
+
   try {
     const bookingConfig = await fetchBookingConfig();
 
@@ -264,7 +289,8 @@ app.get('/api/liff-config', async (_req, res) => {
       pickupTimesByDate,
       sameDayLeadMinutes: SAME_DAY_LEAD_MINUTES,
       todayJst: getNowJstDateLabel(),
-      version: APP_VERSION
+      version: APP_VERSION,
+      reservationMaintenance: false
     });
   } catch (error) {
     console.error('liff-config error:', error);
@@ -277,9 +303,50 @@ app.get('/api/liff-config', async (_req, res) => {
       pickupTimesByDate: {},
       sameDayLeadMinutes: SAME_DAY_LEAD_MINUTES,
       todayJst: getNowJstDateLabel(),
-      version: APP_VERSION
+      version: APP_VERSION,
+      reservationMaintenance: isReservationMaintenanceActive(),
+      maintenanceMessage: isReservationMaintenanceActive()
+        ? buildReservationMaintenanceMessageText()
+        : ''
     });
   }
+});
+
+function buildReservationMaintenanceMessageText() {
+  return (
+    'ただいまメンテナンス中です🙇‍♂️\n' +
+    'お手数ですがお電話にてご予約お願いします！\n' +
+    `TEL ${RESERVATION_MAINTENANCE_TEL}`
+  );
+}
+
+function sendReservationMaintenanceHtml(res) {
+  const lines = buildReservationMaintenanceMessageText().split('\n');
+  const htmlLines = lines
+    .map((line) => {
+      if (line.startsWith('TEL ')) {
+        return `<p style="margin:0 0 12px;font-size:18px;line-height:1.7;"><a href="tel:0484415517" style="color:#92400e;font-weight:700;text-decoration:underline;">${line}</a></p>`;
+      }
+      return `<p style="margin:0 0 12px;font-size:18px;line-height:1.7;color:#292524;">${line}</p>`;
+    })
+    .join('');
+
+  res
+    .status(200)
+    .type('html')
+    .send(
+      `<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>メンテナンス中</title></head><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f5f4;font-family:system-ui,sans-serif;padding:24px;"><div style="max-width:420px;background:#fff;border-radius:24px;padding:32px;text-align:center;border:1px solid #e7e5e4;">${htmlLines}</div></body></html>`
+    );
+}
+
+WEB_RESERVE_MAINTENANCE_PATHS.forEach((maintenancePath) => {
+  app.get(maintenancePath, (req, res) => {
+    if (isReservationMaintenanceActive()) {
+      sendReservationMaintenanceHtml(res);
+      return;
+    }
+    res.status(404).type('text').send('Not found');
+  });
 });
 
 app.get('/', (_req, res) => {
@@ -290,6 +357,7 @@ app.get('/health', (_req, res) => {
   res.status(200).json({
     ok: true,
     version: APP_VERSION,
+    reservationMaintenance: isReservationMaintenanceActive(),
     menuKeys: Object.keys(MENUS),
     limitedAjiFryImageUrl: LIMITED_AJI_FRY_IMAGE_URL,
     file: __filename,
@@ -379,6 +447,7 @@ function getRichMenuIntentFromEvent(event) {
 
     if (isReservationViewText(text)) return 'view';
     if (isReservationChangeText(text)) return 'change';
+    if (isMenuEntryText(text)) return 'menu';
     if (isStartReservationText(text)) return 'start';
     return '';
   }
@@ -414,6 +483,18 @@ function getRichMenuIntentFromEvent(event) {
 
     if (
       [
+        'show_menu',
+        'open_menu',
+        'menu_book',
+        'lunch_menu',
+        'menu_image'
+      ].includes(action)
+    ) {
+      return 'menu';
+    }
+
+    if (
+      [
         'reserve_start',
         'restart',
         'reservation_start',
@@ -430,6 +511,7 @@ function getRichMenuIntentFromEvent(event) {
     if (displayText) {
       if (isReservationViewText(displayText)) return 'view';
       if (isReservationChangeText(displayText)) return 'change';
+      if (isMenuEntryText(displayText)) return 'menu';
       if (isStartReservationText(displayText)) return 'start';
     }
   }
@@ -441,6 +523,11 @@ async function handleRichMenuEntry(event, replyToken, userId) {
   const intent = getRichMenuIntentFromEvent(event);
 
   if (!intent || !userId) return false;
+
+  if (intent === 'menu') {
+    await handleMenuEntryReply(replyToken);
+    return true;
+  }
 
   if (intent === 'start') {
     await handleStartReservationEntry(replyToken, userId);
@@ -525,8 +612,8 @@ async function handleEvent(event) {
       return;
     }
 
-    if (text === 'メニュー') {
-      await replyMessage(replyToken, buildMenuImageMessages());
+    if (isMenuEntryText(text)) {
+      await handleMenuEntryReply(replyToken);
       return;
     }
 
@@ -543,6 +630,11 @@ async function handleEvent(event) {
   if (hasActiveSession(session)) {
     await clearPendingSession(userId);
     clearSession(userId);
+  }
+
+  if (isReservationMaintenanceActive()) {
+    await replyMessage(replyToken, [buildReservationMaintenanceMessage()]);
+    return;
   }
 
   await startLineLoading(userId, 10);
@@ -587,6 +679,11 @@ async function handleEvent(event) {
     }
 
     if (isResumeText(text)) {
+      if (isReservationMaintenanceActive()) {
+        await replyMessage(replyToken, [buildReservationMaintenanceMessage()]);
+        return;
+      }
+
       if (hasActiveSession(session)) {
         await savePendingSession(userId, session);
         await replyMessage(replyToken, buildResumeMessages(session));
@@ -596,6 +693,16 @@ async function handleEvent(event) {
       await startLineLoading(userId, 5);
       await sleep(1200);
       await beginReservationFlow(replyToken, userId);
+      return;
+    }
+
+    if (
+      isReservationMaintenanceActive() &&
+      session &&
+      session.flowType !== 'change' &&
+      hasActiveSession(session)
+    ) {
+      await replyMessage(replyToken, [buildReservationMaintenanceMessage()]);
       return;
     }
 
@@ -737,6 +844,17 @@ async function handleEvent(event) {
 
   if (event.type === 'postback' && userId) {
     const data = parsePostbackData(event.postback?.data || '');
+    const postbackAction = normalizeActionToken(
+      data.action || data.mode || data.type || ''
+    );
+
+    if (
+      isReservationMaintenanceActive() &&
+      shouldBlockReservationPostbackAction(postbackAction, session)
+    ) {
+      await replyMessage(replyToken, [buildReservationMaintenanceMessage()]);
+      return;
+    }
 
     if (data.action === VIEW_RESERVATION_DETAIL_ACTION) {
       const result = await fetchReservations(userId);
@@ -1390,11 +1508,64 @@ function isReservationMaintenanceActive() {
 }
 
 function buildReservationMaintenanceMessage() {
-  return textMessage(
-    'ただいまメンテナンス中です🙇‍♂️\n' +
-      'お手数ですがお電話にてご予約お願いします！\n' +
-      `TEL ${RESERVATION_MAINTENANCE_TEL}`
-  );
+  return textMessage(buildReservationMaintenanceMessageText());
+}
+
+async function handleMenuEntryReply(replyToken) {
+  if (isReservationMaintenanceActive()) {
+    await replyMessage(replyToken, [buildReservationMaintenanceMessage()]);
+    return;
+  }
+
+  await replyMessage(replyToken, buildMenuImageMessages());
+}
+
+function isMenuEntryText(text) {
+  const t = normalizeIncomingText(text);
+  if (!t) return false;
+
+  if (
+    [
+      'メニュー',
+      'メニューを見る',
+      'ランチメニュー',
+      'お品書き',
+      'menu',
+      'Menu'
+    ].includes(t)
+  ) {
+    return true;
+  }
+
+  return t.includes('メニュー') && !isReservationViewText(t) && !isReservationChangeText(t);
+}
+
+function shouldBlockReservationPostbackAction(action, session) {
+  if (session?.flowType === 'change') {
+    return false;
+  }
+
+  return [
+    'menu',
+    'drink',
+    'qty',
+    'rice_size',
+    'drink_confirm',
+    'add_more',
+    'review_order',
+    'confirm',
+    'time',
+    'open_name_input',
+    'open_phone_input',
+    'reserve_start',
+    'restart',
+    'start_order_from_menu_image',
+    'reservation_start',
+    'begin_reservation',
+    'start_reservation',
+    'begin_reserve',
+    'new_reservation'
+  ].includes(action);
 }
 
 async function handleStartReservationEntry(replyToken, userId, session) {
@@ -3073,6 +3244,11 @@ async function handleSelectedDate(replyToken, userId, session, selectedDate) {
 }
 
 async function handleSelectedDateTime(replyToken, userId, session, selectedDate, selectedTime) {
+  if (isReservationMaintenanceActive()) {
+    await replyMessage(replyToken, [buildReservationMaintenanceMessage()]);
+    return;
+  }
+
   const currentSession = session || getSession(userId);
   const normalizedDate = normalizeYmdDate(selectedDate);
   const normalizedTime = String(selectedTime || '').trim();

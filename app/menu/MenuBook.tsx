@@ -27,6 +27,7 @@ import {
   stopAllPremiumSounds,
   unlockPremiumAudio,
 } from "../../lib/premiumSounds";
+import { isWebReservationMaintenance } from "../../lib/reservationMaintenance";
 import {
   addMenuBookItemToDraft,
   adjustMenuBookItemQuantity,
@@ -915,6 +916,11 @@ export default function MenuBook() {
 
     isReserveNavigatingRef.current = true;
     setIsReserveNavigating(true);
+
+    if (isWebReservationMaintenance()) {
+      router.push("/reserve/maintenance");
+      return;
+    }
 
     try {
       await playGoToDatetimeNavigationSound(soundEnabled);

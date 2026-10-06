@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { isWebReservationMaintenance } from "../lib/reservationMaintenance";
 
 type StartReservationButtonProps = {
   href?: string;
@@ -35,6 +36,12 @@ export default function StartReservationButton({
 
     isNavigatingRef.current = true;
     setIsNavigating(true);
+
+    if (isWebReservationMaintenance()) {
+      router.push("/reserve/maintenance");
+      return;
+    }
+
     router.push(href);
   };
 
