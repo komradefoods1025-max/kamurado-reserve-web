@@ -12,8 +12,13 @@ const RESERVATION_SAVE_URL = process.env.RESERVATION_SAVE_URL || '';
 const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
-const APP_VERSION = '2026-10-06-gas-date-validate-02';
+const APP_VERSION = '2026-10-06-reservation-maintenance-01';
 const GAS_BOOKING_RULES_VERSION_EXPECTED = '2026-10-06-open-days-02';
+
+/** false にする場合: Render の RESERVATION_MAINTENANCE=false */
+const RESERVATION_MAINTENANCE =
+  String(process.env.RESERVATION_MAINTENANCE || 'true').toLowerCase() !== 'false';
+const RESERVATION_MAINTENANCE_TEL = '048-441-5517';
 
 const STORE_NAME = 'かむらど';
 const STORE_CODE = 'KMR';
@@ -520,6 +525,11 @@ async function handleEvent(event) {
 }
 
     if (text.includes('予約日時|')) {
+      if (isReservationMaintenanceActive()) {
+        await replyMessage(replyToken, [buildReservationMaintenanceMessage()]);
+        return;
+      }
+
       console.log(`[LIFF ROUTE HIT ${APP_VERSION}]`, JSON.stringify(text));
 
       const normalized = text.slice(text.indexOf('予約日時|'));
@@ -1210,6 +1220,11 @@ async function handleEvent(event) {
 }
 
     if (data.action === 'confirm') {
+      if (isReservationMaintenanceActive()) {
+        await replyMessage(replyToken, [buildReservationMaintenanceMessage()]);
+        return;
+      }
+
       if (!isReservationComplete(session)) {
         await startLineLoading(userId, 5);
         await beginReservationFlow(replyToken, userId);
@@ -1360,7 +1375,28 @@ function buildBusyNoticeText(kind = 'processing') {
   }
 }
 
+function isReservationMaintenanceActive() {
+  return RESERVATION_MAINTENANCE;
+}
+
+function buildReservationMaintenanceMessage() {
+  return textMessage(
+    'ただいまメンテナンス中です🙇‍♂️\n' +
+      'お手数ですがお電話にてご予約お願いします！\n' +
+      `TEL ${RESERVATION_MAINTENANCE_TEL}`
+  );
+}
+
 async function prepareReservationFlow(userId) {
+  if (isReservationMaintenanceActive()) {
+    clearSession(userId);
+    await clearPendingSession(userId);
+    return {
+      ok: false,
+      messages: [buildReservationMaintenanceMessage()]
+    };
+  }
+
   clearSession(userId);
   await clearPendingSession(userId);
 
@@ -3294,6 +3330,11 @@ async function handleReviewOrder(replyToken, userId, session) {
 }
 
 async function handleOrderConfirm(replyToken, userId, session) {
+  if (isReservationMaintenanceActive()) {
+    await replyMessage(replyToken, [buildReservationMaintenanceMessage()]);
+    return;
+  }
+
   const currentSession = session || getSession(userId);
 
   if (!isReservationComplete(currentSession)) {
