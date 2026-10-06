@@ -4,6 +4,8 @@ const SHEET_NAME = 'reservations';
 const DAILY_MENU_SHEET_NAME = 'daily_menu';
 const MENU_STATUS_SHEET_NAME = 'menu_status';
 const CLOSED_DAYS_SHEET_NAME = 'closed_days';
+const BOOKING_RULES_SHEET_NAME = 'booking_rules';
+const BOOKING_RULES_CODE_VERSION = '2026-10-06-open-days-02';
 const PENDING_SHEET_NAME = 'pending_orders';
 
 const STATUS_OPTIONS = ['受付済み', '変更済み', '準備中', '受取済み', 'キャンセル', 'キャンセル済み'];
@@ -59,6 +61,10 @@ function doGet(e) {
 
     if (action === 'getBookingConfig') {
       return jsonOutput_(getBookingConfig_(Number(params.count || DEFAULT_BOOKABLE_DATE_COUNT)));
+    }
+
+    if (action === 'validateBookableDate') {
+      return jsonOutput_(validateBookableDate_(params.date || ''));
     }
 
     if (action === 'getDailyMenu') {
@@ -239,6 +245,7 @@ function jsonOutput_(obj) {
 
 function getBookingConfig_(count) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  ensureBookingRulesSheet_(ss);
   let closedSheet = ss.getSheetByName(CLOSED_DAYS_SHEET_NAME);
 
   if (!closedSheet) {
@@ -266,8 +273,25 @@ function getBookingConfig_(count) {
   return {
     ok: true,
     deadlineHour: RESERVATION_DEADLINE_HOUR,
-    dates
+    dates,
+    bookingRulesCodeVersion: BOOKING_RULES_CODE_VERSION
   };
+}
+
+function validateBookableDate_(dateStr) {
+  try {
+    assertBookableDate_(dateStr);
+    return {
+      ok: true,
+      bookingRulesCodeVersion: BOOKING_RULES_CODE_VERSION
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: String(err),
+      bookingRulesCodeVersion: BOOKING_RULES_CODE_VERSION
+    };
+  }
 }
 
 function getDailyMenu_(dateStr) {
@@ -1585,13 +1609,87 @@ function isHolidayClosedForBooking_(ymd) {
   return HOLIDAY_BOOKABLE_MONTHS.indexOf(month) < 0;
 }
 
+function ensureBookingRulesSheet_(ss) {
+  let sheet = ss.getSheetByName(BOOKING_RULES_SHEET_NAME);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(BOOKING_RULES_SHEET_NAME);
+    sheet.getRange(1, 1, 1, 3).setValues([['year', 'month', 'days']]);
+    sheet.setFrozenRows(1);
+  }
+
+  if (sheet.getLastRow() < 2) {
+    MONTH_OPEN_DAYS_RULES.forEach(function (rule) {
+      sheet.appendRow([
+        rule.year || '',
+        rule.month,
+        (rule.days || []).join(',')
+      ]);
+    });
+  }
+}
+
+function readMonthOpenDaysRulesFromSheet_(ss) {
+  const sheet = ss.getSheetByName(BOOKING_RULES_SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return null;
+
+  const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).getValues();
+  const rules = [];
+
+  for (var i = 0; i < values.length; i++) {
+    const row = values[i];
+    const month = Number(row[1]);
+    if (!month) continue;
+
+    const yearRaw = row[0];
+    const year =
+      yearRaw === '' || yearRaw === null || yearRaw === undefined
+        ? undefined
+        : Number(yearRaw);
+
+    const daysStr = String(row[2] || '').trim();
+    const days = daysStr
+      .split(/[,、\s]+/)
+      .map(function (d) {
+        return Number(String(d).trim());
+      })
+      .filter(function (n) {
+        return n > 0;
+      });
+
+    if (!days.length) continue;
+
+    const rule = { month: month, days: days };
+    if (year) rule.year = year;
+    rules.push(rule);
+  }
+
+  return rules.length ? rules : null;
+}
+
+function getMonthOpenDaysRules_() {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    ensureBookingRulesSheet_(ss);
+    const fromSheet = readMonthOpenDaysRulesFromSheet_(ss);
+    if (fromSheet) return fromSheet;
+  } catch (err) {
+    console.error('getMonthOpenDaysRules_ error:', err);
+  }
+
+  return MONTH_OPEN_DAYS_RULES;
+}
+
 function findMonthOpenDaysRule_(year, month) {
-  for (var i = 0; i < MONTH_OPEN_DAYS_RULES.length; i++) {
-    const rule = MONTH_OPEN_DAYS_RULES[i];
+  const rules = getMonthOpenDaysRules_();
+
+  for (var i = 0; i < rules.length; i++) {
+    const rule = rules[i];
     if (rule.month !== month) continue;
     if (rule.year && rule.year !== year) continue;
     return rule;
   }
+
   return null;
 }
 
@@ -1653,6 +1751,7 @@ function isClosedDate_(ymd, specificClosedDates) {
 
 function getClosedDateContext_() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  ensureBookingRulesSheet_(ss);
   const closedSheet = ss.getSheetByName(CLOSED_DAYS_SHEET_NAME);
   return closedSheet ? getSpecificClosedDateSet_(closedSheet) : new Set();
 }

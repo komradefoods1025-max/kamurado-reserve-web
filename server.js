@@ -12,7 +12,8 @@ const RESERVATION_SAVE_URL = process.env.RESERVATION_SAVE_URL || '';
 const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
-const APP_VERSION = '2026-10-06-oct-open-days-01';
+const APP_VERSION = '2026-10-06-gas-date-validate-02';
+const GAS_BOOKING_RULES_VERSION_EXPECTED = '2026-10-06-open-days-02';
 
 const STORE_NAME = 'かむらど';
 const STORE_CODE = 'KMR';
@@ -1215,6 +1216,12 @@ async function handleEvent(event) {
         return;
       }
 
+      const dateCheck = await ensureReservationDateSavable_(session.date);
+      if (!dateCheck.ok) {
+        await replyMessage(replyToken, dateCheck.messages);
+        return;
+      }
+
       const reservation = {
         reservationNo: createReservationNo(),
         userId,
@@ -1235,7 +1242,7 @@ async function handleEvent(event) {
       if (!saveResult.ok) {
         await replyMessage(replyToken, [
           textMessage(
-            `予約内容の保存でエラーが起きました。\n${saveResult.error}`
+            `予約内容の保存でエラーが起きました。\n${formatReservationSaveError(saveResult.error)}`
           )
         ]);
         return;
@@ -1690,6 +1697,84 @@ function rejectUnavailableDateMessage() {
       '10月は指定営業日のみ、それ以外の祝日・定休日（毎月5日・9日・13日）は受付しておりません。\n' +
       'もう一度お選びください。'
   );
+}
+
+function formatReservationSaveError(errorText) {
+  const raw = String(errorText || '');
+  if (raw.includes('date is not available for booking')) {
+    return (
+      '選択された受取日は保存できません。\n' +
+      '10月は指定営業日のみ、毎月5・9・13日と祝日は原則お休みです。\n' +
+      '受取日を選び直してください。'
+    );
+  }
+  return raw;
+}
+
+async function fetchValidateBookableDate(date) {
+  try {
+    const url = buildReservationApiUrl({
+      action: 'validateBookableDate',
+      date
+    });
+    const response = await fetch(url);
+    const text = await response.text();
+
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (_parseErr) {
+      return { ok: true, skipped: true, reason: 'non-json-response' };
+    }
+
+    if (!json || typeof json.ok !== 'boolean') {
+      return { ok: true, skipped: true, reason: 'unknown-action' };
+    }
+
+    return json.ok
+      ? {
+          ok: true,
+          bookingRulesCodeVersion: json.bookingRulesCodeVersion || ''
+        }
+      : {
+          ok: false,
+          error: json.error || 'validate failed',
+          bookingRulesCodeVersion: json.bookingRulesCodeVersion || ''
+        };
+  } catch (err) {
+    console.error('fetchValidateBookableDate error:', err);
+    return { ok: true, skipped: true, reason: 'fetch-error' };
+  }
+}
+
+async function ensureReservationDateSavable_(dateStr) {
+  const normalizedDate = normalizeYmdDate(dateStr);
+
+  if (!assertSelectedDateIsBookable_(normalizedDate)) {
+    return { ok: false, messages: [rejectUnavailableDateMessage()] };
+  }
+
+  const gasCheck = await fetchValidateBookableDate(normalizedDate);
+
+  if (gasCheck.ok) {
+    if (
+      gasCheck.bookingRulesCodeVersion &&
+      gasCheck.bookingRulesCodeVersion !== GAS_BOOKING_RULES_VERSION_EXPECTED
+    ) {
+      console.warn(
+        `[booking-rules] GAS version ${gasCheck.bookingRulesCodeVersion} != expected ${GAS_BOOKING_RULES_VERSION_EXPECTED}`
+      );
+    }
+    return { ok: true };
+  }
+
+  return {
+    ok: false,
+    messages: [
+      textMessage(formatReservationSaveError(gasCheck.error)),
+      createDateSelectMessage()
+    ]
+  };
 }
 
 function assertSelectedDateIsBookable_(normalizedDate) {
@@ -3217,6 +3302,12 @@ async function handleOrderConfirm(replyToken, userId, session) {
     return;
   }
 
+  const dateCheck = await ensureReservationDateSavable_(currentSession.date);
+  if (!dateCheck.ok) {
+    await replyMessage(replyToken, dateCheck.messages);
+    return;
+  }
+
   const reservation = {
     reservationNo: createReservationNo(),
     userId,
@@ -3236,7 +3327,9 @@ async function handleOrderConfirm(replyToken, userId, session) {
 
   if (!saveResult.ok) {
     await replyMessage(replyToken, [
-      textMessage(`予約内容の保存でエラーが起きました。\n${saveResult.error}`)
+      textMessage(
+        `予約内容の保存でエラーが起きました。\n${formatReservationSaveError(saveResult.error)}`
+      )
     ]);
     return;
   }
