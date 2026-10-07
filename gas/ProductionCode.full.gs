@@ -2335,9 +2335,20 @@ function getBookingSheetStatus_() {
   const bookingRulesDataRowCount =
     rulesSheet && rulesSheet.getLastRow() >= 2 ? rulesSheet.getLastRow() - 1 : 0;
 
+  const reservationsSheet = ss.getSheetByName(SHEET_NAME);
+  const reservationsDataRowCount =
+    reservationsSheet && reservationsSheet.getLastRow() >= 2
+      ? reservationsSheet.getLastRow() - 1
+      : 0;
+
   return {
     ok: true,
     bookingRulesCodeVersion: BOOKING_RULES_CODE_VERSION,
+    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetUrl:
+      'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID + '/edit',
+    reservationsSheetName: SHEET_NAME,
+    reservationsDataRowCount: reservationsDataRowCount,
     codeRulesActive: hasActiveBookingCodeRules_(),
     bookingRulesDataRowCount: bookingRulesDataRowCount,
     enabledClosedDays: enabledClosedDays

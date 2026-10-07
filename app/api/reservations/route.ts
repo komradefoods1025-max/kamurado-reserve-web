@@ -6,6 +6,7 @@ import {
   missingReservationSaveUrlMessage,
 } from "../../../lib/reservationEndpoint";
 import {
+  gasSaveSucceeded,
   isGasDateBookingError,
   saveReservationToGas,
   sanitizeGasErrorForUser,
@@ -596,14 +597,18 @@ async function handleCreateReservation(body: any) {
     return buildGasFailureResponse("create", gasResult, payload);
   }
 
-  if (data && data.ok === false) {
-    const gasError = data.error || data.message || "GASが ok:false を返しました";
+  if (!gasSaveSucceeded(gasResult)) {
+    const gasError =
+      data?.error ||
+      data?.message ||
+      sanitizeGasErrorForUser(gasResult.rawText) ||
+      "予約の保存に失敗しました（GAS が ok:true を返しませんでした）";
     return NextResponse.json(
       {
         ok: false,
         message: formatReservationBookingError(gasError, dateYmd),
         error: gasError,
-        detail: data,
+        detail: data ?? gasResult.rawText?.slice(0, 500),
       },
       { status: 500 },
     );

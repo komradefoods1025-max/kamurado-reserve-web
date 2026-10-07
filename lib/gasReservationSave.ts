@@ -90,20 +90,12 @@ export function createWebReservationNo(): string {
   return `WEB-${jst}-${rand}`;
 }
 
-function gasSaveSucceeded(result: GasPostResult): boolean {
+export function gasSaveSucceeded(result: GasPostResult): boolean {
   const data =
     result.data && typeof result.data === "object"
       ? (result.data as Record<string, unknown>)
       : null;
-  return Boolean(result.ok && data?.ok !== false);
-}
-
-function extractGasSaveError(result: GasPostResult): string {
-  const data =
-    result.data && typeof result.data === "object"
-      ? (result.data as Record<string, unknown>)
-      : null;
-  return String(data?.error || data?.message || result.rawText || "");
+  return Boolean(result.ok && data?.ok === true);
 }
 
 async function saveReservationViaGet(

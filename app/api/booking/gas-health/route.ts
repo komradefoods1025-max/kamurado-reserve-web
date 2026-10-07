@@ -43,6 +43,10 @@ export async function GET() {
     saveUrl: maskExecUrl(saveUrl),
     fallbackUrl: fallbackUrl ? maskExecUrl(fallbackUrl) : null,
     bookingRulesCodeVersion: data?.bookingRulesCodeVersion ?? null,
+    spreadsheetId: data?.spreadsheetId ?? null,
+    spreadsheetUrl: data?.spreadsheetUrl ?? null,
+    reservationsSheetName: data?.reservationsSheetName ?? null,
+    reservationsDataRowCount: data?.reservationsDataRowCount ?? null,
     gasReachable: gas.ok && !gas.rawText.includes("<!DOCTYPE html"),
     debug: getReservationSaveUrlDebugInfo(),
   });
