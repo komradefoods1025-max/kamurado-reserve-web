@@ -72,30 +72,92 @@ export function buildSaveReservationGetUrl(
 
 const MAX_GET_SAVE_URL_LENGTH = 7500;
 
-/** POST 失敗時は GAS の GET saveReservation にフォールバック（Web/LINE 共通パターン）。 */
+export function createWebReservationNo(): string {
+  const now = new Date();
+  const jst = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  })
+    .format(now)
+    .replace(/[^\d]/g, "");
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  return `WEB-${jst}-${rand}`;
+}
+
+function gasSaveSucceeded(result: GasPostResult): boolean {
+  const data =
+    result.data && typeof result.data === "object"
+      ? (result.data as Record<string, unknown>)
+      : null;
+  return Boolean(result.ok && data?.ok !== false);
+}
+
+function extractGasSaveError(result: GasPostResult): string {
+  const data =
+    result.data && typeof result.data === "object"
+      ? (result.data as Record<string, unknown>)
+      : null;
+  return String(data?.error || data?.message || result.rawText || "");
+}
+
+async function saveReservationViaGet(
+  saveUrl: string,
+  payload: Record<string, unknown>,
+): Promise<GasPostResult | null> {
+  const getUrl = buildSaveReservationGetUrl(saveUrl, payload);
+  if (getUrl.length > MAX_GET_SAVE_URL_LENGTH) {
+    return null;
+  }
+  const getHttp = await fetchGasWebAppGet(getUrl);
+  return mapGasHttpToPostResult(getHttp);
+}
+
+/**
+ * Web 新規予約: 診断で安定していた GET saveReservation を優先し、失敗時のみ POST。
+ */
+export async function saveReservationToGas(
+  saveUrl: string,
+  payload: Record<string, unknown>,
+): Promise<GasPostResult> {
+  const withNo = {
+    ...payload,
+    reservationNo:
+      String(payload.reservationNo || "").trim() || createWebReservationNo(),
+  };
+
+  const getResult = await saveReservationViaGet(saveUrl, withNo);
+  if (getResult && gasSaveSucceeded(getResult)) {
+    return getResult;
+  }
+
+  const postHttp = await postToGasWebApp(saveUrl, withNo);
+  const postResult = mapGasHttpToPostResult(postHttp);
+  if (gasSaveSucceeded(postResult)) {
+    return postResult;
+  }
+
+  if (shouldRetrySaveWithGet(postHttp)) {
+    const getRetry = await saveReservationViaGet(saveUrl, withNo);
+    if (getRetry) {
+      return getRetry;
+    }
+  }
+
+  return getResult || postResult;
+}
+
+/** @deprecated use saveReservationToGas */
 export async function postSaveReservationToGas(
   saveUrl: string,
   payload: Record<string, unknown>,
 ): Promise<GasPostResult> {
-  const postHttp = await postToGasWebApp(saveUrl, payload);
-
-  if (!shouldRetrySaveWithGet(postHttp)) {
-    return mapGasHttpToPostResult(postHttp);
-  }
-
-  const getUrl = buildSaveReservationGetUrl(saveUrl, payload);
-  if (getUrl.length > MAX_GET_SAVE_URL_LENGTH) {
-    console.warn(
-      "[gasReservationSave] GET save URL too long; keeping POST result",
-    );
-    return mapGasHttpToPostResult(postHttp);
-  }
-
-  console.warn(
-    "[gasReservationSave] POST save failed or returned HTML; retrying GET saveReservation",
-  );
-  const getHttp = await fetchGasWebAppGet(getUrl);
-  return mapGasHttpToPostResult(getHttp);
+  return saveReservationToGas(saveUrl, payload);
 }
 
 export function sanitizeGasErrorForUser(text: unknown): string {

@@ -7,7 +7,7 @@ import {
 } from "../../../lib/reservationEndpoint";
 import {
   isGasDateBookingError,
-  postSaveReservationToGas,
+  saveReservationToGas,
   sanitizeGasErrorForUser,
 } from "../../../lib/gasReservationSave";
 import {
@@ -566,8 +566,9 @@ async function handleCreateReservation(body: any) {
     );
   }
 
-  let gasResult = await postSaveReservationToGas(
-    getReservationSaveUrl(),
+  const primarySaveUrl = getReservationSaveUrl();
+  let gasResult = await saveReservationToGas(
+    primarySaveUrl,
     payload as Record<string, unknown>,
   );
   let data = gasResult.data;
@@ -577,13 +578,14 @@ async function handleCreateReservation(body: any) {
 
   if (
     fallbackUrl &&
+    fallbackUrl !== primarySaveUrl &&
     (isGasDateBookingError(primaryGasError) ||
       (data && data.ok === false && isGasDateBookingError(data.error || data.message)))
   ) {
     console.warn(
       "[reservations/create] primary GAS rejected date; retrying fallback URL",
     );
-    gasResult = await postSaveReservationToGas(
+    gasResult = await saveReservationToGas(
       fallbackUrl,
       payload as Record<string, unknown>,
     );

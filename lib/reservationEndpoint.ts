@@ -1,3 +1,17 @@
+function normalizeGasExecUrl(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+
+  try {
+    const url = new URL(trimmed);
+    url.search = "";
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return trimmed.split("?")[0]?.split("#")[0]?.trim() || trimmed;
+  }
+}
+
 export function getReservationSaveUrl() {
   const endpoint =
     process.env.NEXT_PUBLIC_RESERVATION_SAVE_URL ??
@@ -5,7 +19,7 @@ export function getReservationSaveUrl() {
     process.env.NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT ??
     "";
 
-  return endpoint.trim();
+  return normalizeGasExecUrl(endpoint);
 }
 
 export function getReservationSaveFallbackUrl() {
