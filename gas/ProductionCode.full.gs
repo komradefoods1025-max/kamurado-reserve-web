@@ -5,7 +5,7 @@ const DAILY_MENU_SHEET_NAME = 'daily_menu';
 const MENU_STATUS_SHEET_NAME = 'menu_status';
 const CLOSED_DAYS_SHEET_NAME = 'closed_days';
 const BOOKING_RULES_SHEET_NAME = 'booking_rules';
-const BOOKING_RULES_CODE_VERSION = '2026-10-06-open-days-02';
+const BOOKING_RULES_CODE_VERSION = '2026-10-07-open-weekdays-01';
 const PENDING_SHEET_NAME = 'pending_orders';
 
 const STATUS_OPTIONS = ['受付済み', '変更済み', '準備中', '受取済み', 'キャンセル', 'キャンセル済み'];
@@ -32,24 +32,11 @@ const STORE_NOTIFY_LINE_ID =
 const RESERVATION_DEADLINE_HOUR = 22;
 const DEFAULT_BOOKABLE_DATE_COUNT = 31;
 const REGULAR_CLOSED_WEEKDAYS = [];
-const REGULAR_CLOSED_MONTH_DAYS = [5, 9, 13];
-const MONTH_WEEKDAY_RULES = [
-  { month: 10, allowedWeekdays: [1, 3] }
-];
-const MONTH_OPEN_DAYS_RULES = [
-  { year: 2026, month: 10, days: [6, 7, 9, 11, 12, 14, 15] }
-];
-const HOLIDAY_BOOKABLE_MONTHS = [9];
-const CLOSED_HOLIDAY_DATES = [
-  '2026-01-01', '2026-01-12', '2026-02-11', '2026-02-23', '2026-03-20',
-  '2026-04-29', '2026-05-03', '2026-05-04', '2026-05-05', '2026-05-06',
-  '2026-07-20', '2026-08-11', '2026-09-21', '2026-09-22', '2026-09-23',
-  '2026-10-12', '2026-11-03', '2026-11-23',
-  '2027-01-01', '2027-01-11', '2027-02-11', '2027-02-23', '2027-03-21',
-  '2027-03-22', '2027-04-29', '2027-05-03', '2027-05-04', '2027-05-05',
-  '2027-07-19', '2027-08-11', '2027-09-20', '2027-09-23', '2027-10-11',
-  '2027-11-03', '2027-11-23'
-];
+const REGULAR_CLOSED_MONTH_DAYS = [];
+const MONTH_WEEKDAY_RULES = [];
+const MONTH_OPEN_DAYS_RULES = [];
+const HOLIDAY_BOOKABLE_MONTHS = [];
+const CLOSED_HOLIDAY_DATES = [];
 const TIME_ZONE = 'Asia/Tokyo';
 
 const EXTRA_KARAAGE_KEY = 'extra_karaage';
@@ -1749,6 +1736,10 @@ function readMonthOpenDaysRulesFromSheet_(ss) {
 }
 
 function getMonthOpenDaysRules_() {
+  if (!MONTH_OPEN_DAYS_RULES.length) {
+    return MONTH_OPEN_DAYS_RULES;
+  }
+
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     ensureBookingRulesSheet_(ss);

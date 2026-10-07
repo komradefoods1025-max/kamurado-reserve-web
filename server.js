@@ -13,7 +13,7 @@ const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
 const APP_VERSION = '2026-10-06-reservation-maintenance-03';
-const GAS_BOOKING_RULES_VERSION_EXPECTED = '2026-10-06-open-days-02';
+const GAS_BOOKING_RULES_VERSION_EXPECTED = '2026-10-07-open-weekdays-01';
 
 /** 予約再開: Render で RESERVATION_MAINTENANCE=false */
 const RESERVATION_MAINTENANCE =
@@ -36,9 +36,7 @@ const BOOKABLE_DATE_COUNT = 31;
 const ORDER_START_DATE = '2026-04-02';
 
 // 臨時休業日
-const CLOSED_DATES = [
-  '2026-10-05'
-];
+const CLOSED_DATES = [];
 
 const MENU_IMAGE_URL = 'https://teppanyaki-toda.com/wp-content/uploads/2026/06/menu1.png';
 
@@ -1931,7 +1929,7 @@ function buildEffectiveAvailableDates(rawDates, now = new Date()) {
 function rejectUnavailableDateMessage() {
   return textMessage(
     '選択された日付は現在ご予約いただけません。\n' +
-      '10月は指定営業日のみ、それ以外の祝日・定休日（毎月5日・9日・13日）は受付しておりません。\n' +
+      '臨時休業日など、現在受付できない日付です。\n' +
       'もう一度お選びください。'
   );
 }
@@ -1941,7 +1939,7 @@ function formatReservationSaveError(errorText) {
   if (raw.includes('date is not available for booking')) {
     return (
       '選択された受取日は保存できません。\n' +
-      '10月は指定営業日のみ、毎月5・9・13日と祝日は原則お休みです。\n' +
+      '臨時休業日など、現在受付できない日付です。\n' +
       '受取日を選び直してください。'
     );
   }
