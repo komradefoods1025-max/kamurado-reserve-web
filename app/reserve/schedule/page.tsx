@@ -10,7 +10,9 @@ import {
   formatDateLabel,
   generateBookableDates,
   getTodayYmdJst,
+  isBookableDate,
 } from "../../../lib/bookingDates";
+import { useSheetClosedDays } from "../../../lib/useSheetClosedDays";
 
 type CartItem = {
   id: string;
@@ -262,19 +264,34 @@ export default function ReserveSchedulePage() {
   const [selectedTime, setSelectedTime] = useState("");
 
   const minYmd = useMemo(() => getTodayYmdJst(), []);
+  const { closedDates, loaded: closedDatesLoaded } = useSheetClosedDays();
 
   useEffect(() => {
+    if (!closedDatesLoaded) return;
+
     const loadDraft = () => {
       const currentDraft = readDraft();
-      const firstDate = generateBookableDates(1, 0, minYmd)[0] || "";
+      const firstDate =
+        generateBookableDates(1, 0, minYmd, closedDates)[0] || "";
+      const draftDate = currentDraft.pickupDate || "";
+      const resolvedDate =
+        draftDate && isBookableDate(draftDate, minYmd, closedDates)
+          ? draftDate
+          : firstDate;
 
       setDraft(currentDraft);
-      setSelectedDate(currentDraft.pickupDate || firstDate);
+      setSelectedDate(resolvedDate);
       setSelectedTime(currentDraft.pickupTime || "");
       setLoaded(true);
 
-      // 読めた時点で全キーへ書き直して、以降のページでもズレないようにする
-      if (getCartQuantity(currentDraft) > 0) {
+      if (
+        getCartQuantity(currentDraft) > 0 &&
+        resolvedDate !== draftDate
+      ) {
+        const nextDraft = { ...currentDraft, pickupDate: resolvedDate };
+        setDraft(nextDraft);
+        writeDraft(nextDraft);
+      } else if (getCartQuantity(currentDraft) > 0) {
         writeDraft(currentDraft);
       }
     };
@@ -288,7 +305,7 @@ export default function ReserveSchedulePage() {
       window.removeEventListener("pageshow", loadDraft);
       window.removeEventListener("focus", loadDraft);
     };
-  }, [minYmd]);
+  }, [minYmd, closedDates, closedDatesLoaded]);
 
   const availableTimes = useMemo(() => generateTimeSlots(), []);
   const cartCount = useMemo(() => getCartQuantity(draft), [draft]);
@@ -333,7 +350,7 @@ export default function ReserveSchedulePage() {
     router.push("/reserve/customer");
   }
 
-  if (!loaded) {
+  if (!loaded || !closedDatesLoaded) {
     return (
       <main className="min-h-screen bg-stone-50 px-4 py-8">
         <div className="mx-auto max-w-4xl rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
@@ -389,6 +406,7 @@ export default function ReserveSchedulePage() {
               value={selectedDate}
               onChange={handleSelectDate}
               minYmd={minYmd}
+              closedDates={closedDates}
             />
           </div>
         </section>

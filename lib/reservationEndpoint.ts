@@ -8,6 +8,14 @@ export function getReservationSaveUrl() {
   return endpoint.trim();
 }
 
+export function getReservationSaveFallbackUrl() {
+  return (
+    process.env.RESERVATION_SAVE_FALLBACK_URL?.trim() ||
+    process.env.NEXT_PUBLIC_RESERVATION_SAVE_FALLBACK_URL?.trim() ||
+    ""
+  );
+}
+
 export function missingReservationSaveUrlMessage() {
   return "NEXT_PUBLIC_RESERVATION_SAVE_URL または RESERVATION_SAVE_URL が未設定です";
 }

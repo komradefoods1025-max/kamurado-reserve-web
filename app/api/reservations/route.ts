@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  getReservationSaveFallbackUrl,
   getReservationSaveUrl,
   getReservationSaveUrlDebugInfo,
   missingReservationSaveUrlMessage,
 } from "../../../lib/reservationEndpoint";
+import { isGasDateBookingError } from "../../../lib/gasReservationSave";
 import {
   isWebReservationMaintenance,
   reservationMaintenanceMessageText,
@@ -14,6 +16,8 @@ import {
   ORDER_START_DATE,
 } from "../../../lib/reservationBookingErrors";
 import { isBookableDate } from "../../../lib/bookingDates";
+import { fetchSheetClosedDaysSet } from "../../../lib/sheetClosedDays";
+import { postToGasWebApp } from "../../../lib/gasHttp";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -133,8 +137,11 @@ function buildGasFailureResponse(
   );
 }
 
-async function postToGas(payload: unknown): Promise<GasPostResult> {
-  const saveUrl = getReservationSaveUrl();
+async function postToGas(
+  payload: unknown,
+  saveUrlOverride?: string,
+): Promise<GasPostResult> {
+  const saveUrl = saveUrlOverride?.trim() || getReservationSaveUrl();
 
   if (process.env.NODE_ENV !== "production") {
     console.log("[reservations] save URL configured:", saveUrl ? "yes" : "no");
@@ -157,29 +164,13 @@ async function postToGas(payload: unknown): Promise<GasPostResult> {
     };
   }
 
-  const upstream = await fetch(saveUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-
-  const rawText = await upstream.text();
-
-  let data: any = null;
-  try {
-    data = rawText ? JSON.parse(rawText) : null;
-  } catch {
-    data = null;
-  }
+  const gasHttp = await postToGasWebApp(saveUrl, payload);
 
   return {
-    ok: upstream.ok,
-    status: upstream.status,
-    rawText,
-    data,
+    ok: gasHttp.ok,
+    status: gasHttp.status,
+    rawText: gasHttp.rawText,
+    data: gasHttp.data,
   };
 }
 
@@ -326,6 +317,24 @@ async function handleUpdateReservation(body: any) {
         message: "注文内容が取得できないため変更できません",
       },
       { status: 400 }
+    );
+  }
+
+  const sheetClosedDays = await fetchSheetClosedDaysSet();
+  const dateYmd = normalizeReservationDateYmd(date);
+  if (
+    !dateYmd ||
+    !isBookableDate(dateYmd, ORDER_START_DATE, sheetClosedDays)
+  ) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: formatReservationBookingError(
+          "date is not available for booking",
+          dateYmd,
+        ),
+      },
+      { status: 400 },
     );
   }
 
@@ -521,8 +530,12 @@ async function handleCreateReservation(body: any) {
     JSON.stringify(payload, null, 2),
   );
 
+  const sheetClosedDays = await fetchSheetClosedDaysSet();
   const dateYmd = normalizeReservationDateYmd(payload.date);
-  if (!dateYmd || !isBookableDate(dateYmd, ORDER_START_DATE)) {
+  if (
+    !dateYmd ||
+    !isBookableDate(dateYmd, ORDER_START_DATE, sheetClosedDays)
+  ) {
     return NextResponse.json(
       {
         ok: false,
@@ -535,13 +548,27 @@ async function handleCreateReservation(body: any) {
     );
   }
 
-  const gasResult = await postToGas(payload);
+  let gasResult = await postToGas(payload);
+  let data = gasResult.data;
+
+  const primaryGasError = extractGasErrorMessage(gasResult).error;
+  const fallbackUrl = getReservationSaveFallbackUrl();
+
+  if (
+    fallbackUrl &&
+    (isGasDateBookingError(primaryGasError) ||
+      (data && data.ok === false && isGasDateBookingError(data.error || data.message)))
+  ) {
+    console.warn(
+      "[reservations/create] primary GAS rejected date; retrying fallback URL",
+    );
+    gasResult = await postToGas(payload, fallbackUrl);
+    data = gasResult.data;
+  }
 
   if (!gasResult.ok) {
     return buildGasFailureResponse("create", gasResult, payload);
   }
-
-  const data = gasResult.data;
 
   if (data && data.ok === false) {
     const gasError = data.error || data.message || "GASが ok:false を返しました";

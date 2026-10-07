@@ -1,6 +1,8 @@
 /**
- * このファイルを Apps Script エディタにすべて貼り付け →「デプロイ」→「新しいデプロイ」→ Webアプリ。
- * 反映確認: （デプロイURL）?action=validateBookableDate&date=2026-10-10
+ * 1. このファイルを Apps Script エディタにすべて貼り付け → 保存
+ * 2. 関数 runOnce_ResetWebBookingSheets_ を選んで「実行」（スプシの booking_rules / closed_days を整える）
+ * 3.「デプロイ」→「デプロイを管理」→ Webアプリ → バージョン「新バージョン」→ デプロイ
+ * 反映確認: （デプロイURL）?action=getBookingSheetStatus
  *   bookingRulesCodeVersion が BOOKING_RULES_CODE_VERSION と一致すること。
  */
 const SPREADSHEET_ID = '1ISLUbviLoKa2bM9twkMpFJKzsp4sHJBcuuRaCC5I60k';
@@ -59,6 +61,14 @@ function doGet(e) {
       return jsonOutput_(validateBookableDate_(params.date || ''));
     }
 
+    if (action === 'getBookingSheetStatus') {
+      return jsonOutput_(getBookingSheetStatus_());
+    }
+
+    if (action === 'getClosedDays') {
+      return jsonOutput_(getClosedDays_());
+    }
+
     if (action === 'getDailyMenu') {
       return jsonOutput_(getDailyMenu_(params.date || ''));
     }
@@ -101,6 +111,21 @@ function doGet(e) {
 
     if (action === 'cancelReservation') {
       return jsonOutput_(cancelReservation_(params));
+    }
+
+    if (action === 'saveReservation') {
+      if (!params.reservationNo) {
+        params.reservationNo = createReservationNo_();
+      }
+      if (!params.status) {
+        params.status = '受付済み';
+      }
+      saveToSheet_(params);
+      return jsonOutput_({
+        ok: true,
+        method: 'GET',
+        reservationNo: params.reservationNo
+      });
     }
 
     const normalizedStatus = normalizeStatus_(params.status || '');
@@ -1698,6 +1723,10 @@ function ensureBookingRulesSheet_(ss) {
       ]);
     });
   }
+
+  if (!MONTH_OPEN_DAYS_RULES.length) {
+    clearStaleBookingRulesSheetRows_(ss);
+  }
 }
 
 function readMonthOpenDaysRulesFromSheet_(ss) {
@@ -2221,6 +2250,100 @@ function createReservationNo_() {
   const rand = Math.floor(1000 + Math.random() * 9000);
   return 'WEB-' + now + '-' + rand;
 }
+
+/**
+ * スプレッドシート側の古い予約ルールを一度だけ整える（エディタから実行）。
+ * - booking_rules シートのデータ行を削除（10月「指定日だけ開店」などの残骸）
+ * - closed_days の「有効」をすべて OFF（本当の臨時休業だけあとで行ごと ON に戻す）
+ */
+function runOnce_ResetWebBookingSheets_() {
+  const result = resetWebBookingSheetsCore_({ disableAllClosedDays: true });
+  Logger.log(JSON.stringify(result, null, 2));
+  return result;
+}
+
+function resetWebBookingSheetsCore_(options) {
+  const opts = options || {};
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let clearedBookingRulesRows = 0;
+
+  const rulesSheet = ss.getSheetByName(BOOKING_RULES_SHEET_NAME);
+  if (rulesSheet && rulesSheet.getLastRow() >= 2) {
+    clearedBookingRulesRows = rulesSheet.getLastRow() - 1;
+    rulesSheet.deleteRows(2, clearedBookingRulesRows);
+  }
+
+  let disabledClosedDays = 0;
+  const closedSheet = ss.getSheetByName(CLOSED_DAYS_SHEET_NAME);
+  if (opts.disableAllClosedDays && closedSheet && closedSheet.getLastRow() >= 2) {
+    const numRows = closedSheet.getLastRow() - 1;
+    const colValues = closedSheet.getRange(2, 3, numRows, 1).getValues();
+    const nextValues = colValues.map(function (row) {
+      if (normalizeBoolean_(row[0])) {
+        disabledClosedDays++;
+      }
+      return [false];
+    });
+    closedSheet.getRange(2, 3, numRows, 1).setValues(nextValues);
+  }
+
+  return {
+    ok: true,
+    clearedBookingRulesRows: clearedBookingRulesRows,
+    disabledClosedDays: disabledClosedDays,
+    bookingRulesCodeVersion: BOOKING_RULES_CODE_VERSION
+  };
+}
+
+function getClosedDays_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let closedSheet = ss.getSheetByName(CLOSED_DAYS_SHEET_NAME);
+
+  if (!closedSheet) {
+    closedSheet = ss.insertSheet(CLOSED_DAYS_SHEET_NAME);
+    setupClosedDaysSheet_(closedSheet);
+  }
+
+  const closedSet = getSpecificClosedDateSet_(closedSheet);
+  const closedDays = Array.from(closedSet).sort();
+
+  return {
+    ok: true,
+    closedDays: closedDays,
+    bookingRulesCodeVersion: BOOKING_RULES_CODE_VERSION
+  };
+}
+
+function getBookingSheetStatus_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  ensureBookingRulesSheet_(ss);
+
+  const enabledClosedDays = [];
+  const closedSheet = ss.getSheetByName(CLOSED_DAYS_SHEET_NAME);
+  if (closedSheet && closedSheet.getLastRow() >= 2) {
+    const numRows = closedSheet.getLastRow() - 1;
+    const values = closedSheet.getRange(2, 1, numRows, 3).getValues();
+    values.forEach(function (row) {
+      const ymd = normalizeDateString_(row[0]);
+      if (ymd && normalizeBoolean_(row[2])) {
+        enabledClosedDays.push(ymd);
+      }
+    });
+  }
+
+  const rulesSheet = ss.getSheetByName(BOOKING_RULES_SHEET_NAME);
+  const bookingRulesDataRowCount =
+    rulesSheet && rulesSheet.getLastRow() >= 2 ? rulesSheet.getLastRow() - 1 : 0;
+
+  return {
+    ok: true,
+    bookingRulesCodeVersion: BOOKING_RULES_CODE_VERSION,
+    codeRulesActive: hasActiveBookingCodeRules_(),
+    bookingRulesDataRowCount: bookingRulesDataRowCount,
+    enabledClosedDays: enabledClosedDays
+  };
+}
+
 function testLineNotify() {
   notifyStoreByLine_(
     'new',

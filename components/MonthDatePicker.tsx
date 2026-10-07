@@ -10,6 +10,7 @@ import {
   getWeekdayLabels,
   shiftMonth,
 } from "../lib/bookingDates";
+import type { SheetClosedDates } from "../lib/sheetClosedDays";
 import styles from "./monthDatePicker.module.css";
 
 type MonthDatePickerProps = {
@@ -17,6 +18,7 @@ type MonthDatePickerProps = {
   onChange: (ymd: string) => void;
   minYmd?: string;
   disabled?: boolean;
+  closedDates?: SheetClosedDates;
 };
 
 export default function MonthDatePicker({
@@ -24,6 +26,7 @@ export default function MonthDatePicker({
   onChange,
   minYmd,
   disabled = false,
+  closedDates,
 }: MonthDatePickerProps) {
   const effectiveMinYmd = minYmd || getTodayYmdJst();
   const minMonth = useMemo(
@@ -46,8 +49,14 @@ export default function MonthDatePicker({
   }, [value]);
 
   const calendarCells = useMemo(
-    () => buildMonthCalendarGrid(viewYear, viewMonth, effectiveMinYmd),
-    [viewYear, viewMonth, effectiveMinYmd],
+    () =>
+      buildMonthCalendarGrid(
+        viewYear,
+        viewMonth,
+        effectiveMinYmd,
+        closedDates,
+      ),
+    [viewYear, viewMonth, effectiveMinYmd, closedDates],
   );
 
   const currentView = { year: viewYear, month: viewMonth };

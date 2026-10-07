@@ -8,6 +8,7 @@ import {
   type MonthOpenDaysRule,
   type MonthWeekdayRule,
 } from "./bookingRules.config";
+import type { SheetClosedDates } from "./sheetClosedDays";
 
 export {
   CLOSED_HOLIDAYS_BY_YEAR,
@@ -95,11 +96,18 @@ function isBlockedByMonthWeekdayRule(ymd: string): boolean {
   return false;
 }
 
-export function isClosedDate(ymd: string): boolean {
+export function isClosedDate(
+  ymd: string,
+  sheetClosedDates?: SheetClosedDates,
+): boolean {
   const match = String(ymd || "")
     .trim()
     .match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return false;
+
+  if (sheetClosedDates?.has(match[0])) {
+    return true;
+  }
 
   const year = Number(match[1]);
   const month = Number(match[2]);
@@ -129,10 +137,14 @@ export function isClosedDate(ymd: string): boolean {
   return false;
 }
 
-export function isBookableDate(ymd: string, minYmd?: string): boolean {
+export function isBookableDate(
+  ymd: string,
+  minYmd?: string,
+  sheetClosedDates?: SheetClosedDates,
+): boolean {
   if (!ymd) return false;
   if (minYmd && ymd < minYmd) return false;
-  return !isClosedDate(ymd);
+  return !isClosedDate(ymd, sheetClosedDates);
 }
 
 export function formatMonthTitle(year: number, month: number): string {
@@ -191,13 +203,14 @@ export function getBookableDatesInMonth(
   year: number,
   month: number,
   minYmd?: string,
+  sheetClosedDates?: SheetClosedDates,
 ): string[] {
   const dates: string[] = [];
   const lastDay = new Date(Date.UTC(year, month, 0, 12, 0, 0)).getUTCDate();
 
   for (let day = 1; day <= lastDay; day += 1) {
     const ymd = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    if (isBookableDate(ymd, minYmd)) {
+    if (isBookableDate(ymd, minYmd, sheetClosedDates)) {
       dates.push(ymd);
     }
   }
@@ -209,6 +222,7 @@ export function buildMonthCalendarGrid(
   year: number,
   month: number,
   minYmd?: string,
+  sheetClosedDates?: SheetClosedDates,
 ): Array<MonthCalendarDay | null> {
   const firstWeekday = getWeekdayJst(
     `${year}-${String(month).padStart(2, "0")}-01`,
@@ -226,7 +240,7 @@ export function buildMonthCalendarGrid(
     cells.push({
       ymd,
       day,
-      bookable: isBookableDate(ymd, minYmd),
+      bookable: isBookableDate(ymd, minYmd, sheetClosedDates),
       isPast,
     });
   }
@@ -242,6 +256,7 @@ export function generateBookableDates(
   count: number,
   startOffset = 0,
   minYmd?: string,
+  sheetClosedDates?: SheetClosedDates,
 ): string[] {
   const dates: string[] = [];
   const today = getTodayYmdJst();
@@ -260,7 +275,7 @@ export function generateBookableDates(
       day: "2-digit",
     }).format(base);
 
-    if (isBookableDate(ymd, minDate)) {
+    if (isBookableDate(ymd, minDate, sheetClosedDates)) {
       dates.push(ymd);
     }
   }

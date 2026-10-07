@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
 const { isBookableDate, filterBookableDates } = require('./lib/bookingDates.js');
+const { postToGasWebApp } = require('./lib/gasHttp.js');
 
 const app = express();
 
@@ -9,10 +10,12 @@ const PORT = process.env.PORT || 10000;
 const CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || '';
 const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';
 const RESERVATION_SAVE_URL = process.env.RESERVATION_SAVE_URL || '';
+const RESERVATION_SAVE_FALLBACK_URL =
+  process.env.RESERVATION_SAVE_FALLBACK_URL || '';
 const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
-const APP_VERSION = '2026-10-07-maintenance-off-01';
+const APP_VERSION = '2026-10-07-gas-post-redirect-01';
 const GAS_BOOKING_RULES_VERSION_EXPECTED = '2026-10-07-no-save-date-check-01';
 
 /** メンテナンスON: Render で RESERVATION_MAINTENANCE=true */
@@ -1940,7 +1943,9 @@ function rejectUnavailableDateMessage() {
 }
 
 function formatReservationSaveError(errorText) {
-  const raw = String(errorText || '');
+  const raw = String(errorText || '')
+    .replace(/^Error:\s*/i, '')
+    .trim();
   if (raw.includes('date is not available for booking')) {
     return (
       '選択された受取日は保存できません。\n' +
@@ -4239,6 +4244,48 @@ async function fetchMenuStatusesConfig() {
   }
 }
 
+function isGasDateBookingError_(errorText) {
+  return String(errorText || '').includes('date is not available for booking');
+}
+
+async function postReservationGasAction_(body, saveUrl) {
+  const endpoint = String(saveUrl || '').trim();
+  if (!endpoint) {
+    return { ok: false, error: 'RESERVATION_SAVE_URL is not set' };
+  }
+
+  const gasHttp = await postToGasWebApp(endpoint, body);
+  const text = gasHttp.rawText;
+
+  if (!gasHttp.ok) return { ok: false, error: text };
+
+  const json = gasHttp.data;
+  if (!json || typeof json !== 'object') {
+    return { ok: false, error: text || 'invalid JSON from GAS' };
+  }
+
+  return json.ok
+    ? { ok: true, reservationNo: json.reservationNo || body.reservationNo || '' }
+    : { ok: false, error: json.error || json.message || 'GAS error' };
+}
+
+async function postReservationGasWithFallback_(body) {
+  let result = await postReservationGasAction_(body, RESERVATION_SAVE_URL);
+
+  if (
+    !result.ok &&
+    isGasDateBookingError_(result.error) &&
+    RESERVATION_SAVE_FALLBACK_URL
+  ) {
+    console.warn(
+      '[LINE save] primary GAS rejected date; retrying RESERVATION_SAVE_FALLBACK_URL'
+    );
+    result = await postReservationGasAction_(body, RESERVATION_SAVE_FALLBACK_URL);
+  }
+
+  return result;
+}
+
 async function saveReservationToSheet(reservation) {
   try {
     const items = Array.isArray(reservation.items) ? reservation.items : [];
@@ -4248,7 +4295,7 @@ async function saveReservationToSheet(reservation) {
     const largeRiceQty = getLargeRiceQty(items);
     const hasDrink = hasDrinkItems(items);
 
-    const url = buildReservationApiUrl({
+    return await postReservationGasWithFallback_({
       action: 'saveReservation',
       reservationNo: reservation.reservationNo,
       userId: reservation.userId,
@@ -4258,29 +4305,20 @@ async function saveReservationToSheet(reservation) {
       phone: reservation.phone,
       status: reservation.status || '受付済み',
       createdAt: reservation.createdAt || '',
-      itemCount: String(reservation.itemCount || 0),
-      totalQty: String(reservation.totalQty || 0),
-      total: String(reservation.total || 0),
+      itemCount: reservation.itemCount || 0,
+      totalQty: reservation.totalQty || 0,
+      total: reservation.total || 0,
+      items,
       itemsJson: JSON.stringify(items),
       orderLines,
       foodLines,
       drinkLines,
       hasDrink: hasDrink ? 'yes' : 'no',
       hasLargeRice: largeRiceQty > 0 ? 'yes' : 'no',
-      largeRiceQty: String(largeRiceQty),
-      notifyMail: 'yes',
+      largeRiceQty,
+      notifyMail: true,
       notifyType: 'new'
     });
-
-    const response = await fetch(url);
-    const text = await response.text();
-
-    if (!response.ok) return { ok: false, error: text };
-
-    const json = JSON.parse(text);
-    return json.ok
-      ? { ok: true }
-      : { ok: false, error: json.error || 'save error' };
   } catch (err) {
     return { ok: false, error: String(err) };
   }
@@ -4576,12 +4614,13 @@ function reservationFromApiRow(row) {
 
 async function savePendingOrder(data) {
   try {
-    const response = await fetch(RESERVATION_SAVE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'savePending', ...data })
+    const gasHttp = await postToGasWebApp(RESERVATION_SAVE_URL, {
+      action: 'savePending',
+      ...data
     });
-    return await response.json();
+    return gasHttp.data && typeof gasHttp.data === 'object'
+      ? gasHttp.data
+      : { ok: false, error: gasHttp.rawText };
   } catch (err) {
     console.error('savePendingOrder error:', err);
     return { ok: false, error: err.message || String(err) };
@@ -4601,12 +4640,13 @@ async function getPendingOrder(userId) {
 
 async function clearPendingOrder(userId) {
   try {
-    const response = await fetch(RESERVATION_SAVE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'clearPending', userId })
+    const gasHttp = await postToGasWebApp(RESERVATION_SAVE_URL, {
+      action: 'clearPending',
+      userId
     });
-    return await response.json();
+    return gasHttp.data && typeof gasHttp.data === 'object'
+      ? gasHttp.data
+      : { ok: false, error: gasHttp.rawText };
   } catch (err) {
     console.error('clearPendingOrder error:', err);
     return { ok: false, error: err.message || String(err) };
@@ -4629,12 +4669,13 @@ async function getReminderTargets() {
 
 async function markReminderSent(userId) {
   try {
-    const response = await fetch(RESERVATION_SAVE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'markReminderSent', userId })
+    const gasHttp = await postToGasWebApp(RESERVATION_SAVE_URL, {
+      action: 'markReminderSent',
+      userId
     });
-    return await response.json();
+    return gasHttp.data && typeof gasHttp.data === 'object'
+      ? gasHttp.data
+      : { ok: false, error: gasHttp.rawText };
   } catch (err) {
     console.error('markReminderSent error:', err);
     return { ok: false, error: err.message || String(err) };

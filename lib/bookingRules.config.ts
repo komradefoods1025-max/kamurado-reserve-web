@@ -4,6 +4,7 @@ import rules from "./bookingRules.config.json";
  * 予約受付ルール（判明次第 lib/bookingRules.config.json を更新）
  *
  * GAS（gas/ProductionCode.full.gs）の定数も同内容に揃えてください。
+ * 臨時休業はスプレッドシート closed_days シート（Web/LINE 共通・GAS getClosedDays）。
  */
 
 export const REGULAR_CLOSED_WEEKDAYS: number[] = rules.REGULAR_CLOSED_WEEKDAYS;

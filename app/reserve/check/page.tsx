@@ -7,6 +7,7 @@ import {
   generateBookableDates,
   getTodayYmdJst,
 } from "../../../lib/bookingDates";
+import { useSheetClosedDays } from "../../../lib/useSheetClosedDays";
 
 type MenuItemType = "bento" | "drink" | "extra";
 
@@ -454,9 +455,10 @@ export default function ReserveCheckPage() {
   const [editItems, setEditItems] = useState<EditableOrderItem[]>([]);
 
   const minYmd = useMemo(() => getTodayYmdJst(), []);
+  const { closedDates, loaded: closedDatesLoaded } = useSheetClosedDays();
   const defaultBookableDate = useMemo(
-    () => generateBookableDates(1, 0, minYmd)[0] || "",
-    [minYmd],
+    () => generateBookableDates(1, 0, minYmd, closedDates)[0] || "",
+    [minYmd, closedDates],
   );
   const availableTimes = useMemo(() => generateTimeSlots(), []);
 
@@ -1104,7 +1106,8 @@ export default function ReserveCheckPage() {
                       value={editDate}
                       onChange={setEditDate}
                       minYmd={minYmd}
-                      disabled={updating}
+                      closedDates={closedDates}
+                      disabled={updating || !closedDatesLoaded}
                     />
                   </div>
 
