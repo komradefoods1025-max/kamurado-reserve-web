@@ -12,13 +12,18 @@ const RESERVATION_SAVE_URL = process.env.RESERVATION_SAVE_URL || '';
 const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
-const APP_VERSION = '2026-10-06-reservation-maintenance-03';
+const APP_VERSION = '2026-10-07-maintenance-off-01';
 const GAS_BOOKING_RULES_VERSION_EXPECTED = '2026-10-07-open-weekdays-01';
 
-/** 予約再開: Render で RESERVATION_MAINTENANCE=false */
-const RESERVATION_MAINTENANCE =
-  String(process.env.RESERVATION_MAINTENANCE || 'true').toLowerCase() !== 'false' &&
-  String(process.env.RESERVATION_MAINTENANCE || 'true').toLowerCase() !== '0';
+/** メンテナンスON: Render で RESERVATION_MAINTENANCE=true */
+function isTruthyEnvFlag(value) {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase();
+  return normalized === 'true' || normalized === '1' || normalized === 'yes';
+}
+
+const RESERVATION_MAINTENANCE = isTruthyEnvFlag(process.env.RESERVATION_MAINTENANCE);
 const RESERVATION_MAINTENANCE_TEL = '048-441-5517';
 const WEB_RESERVE_MAINTENANCE_PATHS = [
   '/menu',

@@ -10,12 +10,12 @@ export function reservationMaintenanceMessageText(): string {
   return RESERVATION_MAINTENANCE_LINES.join("\n");
 }
 
-/** Web/LIFF: 予約再開時は NEXT_PUBLIC_RESERVATION_MAINTENANCE=false */
+/** Web/LIFF: メンテナンスONは NEXT_PUBLIC_RESERVATION_MAINTENANCE=true */
 export function isWebReservationMaintenance(): boolean {
   const raw =
     process.env.NEXT_PUBLIC_RESERVATION_MAINTENANCE ??
     process.env.RESERVATION_MAINTENANCE ??
-    "true";
+    "false";
   const normalized = String(raw).trim().toLowerCase();
-  return normalized !== "false" && normalized !== "0";
+  return normalized === "true" || normalized === "1" || normalized === "yes";
 }
