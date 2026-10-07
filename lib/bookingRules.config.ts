@@ -34,9 +34,14 @@ export const MONTH_OPEN_DAYS_RULES: MonthOpenDaysRule[] =
 export const HOLIDAY_BOOKABLE_MONTHS: number[] =
   rules.HOLIDAY_BOOKABLE_MONTHS ?? [];
 
+const closedHolidaysByYear = rules.CLOSED_HOLIDAYS_BY_YEAR as Record<
+  string,
+  string[]
+>;
+
 export const CLOSED_HOLIDAYS_BY_YEAR: Record<number, string[]> =
   Object.fromEntries(
-    Object.entries(rules.CLOSED_HOLIDAYS_BY_YEAR).map(([year, dates]) => [
+    Object.entries(closedHolidaysByYear).map(([year, dates]) => [
       Number(year),
       dates,
     ]),
