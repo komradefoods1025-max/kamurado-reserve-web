@@ -13,7 +13,7 @@ const STORE_NOTIFY_LINE_ID = process.env.STORE_NOTIFY_LINE_ID || '';
 const STORE_NOTIFY_GROUP_ID = process.env.STORE_NOTIFY_GROUP_ID || '';
 const LIFF_ID = process.env.LIFF_ID || '';
 const APP_VERSION = '2026-10-07-maintenance-off-01';
-const GAS_BOOKING_RULES_VERSION_EXPECTED = '2026-10-07-sheet-closed-only-01';
+const GAS_BOOKING_RULES_VERSION_EXPECTED = '2026-10-07-no-save-date-check-01';
 
 /** メンテナンスON: Render で RESERVATION_MAINTENANCE=true */
 function isTruthyEnvFlag(value) {

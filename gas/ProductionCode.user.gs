@@ -5,7 +5,7 @@ const DAILY_MENU_SHEET_NAME = 'daily_menu';
 const MENU_STATUS_SHEET_NAME = 'menu_status';
 const CLOSED_DAYS_SHEET_NAME = 'closed_days';
 const BOOKING_RULES_SHEET_NAME = 'booking_rules';
-const BOOKING_RULES_CODE_VERSION = '2026-10-07-sheet-closed-only-01';
+const BOOKING_RULES_CODE_VERSION = '2026-10-07-no-save-date-check-01';
 const PENDING_SHEET_NAME = 'pending_orders';
 
 const STATUS_OPTIONS = ['受付済み', '変更済み', '準備中', '受取済み', 'キャンセル', 'キャンセル済み'];
@@ -1332,8 +1332,6 @@ function validateReservationData_(reservation) {
   if (!Array.isArray(reservation.items) || reservation.items.length === 0) {
     throw new Error('items is required');
   }
-
-  assertBookableDate_(reservation.date);
 }
 
 function summarizeReservationItems_(items) {

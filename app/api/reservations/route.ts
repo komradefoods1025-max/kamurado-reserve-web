@@ -459,6 +459,7 @@ async function handleCreateReservation(body: any) {
   );
 
   const payload = {
+    action: "saveReservation",
     channel: body?.channel || "WEB",
     source: body?.source || "next-web-app",
     storeName: body?.storeName || "かむらど",
