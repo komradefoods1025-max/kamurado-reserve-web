@@ -5,7 +5,7 @@ const DAILY_MENU_SHEET_NAME = 'daily_menu';
 const MENU_STATUS_SHEET_NAME = 'menu_status';
 const CLOSED_DAYS_SHEET_NAME = 'closed_days';
 const BOOKING_RULES_SHEET_NAME = 'booking_rules';
-const BOOKING_RULES_CODE_VERSION = '2026-10-07-open-weekdays-01';
+const BOOKING_RULES_CODE_VERSION = '2026-10-07-open-weekdays-02';
 const PENDING_SHEET_NAME = 'pending_orders';
 
 const STATUS_OPTIONS = ['受付済み', '変更済み', '準備中', '受取済み', 'キャンセル', 'キャンセル済み'];
@@ -1740,9 +1740,19 @@ function isClosedDate_(ymd, specificClosedDates) {
   return specificClosedDates.has(normalized);
 }
 
+function clearStaleBookingRulesSheetRows_(ss) {
+  if (MONTH_OPEN_DAYS_RULES.length) return;
+
+  const sheet = ss.getSheetByName(BOOKING_RULES_SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return;
+
+  sheet.deleteRows(2, sheet.getLastRow() - 1);
+}
+
 function getClosedDateContext_() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   ensureBookingRulesSheet_(ss);
+  clearStaleBookingRulesSheetRows_(ss);
   const closedSheet = ss.getSheetByName(CLOSED_DAYS_SHEET_NAME);
   return closedSheet ? getSpecificClosedDateSet_(closedSheet) : new Set();
 }

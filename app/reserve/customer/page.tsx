@@ -135,15 +135,18 @@ function formatReservationSubmitError(
   data: SubmitResponse,
   rawText: string,
   status: number,
+  pickupDate?: string,
 ) {
-  const lines = [
-    data.error,
-    data.message,
-    data.stack,
-  ].filter((line): line is string => Boolean(line && String(line).trim()));
+  if (data.message && String(data.message).trim()) {
+    return String(data.message).trim();
+  }
+
+  const lines = [data.error, data.stack].filter((line): line is string =>
+    Boolean(line && String(line).trim()),
+  );
 
   if (lines.length > 0) {
-    return Array.from(new Set(lines)).join("\n");
+    return lines.join("\n");
   }
 
   if (rawText.trim()) {
@@ -180,7 +183,14 @@ async function submitReservation(payload: Record<string, unknown>) {
       data,
     });
 
-    throw new Error(formatReservationSubmitError(data, rawText, res.status));
+    throw new Error(
+      formatReservationSubmitError(
+        data,
+        rawText,
+        res.status,
+        String(payload.pickupDate || payload.date || ""),
+      ),
+    );
   }
 
   return data;

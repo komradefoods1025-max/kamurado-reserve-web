@@ -8,6 +8,12 @@ import {
   isWebReservationMaintenance,
   reservationMaintenanceMessageText,
 } from "../../../lib/reservationMaintenance";
+import {
+  formatReservationBookingError,
+  normalizeReservationDateYmd,
+  ORDER_START_DATE,
+} from "../../../lib/reservationBookingErrors";
+import { isBookableDate } from "../../../lib/bookingDates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -103,10 +109,21 @@ function buildGasFailureResponse(
   logGasHttpError(action, gasResult, payload);
   const gasError = extractGasErrorMessage(gasResult);
 
+  const dateFromPayload =
+    payload && typeof payload === "object" && payload !== null
+      ? normalizeReservationDateYmd(
+          (payload as Record<string, unknown>).date ||
+            (payload as Record<string, unknown>).pickupDate,
+        )
+      : "";
+
   return NextResponse.json(
     {
       ok: false,
-      message: gasError.message,
+      message: formatReservationBookingError(
+        gasError.message,
+        dateFromPayload,
+      ),
       error: gasError.error,
       stack: gasError.stack,
       detail: gasError.detail,
@@ -503,6 +520,20 @@ async function handleCreateReservation(body: any) {
     JSON.stringify(payload, null, 2),
   );
 
+  const dateYmd = normalizeReservationDateYmd(payload.date);
+  if (!dateYmd || !isBookableDate(dateYmd, ORDER_START_DATE)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: formatReservationBookingError(
+          "date is not available for booking",
+          dateYmd,
+        ),
+      },
+      { status: 400 },
+    );
+  }
+
   const gasResult = await postToGas(payload);
 
   if (!gasResult.ok) {
@@ -512,13 +543,15 @@ async function handleCreateReservation(body: any) {
   const data = gasResult.data;
 
   if (data && data.ok === false) {
+    const gasError = data.error || data.message || "GASが ok:false を返しました";
     return NextResponse.json(
       {
         ok: false,
-        message: data.error || data.message || "GASが ok:false を返しました",
+        message: formatReservationBookingError(gasError, dateYmd),
+        error: gasError,
         detail: data,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
