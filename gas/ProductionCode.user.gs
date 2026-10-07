@@ -5,7 +5,7 @@ const DAILY_MENU_SHEET_NAME = 'daily_menu';
 const MENU_STATUS_SHEET_NAME = 'menu_status';
 const CLOSED_DAYS_SHEET_NAME = 'closed_days';
 const BOOKING_RULES_SHEET_NAME = 'booking_rules';
-const BOOKING_RULES_CODE_VERSION = '2026-10-07-open-weekdays-02';
+const BOOKING_RULES_CODE_VERSION = '2026-10-07-sheet-closed-only-01';
 const PENDING_SHEET_NAME = 'pending_orders';
 
 const STATUS_OPTIONS = ['受付済み', '変更済み', '準備中', '受取済み', 'キャンセル', 'キャンセル済み'];
@@ -1704,8 +1704,22 @@ function isBlockedByMonthWeekdayRule_(ymd) {
   return false;
 }
 
+function hasActiveBookingCodeRules_() {
+  return REGULAR_CLOSED_MONTH_DAYS.length > 0 ||
+    REGULAR_CLOSED_WEEKDAYS.length > 0 ||
+    MONTH_WEEKDAY_RULES.length > 0 ||
+    MONTH_OPEN_DAYS_RULES.length > 0 ||
+    HOLIDAY_BOOKABLE_MONTHS.length > 0 ||
+    CLOSED_HOLIDAY_DATES.length > 0;
+}
+
 function isClosedDate_(ymd, specificClosedDates) {
   const normalized = normalizeDateString_(ymd);
+
+  if (!hasActiveBookingCodeRules_()) {
+    return specificClosedDates.has(normalized);
+  }
+
   const dayMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
   if (dayMatch) {
@@ -1763,7 +1777,16 @@ function assertBookableDate_(dateStr) {
     throw new Error('date is required');
   }
 
-  if (isClosedDate_(normalized, getClosedDateContext_())) {
+  const closedContext = getClosedDateContext_();
+  if (closedContext.has(normalized)) {
+    throw new Error('date is not available for booking');
+  }
+
+  if (!hasActiveBookingCodeRules_()) {
+    return;
+  }
+
+  if (isClosedDate_(normalized, closedContext)) {
     throw new Error('date is not available for booking');
   }
 }
