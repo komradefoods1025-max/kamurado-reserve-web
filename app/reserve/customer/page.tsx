@@ -14,6 +14,7 @@ import BookCloseOverlay from "../../../components/BookCloseOverlay";
 import ReservationCompleteCelebration from "../../../components/ReservationCompleteCelebration";
 import ReserveStepNav from "../../../components/ReserveStepNav";
 import reserveStyles from "../../../components/reserve.module.css";
+import { sanitizeGasErrorForUser } from "../../../lib/gasReservationSave";
 import styles from "./page.module.css";
 
 type CartItem = {
@@ -135,10 +136,10 @@ function formatReservationSubmitError(
   data: SubmitResponse,
   rawText: string,
   status: number,
-  pickupDate?: string,
+  _pickupDate?: string,
 ) {
   if (data.message && String(data.message).trim()) {
-    return String(data.message).trim();
+    return sanitizeGasErrorForUser(String(data.message).trim());
   }
 
   const lines = [data.error, data.stack].filter((line): line is string =>
@@ -146,11 +147,11 @@ function formatReservationSubmitError(
   );
 
   if (lines.length > 0) {
-    return lines.join("\n");
+    return sanitizeGasErrorForUser(lines.join("\n"));
   }
 
   if (rawText.trim()) {
-    return rawText.trim();
+    return sanitizeGasErrorForUser(rawText.trim());
   }
 
   return `予約送信に失敗しました (HTTP ${status})`;

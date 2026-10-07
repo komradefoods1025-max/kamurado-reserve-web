@@ -1,3 +1,4 @@
+import { fetchGasWebAppGet } from "./gasHttp";
 import { getReservationSaveUrl } from "./reservationEndpoint";
 
 export type SheetClosedDates = ReadonlySet<string>;
@@ -49,20 +50,10 @@ export async function fetchSheetClosedDaysSet(options?: {
   url.searchParams.set("action", "getClosedDays");
 
   try {
-    const response = await fetch(url.toString(), {
-      method: "GET",
-      cache: "no-store",
-    });
-    const text = await response.text();
+    const gasHttp = await fetchGasWebAppGet(url.toString());
+    const json = gasHttp.data as { ok?: boolean; closedDays?: unknown } | null;
 
-    let json: { ok?: boolean; closedDays?: unknown };
-    try {
-      json = JSON.parse(text) as { ok?: boolean; closedDays?: unknown };
-    } catch {
-      return memoryCache ? new Set(memoryCache.closedDays) : new Set();
-    }
-
-    if (!json.ok) {
+    if (!gasHttp.ok || !json?.ok) {
       return memoryCache ? new Set(memoryCache.closedDays) : new Set();
     }
 

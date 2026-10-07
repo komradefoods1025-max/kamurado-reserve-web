@@ -5,7 +5,11 @@ import {
   getReservationSaveUrlDebugInfo,
   missingReservationSaveUrlMessage,
 } from "../../../lib/reservationEndpoint";
-import { isGasDateBookingError } from "../../../lib/gasReservationSave";
+import {
+  isGasDateBookingError,
+  postSaveReservationToGas,
+  sanitizeGasErrorForUser,
+} from "../../../lib/gasReservationSave";
 import {
   isWebReservationMaintenance,
   reservationMaintenanceMessageText,
@@ -17,7 +21,7 @@ import {
 } from "../../../lib/reservationBookingErrors";
 import { isBookableDate } from "../../../lib/bookingDates";
 import { fetchSheetClosedDaysSet } from "../../../lib/sheetClosedDays";
-import { postToGasWebApp } from "../../../lib/gasHttp";
+import { isGasHtmlErrorPage, postToGasWebApp } from "../../../lib/gasHttp";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -77,11 +81,12 @@ function extractGasErrorMessage(gasResult: GasPostResult) {
       ? (gasResult.data as Record<string, unknown>)
       : null;
 
-  const error =
+  const error = sanitizeGasErrorForUser(
     (parsed?.error && String(parsed.error)) ||
-    (parsed?.message && String(parsed.message)) ||
-    (gasResult.rawText.trim() || "") ||
-    `GASへの送信でHTTPエラーが発生しました (${gasResult.status})`;
+      (parsed?.message && String(parsed.message)) ||
+      (gasResult.rawText.trim() || "") ||
+      `GASへの送信でHTTPエラーが発生しました (${gasResult.status})`,
+  );
 
   return {
     message: error,
@@ -165,6 +170,19 @@ async function postToGas(
   }
 
   const gasHttp = await postToGasWebApp(saveUrl, payload);
+
+  if (isGasHtmlErrorPage(gasHttp.rawText)) {
+    return {
+      ok: false,
+      status: gasHttp.status || 502,
+      rawText: gasHttp.rawText,
+      data: {
+        ok: false,
+        error:
+          "GAS WebアプリのURLが無効か、リダイレクト先を直接開いています。Vercel の RESERVATION_SAVE_URL（/exec まで）を確認してください。",
+      },
+    };
+  }
 
   return {
     ok: gasHttp.ok,
@@ -548,7 +566,10 @@ async function handleCreateReservation(body: any) {
     );
   }
 
-  let gasResult = await postToGas(payload);
+  let gasResult = await postSaveReservationToGas(
+    getReservationSaveUrl(),
+    payload as Record<string, unknown>,
+  );
   let data = gasResult.data;
 
   const primaryGasError = extractGasErrorMessage(gasResult).error;
@@ -562,7 +583,10 @@ async function handleCreateReservation(body: any) {
     console.warn(
       "[reservations/create] primary GAS rejected date; retrying fallback URL",
     );
-    gasResult = await postToGas(payload, fallbackUrl);
+    gasResult = await postSaveReservationToGas(
+      fallbackUrl,
+      payload as Record<string, unknown>,
+    );
     data = gasResult.data;
   }
 
