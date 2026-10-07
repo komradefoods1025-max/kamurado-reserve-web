@@ -12,14 +12,35 @@ function normalizeGasExecUrl(raw: string): string {
   }
 }
 
+/** サーバー API 用: 非公開の RESERVATION_SAVE_URL を優先（古い NEXT_PUBLIC より信頼） */
 export function getReservationSaveUrl() {
   const endpoint =
-    process.env.NEXT_PUBLIC_RESERVATION_SAVE_URL ??
     process.env.RESERVATION_SAVE_URL ??
+    process.env.NEXT_PUBLIC_RESERVATION_SAVE_URL ??
     process.env.NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT ??
     "";
 
   return normalizeGasExecUrl(endpoint);
+}
+
+export function getReservationSaveUrlCandidates(): string[] {
+  const raw = [
+    process.env.RESERVATION_SAVE_URL,
+    process.env.NEXT_PUBLIC_RESERVATION_SAVE_URL,
+    process.env.NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT,
+  ];
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+
+  for (const value of raw) {
+    const normalized = normalizeGasExecUrl(String(value || ""));
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    out.push(normalized);
+  }
+
+  return out;
 }
 
 export function getReservationSaveFallbackUrl() {
@@ -35,6 +56,7 @@ export function missingReservationSaveUrlMessage() {
 }
 
 export function getReservationSaveUrlDebugInfo() {
+  const candidates = getReservationSaveUrlCandidates();
   return {
     hasNextPublicReservationSaveUrl: Boolean(
       process.env.NEXT_PUBLIC_RESERVATION_SAVE_URL,
@@ -44,5 +66,8 @@ export function getReservationSaveUrlDebugInfo() {
       process.env.NEXT_PUBLIC_WEB_RESERVATION_ENDPOINT,
     ),
     configured: Boolean(getReservationSaveUrl()),
+    activeSaveUrl: getReservationSaveUrl(),
+    candidateCount: candidates.length,
+    multipleCandidatesConfigured: candidates.length > 1,
   };
 }

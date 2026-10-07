@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getReservationSaveFallbackUrl,
   getReservationSaveUrl,
+  getReservationSaveUrlCandidates,
   getReservationSaveUrlDebugInfo,
   missingReservationSaveUrlMessage,
 } from "../../../lib/reservationEndpoint";
@@ -567,24 +568,55 @@ async function handleCreateReservation(body: any) {
     );
   }
 
-  const primarySaveUrl = getReservationSaveUrl();
-  let gasResult = await saveReservationToGas(
-    primarySaveUrl,
-    payload as Record<string, unknown>,
-  );
-  let data = gasResult.data;
+  const saveUrlCandidates = getReservationSaveUrlCandidates();
+  if (!saveUrlCandidates.length) {
+    return NextResponse.json(
+      { ok: false, message: missingReservationSaveUrlMessage() },
+      { status: 500 },
+    );
+  }
 
-  const primaryGasError = extractGasErrorMessage(gasResult).error;
+  let gasResult: GasPostResult | null = null;
+  let data: any = null;
+
+  for (const saveUrl of saveUrlCandidates) {
+    const attempt = await saveReservationToGas(
+      saveUrl,
+      payload as Record<string, unknown>,
+    );
+    gasResult = attempt;
+    data = attempt.data;
+
+    if (gasSaveSucceeded(attempt)) {
+      break;
+    }
+
+    const attemptError = extractGasErrorMessage(attempt).error;
+    if (!isGasDateBookingError(attemptError)) {
+      break;
+    }
+
+    console.warn(
+      "[reservations/create] GAS date rejection on URL; trying next candidate if any",
+      { saveUrl: saveUrl.slice(0, 60) },
+    );
+  }
+
   const fallbackUrl = getReservationSaveFallbackUrl();
+  const primaryGasError = gasResult
+    ? extractGasErrorMessage(gasResult).error
+    : "";
 
   if (
+    gasResult &&
+    !gasSaveSucceeded(gasResult) &&
     fallbackUrl &&
-    fallbackUrl !== primarySaveUrl &&
+    !saveUrlCandidates.includes(fallbackUrl) &&
     (isGasDateBookingError(primaryGasError) ||
       (data && data.ok === false && isGasDateBookingError(data.error || data.message)))
   ) {
     console.warn(
-      "[reservations/create] primary GAS rejected date; retrying fallback URL",
+      "[reservations/create] retrying RESERVATION_SAVE_FALLBACK_URL",
     );
     gasResult = await saveReservationToGas(
       fallbackUrl,
@@ -593,11 +625,18 @@ async function handleCreateReservation(body: any) {
     data = gasResult.data;
   }
 
-  if (!gasResult.ok) {
-    return buildGasFailureResponse("create", gasResult, payload);
+  if (!gasResult) {
+    return NextResponse.json(
+      { ok: false, message: missingReservationSaveUrlMessage() },
+      { status: 500 },
+    );
   }
 
   if (!gasSaveSucceeded(gasResult)) {
+    if (!gasResult.ok) {
+      return buildGasFailureResponse("create", gasResult, payload);
+    }
+
     const gasError =
       data?.error ||
       data?.message ||
