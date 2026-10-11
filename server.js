@@ -139,7 +139,8 @@ const MENUS = {
       'サクッとふっくら！アジの旨みをぜひお楽しみください。期間限定・数量限定（その日の入荷分のみ）',
     imageUrl: LIMITED_AJI_FRY_IMAGE_URL,
     allowLargeRice: true,
-    visible: true
+    soldOut: true,
+    visible: false
   },
   karaage: {
     name: 'からあげ弁当',

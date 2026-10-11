@@ -9,6 +9,11 @@ export type MenuBookItem = {
   itemType: "bento" | "drink" | "extra";
 };
 
+/** 完売などでメニュー本から一時非表示（再開時は空にする） */
+export const TEMPORARILY_HIDDEN_MENU_IDS = new Set<string>([
+  "aji_fry_teishoku",
+]);
+
 /** public/menu/01.jpg〜11.jpg + 期間限定 12.jpg。各 jpg の写真内容と商品データを1対1で対応 */
 export const MENU_BOOK_PAGES: MenuBookItem[] = [
   {
@@ -133,10 +138,20 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
   },
 ];
 
+export function getVisibleMenuBookPages(): MenuBookItem[] {
+  return MENU_BOOK_PAGES.filter(
+    (item) => !TEMPORARILY_HIDDEN_MENU_IDS.has(item.id),
+  );
+}
+
+/** Web メニュー本の表示用（非表示商品を除く） */
+export const VISIBLE_MENU_BOOK_PAGES = getVisibleMenuBookPages();
+
 export type MenuBookPage = MenuBookItem;
 
 export function getMenuBookPage(index: number): MenuBookItem {
-  return MENU_BOOK_PAGES[index] ?? MENU_BOOK_PAGES[0];
+  const pages = getVisibleMenuBookPages();
+  return pages[index] ?? pages[0];
 }
 
 export function getMenuBookItemById(id: string): MenuBookItem | undefined {
@@ -146,7 +161,7 @@ export function getMenuBookItemById(id: string): MenuBookItem | undefined {
 export function isOrderableMenuBookPage(
   page: MenuBookItem,
 ): page is MenuBookItem {
-  return page.orderable;
+  return page.orderable && !TEMPORARILY_HIDDEN_MENU_IDS.has(page.id);
 }
 
 export function formatMenuPrice(price: number): string {

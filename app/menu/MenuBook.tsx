@@ -10,7 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
-  MENU_BOOK_PAGES,
+  VISIBLE_MENU_BOOK_PAGES,
   formatMenuPrice,
   getMenuBookPage,
   getMenuBookItemById,
@@ -172,12 +172,12 @@ function BrandLogo() {
 
 function getMaxLeftPage(isMobile: boolean): number {
   if (isMobile) {
-    return MENU_BOOK_PAGES.length - 1;
+    return VISIBLE_MENU_BOOK_PAGES.length - 1;
   }
 
-  return MENU_BOOK_PAGES.length % 2 === 1
-    ? MENU_BOOK_PAGES.length - 1
-    : MENU_BOOK_PAGES.length - 2;
+  return VISIBLE_MENU_BOOK_PAGES.length % 2 === 1
+    ? VISIBLE_MENU_BOOK_PAGES.length - 1
+    : VISIBLE_MENU_BOOK_PAGES.length - 2;
 }
 
 function getTargetPageIndex(
@@ -293,7 +293,7 @@ function MenuSpread({
   const leftItem = getMenuBookPage(leftPageIndex);
   const rightItem = layout.isMobile
     ? null
-    : (MENU_BOOK_PAGES[leftPageIndex + 1] ?? null);
+    : (VISIBLE_MENU_BOOK_PAGES[leftPageIndex + 1] ?? null);
 
   const leftTapHint = showTapHint;
 
@@ -569,7 +569,7 @@ export default function MenuBook() {
         return getMenuBookPage(currentPage);
       }
 
-      return currentPage + 1 < MENU_BOOK_PAGES.length
+      return currentPage + 1 < VISIBLE_MENU_BOOK_PAGES.length
         ? getMenuBookPage(currentPage + 1)
         : getMenuBookPage(currentPage);
     },
@@ -1069,7 +1069,7 @@ export default function MenuBook() {
           <div className={styles.pageMeta}>
             <div className={styles.pageMetaTop}>
               <div className={styles.counter}>
-                {currentPage + 1} / {MENU_BOOK_PAGES.length}
+                {currentPage + 1} / {VISIBLE_MENU_BOOK_PAGES.length}
               </div>
               <button
                 type="button"
