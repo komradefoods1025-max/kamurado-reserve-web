@@ -9,20 +9,18 @@ export type MenuBookItem = {
   itemType: "bento" | "drink" | "extra";
 };
 
-/** 完売などでメニュー本から一時非表示（再開時は空にする） */
-export const TEMPORARILY_HIDDEN_MENU_IDS = new Set<string>([
-  "aji_fry_teishoku",
-]);
+/** 完売などでメニュー本から一時非表示（再開時は id を追加） */
+export const TEMPORARILY_HIDDEN_MENU_IDS = new Set<string>([]);
 
-/** public/menu/01.jpg〜11.jpg + 期間限定 12.jpg。各 jpg の写真内容と商品データを1対1で対応 */
+/** public/menu/01.jpg〜11.jpg + おすすめ 12.jpg。各 jpg の写真内容と商品データを1対1で対応 */
 export const MENU_BOOK_PAGES: MenuBookItem[] = [
   {
     pageNumber: 1,
-    id: "aji_fry_teishoku",
-    name: "アジフライ弁当",
-    price: 880,
+    id: "kinoko_ankake_hamburg_bento",
+    name: "秋のきのこあんかけハンバーグ弁当",
+    price: 980,
     image: "/menu/12.jpg",
-    alt: "アジフライ弁当（期間限定）",
+    alt: "秋のきのこあんかけハンバーグ弁当",
     orderable: true,
     itemType: "bento",
   },

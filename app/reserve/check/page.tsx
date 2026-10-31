@@ -92,6 +92,13 @@ const RICE_SIZE_OPTIONS = ["小盛り", "普通", "大盛り"];
 
 const BENTO_MENUS: MenuCatalogItem[] = [
   {
+    id: "kinoko_ankake_hamburg_bento",
+    name: "秋のきのこあんかけハンバーグ弁当",
+    price: 980,
+    itemType: "bento",
+    label: "おすすめ",
+  },
+  {
     id: "karaage_bento",
     name: "からあげ弁当",
     price: 700,

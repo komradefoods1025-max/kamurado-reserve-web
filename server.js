@@ -128,19 +128,18 @@ const DEFAULT_DAILY_MENU = {
 
 const PUBLIC_MENU_ASSET_ORIGIN =
   process.env.PUBLIC_MENU_ASSET_ORIGIN || 'https://line-bento-bot.onrender.com';
-const LIMITED_AJI_FRY_MENU_KEY = 'aji_fry_teishoku';
-const LIMITED_AJI_FRY_IMAGE_URL = `${PUBLIC_MENU_ASSET_ORIGIN}/menu/12.jpg?v=20260919`;
+const FEATURED_BENTO_MENU_KEY = 'kinoko_ankake_hamburg_bento';
+const FEATURED_BENTO_IMAGE_URL = `${PUBLIC_MENU_ASSET_ORIGIN}/menu/12.jpg?v=20261101`;
 
 const MENUS = {
-  [LIMITED_AJI_FRY_MENU_KEY]: {
-    name: 'アジフライ弁当',
-    price: 880,
+  [FEATURED_BENTO_MENU_KEY]: {
+    name: '秋のきのこあんかけハンバーグ弁当',
+    price: 980,
     description:
-      'サクッとふっくら！アジの旨みをぜひお楽しみください。期間限定・数量限定（その日の入荷分のみ）',
-    imageUrl: LIMITED_AJI_FRY_IMAGE_URL,
+      '秋の味覚きのこをあんかけハンバーグに。ジューシーなハンバーグとご一緒にお楽しみください。',
+    imageUrl: FEATURED_BENTO_IMAGE_URL,
     allowLargeRice: true,
-    soldOut: true,
-    visible: false
+    visible: true
   },
   karaage: {
     name: 'からあげ弁当',
@@ -366,7 +365,7 @@ app.get('/health', (_req, res) => {
     version: APP_VERSION,
     reservationMaintenance: isReservationMaintenanceActive(),
     menuKeys: Object.keys(MENUS),
-    limitedAjiFryImageUrl: LIMITED_AJI_FRY_IMAGE_URL,
+    featuredBentoImageUrl: FEATURED_BENTO_IMAGE_URL,
     file: __filename,
     cwd: process.cwd()
   });
@@ -2163,10 +2162,10 @@ function buildMenuBubble(itemKey, menu) {
     }
   ];
 
-  if (itemKey === LIMITED_AJI_FRY_MENU_KEY) {
+  if (itemKey === FEATURED_BENTO_MENU_KEY) {
     bodyContents.push({
       type: 'text',
-      text: '期間限定・数量限定',
+      text: 'おすすめ',
       size: 'xs',
       weight: 'bold',
       color: '#DC2626',
