@@ -129,7 +129,7 @@ const DEFAULT_DAILY_MENU = {
 const PUBLIC_MENU_ASSET_ORIGIN =
   process.env.PUBLIC_MENU_ASSET_ORIGIN || 'https://line-bento-bot.onrender.com';
 const FEATURED_BENTO_MENU_KEY = 'kinoko_ankake_hamburg_bento';
-const FEATURED_BENTO_IMAGE_URL = `${PUBLIC_MENU_ASSET_ORIGIN}/menu/12.jpg?v=20261101`;
+const FEATURED_BENTO_IMAGE_URL = `${PUBLIC_MENU_ASSET_ORIGIN}/menu/12.jpg?v=20261108`;
 
 const MENUS = {
   [FEATURED_BENTO_MENU_KEY]: {

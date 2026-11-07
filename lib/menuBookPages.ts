@@ -19,7 +19,7 @@ export const MENU_BOOK_PAGES: MenuBookItem[] = [
     id: "kinoko_ankake_hamburg_bento",
     name: "秋のきのこあんかけハンバーグ弁当",
     price: 980,
-    image: "/menu/12.jpg",
+    image: "/menu/12.jpg?v=20261108",
     alt: "秋のきのこあんかけハンバーグ弁当",
     orderable: true,
     itemType: "bento",
