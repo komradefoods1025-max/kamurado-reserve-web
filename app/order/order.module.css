@@ -495,7 +495,7 @@
 }
 
 .landingPage {
-  padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  padding-bottom: calc(140px + env(safe-area-inset-bottom));
   background: #1c1410;
 }
 
@@ -613,5 +613,29 @@
 }
 
 .landingMenuBtn:active {
+  transform: scale(0.98);
+}
+
+.landingFooterBar {
+  gap: 10px;
+}
+
+.landingCheckBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 999px;
+  border: 2px solid rgba(245, 230, 211, 0.55);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: rgba(30, 22, 18, 0.92);
+  color: #f5e6d3;
+  text-decoration: none;
+}
+
+.landingCheckBtn:active {
   transform: scale(0.98);
 }

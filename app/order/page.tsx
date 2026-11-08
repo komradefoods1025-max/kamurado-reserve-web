@@ -66,9 +66,12 @@ export default function StoreOrderLandingPage() {
         </p>
       </section>
 
-      <div className={styles.footerBar}>
+      <div className={`${styles.footerBar} ${styles.landingFooterBar}`}>
         <Link href="/order/menu" className={styles.landingMenuBtn}>
           商品ページはコチラ
+        </Link>
+        <Link href="/order/check" className={styles.landingCheckBtn}>
+          予約確認
         </Link>
       </div>
     </main>

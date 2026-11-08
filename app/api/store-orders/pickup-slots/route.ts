@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  advanceBookingStartYmd,
   getStoreSlotsForPickupDate,
   isAfterStoreOrderNextDayCutoff,
   isStoreOrderSameDayLiveWindow,
+  listStoreAdvanceBookableDates,
   listStorePickupSlots,
 } from "../../../../lib/storePickupSlots";
 import { fetchSheetClosedDaysSet } from "../../../../lib/sheetClosedDays";
@@ -54,6 +56,14 @@ export async function GET(req: NextRequest) {
       ? getStoreSlotsForPickupDate(pickupDate, today)
       : estimate.slots;
 
+  const manageStart = isStoreOrderSameDayLiveWindow()
+    ? today
+    : advanceBookingStartYmd(today, new Date());
+  const manageBookableDates = listStoreAdvanceBookableDates(
+    manageStart,
+    closed,
+  );
+
   return NextResponse.json({
     ok: true,
     pickupDate,
@@ -61,6 +71,7 @@ export async function GET(req: NextRequest) {
       pickupDate !== today ? formatDateLabel(pickupDate) : null,
     bookingMode: estimate.bookingMode,
     bookableDates: estimate.bookableDates,
+    manageBookableDates: manageBookableDates,
     earliestReadyTime: estimate.earliestReadyTime,
     pickupTime: slots[0] ?? estimate.pickupTime,
     slots,

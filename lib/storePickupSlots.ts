@@ -71,7 +71,7 @@ export function isStoreOrderSameDayLiveWindow(now = new Date()): boolean {
   return m >= open && m < cutoff;
 }
 
-function advanceBookingStartYmd(todayYmd: string, now: Date): string {
+export function advanceBookingStartYmd(todayYmd: string, now: Date): string {
   return isAfterStoreOrderNextDayCutoff(now)
     ? addDaysYmd(todayYmd, 1)
     : todayYmd;
