@@ -9,7 +9,6 @@ import StoreOrderCartSummary from "../StoreOrderCartSummary";
 import StoreOrderDisclaimer from "../StoreOrderDisclaimer";
 import StoreOrderTestBanner from "../StoreOrderTestBanner";
 import {
-  clearStoreOrderDraft,
   readStoreOrderDraft,
   storeCartQuantity,
   writeStoreOrderDraft,
@@ -127,12 +126,6 @@ export default function StoreOrderConfirmReadyPage() {
     router.push("/order/customer");
   }
 
-  function emptyCart() {
-    if (!window.confirm("カートの商品をすべて削除しますか？")) return;
-    clearStoreOrderDraft();
-    router.replace("/order/menu");
-  }
-
   return (
     <main className={styles.page}>
       <StoreOrderTestBanner />
@@ -140,18 +133,6 @@ export default function StoreOrderConfirmReadyPage() {
         <h1 className={styles.title}>注文確認</h1>
         <p className={styles.sub}>{STORE_ORDER_READY_NOTE}</p>
       </header>
-
-      {cartItems.length > 0 ? (
-        <div className={styles.clearCartWrap}>
-          <button
-            type="button"
-            className={styles.clearCartBtn}
-            onClick={emptyCart}
-          >
-            カートを空にする
-          </button>
-        </div>
-      ) : null}
 
       <section className={styles.section}>
         <div className={styles.panel}>

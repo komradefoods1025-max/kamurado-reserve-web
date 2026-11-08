@@ -363,15 +363,11 @@
   letter-spacing: 0.04em;
 }
 
-.clearCartWrap {
-  padding: 0 16px 4px;
-}
-
 .clearCartBtn {
   display: block;
   width: 100%;
   margin: 0;
-  padding: 12px 16px;
+  padding: 8px 4px 2px;
   border: none;
   border-radius: 12px;
   background: transparent;

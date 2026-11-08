@@ -15,6 +15,7 @@ import {
   type StoreMenuCategory,
 } from "../../../lib/storeMenuCatalog";
 import {
+  clearStoreOrderDraft,
   readStoreOrderDraft,
   storeCartQuantity,
   writeStoreOrderDraft,
@@ -92,6 +93,12 @@ export default function StoreOrderMenuPage() {
 
     const others = cart.filter((c) => c.id !== id);
     persist([...others, line]);
+  }
+
+  function emptyCart() {
+    if (!window.confirm("カートの商品をすべて削除しますか？")) return;
+    clearStoreOrderDraft();
+    setCart([]);
   }
 
   return (
@@ -180,6 +187,15 @@ export default function StoreOrderMenuPage() {
             ? `注文確認（${totalQty}点）`
             : "商品を選んでください"}
         </Link>
+        {totalQty > 0 ? (
+          <button
+            type="button"
+            className={styles.clearCartBtn}
+            onClick={emptyCart}
+          >
+            カートを空にする
+          </button>
+        ) : null}
       </div>
     </main>
   );
