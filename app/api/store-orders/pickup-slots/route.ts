@@ -26,6 +26,7 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     pickupDate: estimate.pickupDate,
+    earliestReadyTime: estimate.earliestReadyTime,
     pickupTime: estimate.pickupTime,
     slots: estimate.slots,
     closedToday: estimate.closedToday,

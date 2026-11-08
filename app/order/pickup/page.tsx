@@ -18,6 +18,7 @@ import styles from "../order.module.css";
 type ReadyResponse = {
   ok?: boolean;
   pickupDate?: string;
+  earliestReadyTime?: string | null;
   pickupTime?: string | null;
   slots?: string[];
   message?: string | null;
@@ -38,6 +39,7 @@ export default function StoreOrderConfirmReadyPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [pickupDate, setPickupDate] = useState("");
+  const [earliestReadyTime, setEarliestReadyTime] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [slots, setSlots] = useState<string[]>([]);
   const [closed, setClosed] = useState(false);
@@ -65,11 +67,15 @@ export default function StoreOrderConfirmReadyPage() {
               ? [String(data.pickupTime)]
               : [];
           const date = data.pickupDate || "";
+          const ready = data.earliestReadyTime
+            ? String(data.earliestReadyTime)
+            : "";
           const defaultTime = data.pickupTime ? String(data.pickupTime) : "";
           const current = readStoreOrderDraft().pickupTime || pickupTime;
           const chosen = pickValidTime(list, current, defaultTime);
 
           setPickupDate(date);
+          setEarliestReadyTime(ready);
           setPickupTime(chosen);
           setSlots(list);
           setClosed(Boolean(data.closedToday) || list.length === 0);
@@ -131,13 +137,19 @@ export default function StoreOrderConfirmReadyPage() {
             </p>
           ) : (
             <>
-              <p className={styles.readyTimeLabel}>お受け取り希望時間</p>
-              <p className={styles.readyTimeValue}>{pickupTime}</p>
-
-              <p className={styles.label} style={{ marginTop: 16 }}>
-                {STORE_ORDER_MIN_LEAD_LABEL}
+              <p className={styles.readyTimeLabel}>
+                ただいまの出来上がり予定時間
               </p>
-              <div className={styles.slotGrid} role="listbox" aria-label="お受け取り時間">
+              <p className={styles.readyTimeValue}>{earliestReadyTime}</p>
+
+              <p className={styles.label} style={{ marginTop: 20 }}>
+                お受け取り希望時間（{earliestReadyTime} 以降・10分刻み）
+              </p>
+              <div
+                className={styles.slotGrid}
+                role="listbox"
+                aria-label="お受け取り時間"
+              >
                 {slots.map((time) => (
                   <button
                     key={time}
@@ -190,6 +202,3 @@ export default function StoreOrderConfirmReadyPage() {
     </main>
   );
 }
-
-const STORE_ORDER_MIN_LEAD_LABEL =
-  "※17:30〜21:30の間で、ご注文から30分後以降の時間をお選びください（10分刻み）。";

@@ -121,7 +121,7 @@ export default function StoreOrderConfirmPage() {
       <section className={styles.section}>
         <div className={styles.panel}>
           <p className={styles.readyTimeLabel} style={{ marginTop: 4 }}>
-            お受け取り希望時間
+            お受け取り時間
           </p>
           <p className={styles.readyTimeValue}>{draft.pickupTime || "—"}</p>
           <StoreOrderDisclaimer />
