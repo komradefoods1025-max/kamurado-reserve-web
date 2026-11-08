@@ -470,33 +470,102 @@
 }
 
 .landingPage {
-  display: flex;
-  flex-direction: column;
-  min-height: 100dvh;
-  max-width: 100%;
-  padding-bottom: 0;
+  padding-bottom: calc(88px + env(safe-area-inset-bottom));
   background: #1c1410;
 }
 
 .landingHeroWrap {
-  position: relative;
-  flex: 1 1 auto;
   width: 100%;
-  min-height: 0;
+  line-height: 0;
 }
 
 .landingHeroImg {
-  object-fit: contain;
-  object-position: center center;
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
-.landingFooter {
-  flex-shrink: 0;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
-  background: rgba(20, 14, 10, 0.98);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+.landingFlow {
+  padding: 20px 16px 28px;
+}
+
+.landingFlowTitle {
+  margin: 0 0 18px;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: #faf3e8;
+  text-align: center;
+}
+
+.landingSteps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.landingStep {
+  padding: 14px 14px 12px;
+  border-radius: 12px;
+  background: rgba(47, 38, 32, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.landingStepTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #f5d9a8;
+}
+
+.landingStepBody {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: #d8cdc0;
+}
+
+.landingHighlight {
+  margin-top: 20px;
+  padding: 16px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(232, 168, 88, 0.45);
+  background: linear-gradient(
+    180deg,
+    rgba(232, 168, 88, 0.18) 0%,
+    rgba(140, 80, 40, 0.12) 100%
+  );
+  text-align: center;
+}
+
+.landingHighlightLead {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffe8c4;
+}
+
+.landingHighlightBody {
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.65;
+  color: #f5f0e8;
+}
+
+.landingDisclaimer {
+  margin: 18px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.65;
+  color: #a89888;
+  text-align: center;
 }
 
 .landingMenuBtn {
