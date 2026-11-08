@@ -9,7 +9,10 @@ import {
   sanitizeGasErrorForUser,
 } from "../../../lib/gasReservationSave";
 import { createStoreOrderReservationNo } from "../../../lib/storeReservationNo";
-import { computeStoreReadyEstimate } from "../../../lib/storePickupSlots";
+import {
+  isAllowedStorePickupSlot,
+  listStorePickupSlots,
+} from "../../../lib/storePickupSlots";
 import { getTodayYmdJst } from "../../../lib/bookingDates";
 import { fetchSheetClosedDaysSet } from "../../../lib/sheetClosedDays";
 import {
@@ -112,21 +115,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ready = computeStoreReadyEstimate();
-    if (ready.closedToday || !ready.pickupTime) {
+    const slotsInfo = listStorePickupSlots();
+    if (slotsInfo.closedToday || !slotsInfo.slots.length) {
       return NextResponse.json(
         {
           ok: false,
           message:
-            ready.message ||
+            slotsInfo.message ||
             "現在、ご注文をお受けできる時間帯がありません。",
         },
         { status: 400 },
       );
     }
 
-    const pickupDate = ready.pickupDate;
-    const pickupTime = ready.pickupTime;
+    const pickupDate = String(
+      body?.pickupDate || body?.date || slotsInfo.pickupDate,
+    ).trim();
+    const pickupTime = String(
+      body?.pickupTime || body?.time || "",
+    ).trim();
+
+    if (
+      !pickupTime ||
+      !isAllowedStorePickupSlot(pickupDate, pickupTime, today)
+    ) {
+      return NextResponse.json(
+        {
+          ok: false,
+          message: "お受け取り時間を選び直してください。",
+        },
+        { status: 400 },
+      );
+    }
 
     const reservationNo =
       String(body?.reservationNo || "").trim() ||

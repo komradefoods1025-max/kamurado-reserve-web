@@ -19,15 +19,27 @@ type ReadyResponse = {
   ok?: boolean;
   pickupDate?: string;
   pickupTime?: string | null;
+  slots?: string[];
   message?: string | null;
   closedToday?: boolean;
 };
+
+function pickValidTime(
+  slots: string[],
+  preferred: string,
+  fallback: string,
+): string {
+  if (preferred && slots.includes(preferred)) return preferred;
+  if (fallback && slots.includes(fallback)) return fallback;
+  return slots[0] || "";
+}
 
 export default function StoreOrderConfirmReadyPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
+  const [slots, setSlots] = useState<string[]>([]);
   const [closed, setClosed] = useState(false);
   const [closedMessage, setClosedMessage] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<StoreCartLine[]>([]);
@@ -47,18 +59,27 @@ export default function StoreOrderConfirmReadyPage() {
         .then((r) => r.json())
         .then((data: ReadyResponse) => {
           if (!active) return;
-          const time = data.pickupTime ? String(data.pickupTime) : "";
+          const list = Array.isArray(data.slots)
+            ? data.slots.map(String)
+            : data.pickupTime
+              ? [String(data.pickupTime)]
+              : [];
           const date = data.pickupDate || "";
+          const defaultTime = data.pickupTime ? String(data.pickupTime) : "";
+          const current = readStoreOrderDraft().pickupTime || pickupTime;
+          const chosen = pickValidTime(list, current, defaultTime);
+
           setPickupDate(date);
-          setPickupTime(time);
-          setClosed(Boolean(data.closedToday) || !time);
+          setPickupTime(chosen);
+          setSlots(list);
+          setClosed(Boolean(data.closedToday) || list.length === 0);
           setClosedMessage(data.message || null);
 
-          if (time && date) {
+          if (chosen && date) {
             writeStoreOrderDraft({
               ...readStoreOrderDraft(),
               pickupDate: date,
-              pickupTime: time,
+              pickupTime: chosen,
             });
           }
         })
@@ -74,7 +95,17 @@ export default function StoreOrderConfirmReadyPage() {
       active = false;
       window.clearInterval(timer);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pickupTime は refresh 内で draft から再取得
   }, [router]);
+
+  function selectTime(time: string) {
+    setPickupTime(time);
+    writeStoreOrderDraft({
+      ...readStoreOrderDraft(),
+      pickupDate,
+      pickupTime: time,
+    });
+  }
 
   function continueNext() {
     if (!pickupTime || !pickupDate) return;
@@ -100,10 +131,31 @@ export default function StoreOrderConfirmReadyPage() {
             </p>
           ) : (
             <>
-              <p className={styles.readyTimeLabel}>
-                ただいまの出来上がり予定時間
-              </p>
+              <p className={styles.readyTimeLabel}>お受け取り希望時間</p>
               <p className={styles.readyTimeValue}>{pickupTime}</p>
+
+              <p className={styles.label} style={{ marginTop: 16 }}>
+                {STORE_ORDER_MIN_LEAD_LABEL}
+              </p>
+              <div className={styles.slotGrid} role="listbox" aria-label="お受け取り時間">
+                {slots.map((time) => (
+                  <button
+                    key={time}
+                    type="button"
+                    role="option"
+                    aria-selected={pickupTime === time}
+                    className={
+                      pickupTime === time
+                        ? `${styles.slotBtn} ${styles.slotBtnActive}`
+                        : styles.slotBtn
+                    }
+                    onClick={() => selectTime(time)}
+                  >
+                    {time}
+                  </button>
+                ))}
+              </div>
+
               <StoreOrderDisclaimer />
               <StoreOrderCartSummary items={cartItems} />
             </>
@@ -138,3 +190,6 @@ export default function StoreOrderConfirmReadyPage() {
     </main>
   );
 }
+
+const STORE_ORDER_MIN_LEAD_LABEL =
+  "※最短の時間より後の枠も選べます（時間は5分刻み）。";

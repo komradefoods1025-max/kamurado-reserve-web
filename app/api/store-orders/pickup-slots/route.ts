@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { computeStoreReadyEstimate } from "../../../../lib/storePickupSlots";
+import { listStorePickupSlots } from "../../../../lib/storePickupSlots";
 import { fetchSheetClosedDaysSet } from "../../../../lib/sheetClosedDays";
 import { getTodayYmdJst } from "../../../../lib/bookingDates";
 import { STORE_ORDER_BUSY_DISCLAIMER } from "../../../../lib/storeOrderCopy";
@@ -22,11 +22,12 @@ export async function GET() {
     });
   }
 
-  const estimate = computeStoreReadyEstimate();
+  const estimate = listStorePickupSlots();
   return NextResponse.json({
     ok: true,
     pickupDate: estimate.pickupDate,
     pickupTime: estimate.pickupTime,
+    slots: estimate.slots,
     closedToday: estimate.closedToday,
     disclaimer: STORE_ORDER_BUSY_DISCLAIMER,
     message: estimate.message,

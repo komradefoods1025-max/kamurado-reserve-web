@@ -41,11 +41,22 @@ export default function StoreOrderConfirmPage() {
           cache: "no-store",
         });
         const data = await res.json();
-        if (data.pickupTime && data.pickupDate) {
+        const slots: string[] = Array.isArray(data.slots)
+          ? data.slots.map(String)
+          : [];
+        if (data.pickupDate && (slots.length || data.pickupTime)) {
+          const preferred = current.pickupTime || "";
+          const fallback = data.pickupTime ? String(data.pickupTime) : "";
+          const pickupTime =
+            preferred && slots.includes(preferred)
+              ? preferred
+              : fallback && slots.includes(fallback)
+                ? fallback
+                : slots[0] || fallback;
           const next = {
             ...current,
-            pickupDate: data.pickupDate,
-            pickupTime: data.pickupTime,
+            pickupDate: String(data.pickupDate),
+            pickupTime,
           };
           setDraft(next);
           return;
@@ -110,7 +121,7 @@ export default function StoreOrderConfirmPage() {
       <section className={styles.section}>
         <div className={styles.panel}>
           <p className={styles.readyTimeLabel} style={{ marginTop: 4 }}>
-            ただいまの出来上がり予定時間
+            お受け取り希望時間
           </p>
           <p className={styles.readyTimeValue}>{draft.pickupTime || "—"}</p>
           <StoreOrderDisclaimer />
