@@ -1,6 +1,7 @@
-import { addDaysYmd, getTodayYmdJst } from "./bookingDates";
+import { addDaysYmd, formatDateLabel, getTodayYmdJst } from "./bookingDates";
 import {
   STORE_ORDER_ADVANCE_BOOKING_MAX_DAYS,
+  STORE_ORDER_ADVANCE_DATE_CHOICES,
   STORE_ORDER_FUTURE_PICKUP_HOURS,
   STORE_ORDER_HOURS,
   STORE_ORDER_LAST_MINUTES_BEFORE_CLOSE,
@@ -73,9 +74,15 @@ export function formatStoreEarliestReadyWithSeconds(now = new Date()): string {
 
 export type StorePickupBookingMode = "today" | "advance";
 
+export type StoreBookableDate = {
+  ymd: string;
+  label: string;
+};
+
 export type StorePickupSlotResult = {
   pickupDate: string;
   bookingMode: StorePickupBookingMode;
+  bookableDates: StoreBookableDate[];
   /** いまからちょうど30分後（当日モードのみ・秒付き表示用） */
   earliestReadyTime: string | null;
   /** デフォルト選択 = 選択可能枠の先頭 */
@@ -84,6 +91,26 @@ export type StorePickupSlotResult = {
   closedToday: boolean;
   message: string | null;
 };
+
+export function listStoreAdvanceBookableDates(
+  todayYmd = getTodayYmdJst(),
+  closedDates?: Set<string>,
+): StoreBookableDate[] {
+  const out: StoreBookableDate[] = [];
+  let cursor = addDaysYmd(todayYmd, 1);
+  for (let i = 0; i < STORE_ORDER_ADVANCE_BOOKING_MAX_DAYS; i++) {
+    if (!closedDates || !closedDates.has(cursor)) {
+      out.push({ ymd: cursor, label: formatDateLabel(cursor) });
+      if (out.length >= STORE_ORDER_ADVANCE_DATE_CHOICES) break;
+    }
+    cursor = addDaysYmd(cursor, 1);
+  }
+  return out;
+}
+
+export function getStoreAdvanceSlotsForDate(): string[] {
+  return buildAdvanceSlots(STORE_ORDER_SLOT_INTERVAL_MINUTES);
+}
 
 export type StoreReadyEstimate = Pick<
   StorePickupSlotResult,
@@ -165,6 +192,7 @@ export function listStorePickupSlots(
       return {
         pickupDate: todayYmd,
         bookingMode: "today",
+        bookableDates: [],
         earliestReadyTime: testEarliest,
         pickupTime: todaySlots[0],
         slots: todaySlots,
@@ -172,17 +200,17 @@ export function listStorePickupSlots(
         message: null,
       };
     }
-    const advanceDate =
-      findAdvancePickupDate(addDaysYmd(todayYmd, 1), closedDates) ??
-      addDaysYmd(todayYmd, 1);
+    const bookableDates = listStoreAdvanceBookableDates(todayYmd, closedDates);
+    const advanceDate = bookableDates[0]?.ymd ?? addDaysYmd(todayYmd, 1);
     const advanceSlots = buildAdvanceSlots(interval);
     return {
       pickupDate: advanceDate,
       bookingMode: "advance",
-      earliestReadyTime: advanceSlots[0] ?? "17:00",
+      bookableDates,
+      earliestReadyTime: null,
       pickupTime: advanceSlots[0] ?? null,
       slots: advanceSlots,
-      closedToday: false,
+      closedToday: !bookableDates.length,
       message: null,
     };
   }
@@ -191,6 +219,7 @@ export function listStorePickupSlots(
     return {
       pickupDate: todayYmd,
       bookingMode: "today",
+      bookableDates: [],
       earliestReadyTime: getJstHmFromDate(readyAt),
       pickupTime: todaySlots[0],
       slots: todaySlots,
@@ -199,14 +228,17 @@ export function listStorePickupSlots(
     };
   }
 
-  const advanceFrom = addDaysYmd(todayYmd, 1);
-  const advanceDate = findAdvancePickupDate(advanceFrom, closedDates);
+  const bookableDates = listStoreAdvanceBookableDates(todayYmd, closedDates);
+  const advanceDate =
+    findAdvancePickupDate(addDaysYmd(todayYmd, 1), closedDates) ??
+    bookableDates[0]?.ymd;
   const advanceSlots = buildAdvanceSlots(interval);
 
-  if (!advanceDate || !advanceSlots.length) {
+  if (!advanceDate || !advanceSlots.length || !bookableDates.length) {
     return {
       pickupDate: todayYmd,
       bookingMode: "advance",
+      bookableDates: [],
       earliestReadyTime: null,
       pickupTime: null,
       slots: [],
@@ -219,13 +251,14 @@ export function listStorePickupSlots(
   return {
     pickupDate: advanceDate,
     bookingMode: "advance",
-    earliestReadyTime: advanceSlots[0],
+    bookableDates,
+    earliestReadyTime: null,
     pickupTime: advanceSlots[0],
     slots: advanceSlots,
     closedToday: false,
     message: afterCutoff
-      ? "21:01以降のご注文は、翌日以降のお受け取り時間（17:00〜）をお選びください。"
-      : "本日の受け取り枠は終了しました。翌日以降のお受け取り時間をお選びください。",
+      ? "21:01以降のご注文は、日付とお受け取り時間（17:00〜）をお選びください。"
+      : "本日の受け取り枠は終了しました。日付とお受け取り時間をお選びください。",
   };
 }
 
@@ -253,8 +286,14 @@ export function isAllowedStorePickupSlot(
 ): boolean {
   const result = listStorePickupSlots(now, todayYmd, closedDates);
   if (result.closedToday) return false;
-  return (
-    pickupDate === result.pickupDate &&
-    result.slots.includes(pickupTime)
-  );
+
+  if (result.bookingMode === "today") {
+    return (
+      pickupDate === result.pickupDate && result.slots.includes(pickupTime)
+    );
+  }
+
+  const dateOk = result.bookableDates.some((d) => d.ymd === pickupDate);
+  if (!dateOk) return false;
+  return getStoreAdvanceSlotsForDate().includes(pickupTime);
 }

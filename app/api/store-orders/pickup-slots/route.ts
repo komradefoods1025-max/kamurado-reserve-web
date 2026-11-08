@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   isAfterStoreOrderNextDayCutoff,
   listStorePickupSlots,
@@ -11,7 +11,7 @@ import { isStoreOrderTestMode } from "../../../../lib/storeOrderTestMode";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const today = getTodayYmdJst();
   const closed = await fetchSheetClosedDaysSet();
   const afterCutoff = isAfterStoreOrderNextDayCutoff();
@@ -21,6 +21,7 @@ export async function GET() {
       ok: true,
       pickupDate: today,
       bookingMode: "today",
+      bookableDates: [],
       earliestReadyTime: null,
       pickupTime: null,
       slots: [],
@@ -31,14 +32,23 @@ export async function GET() {
   }
 
   const estimate = listStorePickupSlots(new Date(), today, closed);
+  const requestedDate = req.nextUrl.searchParams.get("date")?.trim();
+  let pickupDate = estimate.pickupDate;
+  if (
+    estimate.bookingMode === "advance" &&
+    requestedDate &&
+    estimate.bookableDates.some((d) => d.ymd === requestedDate)
+  ) {
+    pickupDate = requestedDate;
+  }
+
   return NextResponse.json({
     ok: true,
-    pickupDate: estimate.pickupDate,
+    pickupDate,
     pickupDateLabel:
-      estimate.pickupDate !== today
-        ? formatDateLabel(estimate.pickupDate)
-        : null,
+      pickupDate !== today ? formatDateLabel(pickupDate) : null,
     bookingMode: estimate.bookingMode,
+    bookableDates: estimate.bookableDates,
     earliestReadyTime: estimate.earliestReadyTime,
     pickupTime: estimate.pickupTime,
     slots: estimate.slots,

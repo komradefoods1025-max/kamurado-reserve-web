@@ -16,11 +16,14 @@ import {
 } from "../../../lib/storeOrderDraft";
 import styles from "../order.module.css";
 
+type BookableDate = { ymd: string; label: string };
+
 type ReadyResponse = {
   ok?: boolean;
   pickupDate?: string;
   pickupDateLabel?: string | null;
   bookingMode?: "today" | "advance";
+  bookableDates?: BookableDate[];
   earliestReadyTime?: string | null;
   pickupTime?: string | null;
   slots?: string[];
@@ -49,7 +52,7 @@ export default function StoreOrderConfirmReadyPage() {
   const [closedMessage, setClosedMessage] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<StoreCartLine[]>([]);
   const [bookingMode, setBookingMode] = useState<"today" | "advance">("today");
-  const [pickupDateLabel, setPickupDateLabel] = useState("");
+  const [bookableDates, setBookableDates] = useState<BookableDate[]>([]);
 
   useEffect(() => {
     const draft = readStoreOrderDraft();
@@ -61,8 +64,9 @@ export default function StoreOrderConfirmReadyPage() {
 
     let active = true;
 
-    const refresh = () => {
-      fetch("/api/store-orders/pickup-slots", { cache: "no-store" })
+    const refresh = (dateQuery?: string) => {
+      const qs = dateQuery ? `?date=${encodeURIComponent(dateQuery)}` : "";
+      fetch(`/api/store-orders/pickup-slots${qs}`, { cache: "no-store" })
         .then((r) => r.json())
         .then((data: ReadyResponse) => {
           if (!active) return;
@@ -71,28 +75,36 @@ export default function StoreOrderConfirmReadyPage() {
             : data.pickupTime
               ? [String(data.pickupTime)]
               : [];
-          const date = data.pickupDate || "";
-          const defaultTime = data.pickupTime ? String(data.pickupTime) : "";
+          const dates = Array.isArray(data.bookableDates)
+            ? data.bookableDates
+            : [];
+          const mode = data.bookingMode === "advance" ? "advance" : "today";
           const draftState = readStoreOrderDraft();
+          let date = data.pickupDate || "";
+
+          if (mode === "advance" && dates.length) {
+            const draftDateValid = dates.some((d) => d.ymd === draftState.pickupDate);
+            if (draftDateValid && draftState.pickupDate) {
+              date = draftState.pickupDate;
+            } else if (!dates.some((d) => d.ymd === date)) {
+              date = dates[0]?.ymd || date;
+            }
+          }
+
+          const defaultTime = data.pickupTime ? String(data.pickupTime) : "";
           const current =
             draftState.pickupDate === date && draftState.pickupTime
               ? draftState.pickupTime
               : pickupTime;
           const chosen = pickValidTime(list, current, defaultTime);
-          const mode = data.bookingMode === "advance" ? "advance" : "today";
 
           setPickupDate(date);
           setPickupTime(chosen);
           setSlots(list);
           setBookingMode(mode);
-          setPickupDateLabel(
-            data.pickupDateLabel ? String(data.pickupDateLabel) : "",
-          );
+          setBookableDates(dates);
           setClosed(Boolean(data.closedToday) || list.length === 0);
           setClosedMessage(data.message || null);
-          if (mode === "advance" && data.earliestReadyTime) {
-            setEarliestReadyTime(String(data.earliestReadyTime));
-          }
 
           if (chosen && date) {
             writeStoreOrderDraft({
@@ -107,14 +119,17 @@ export default function StoreOrderConfirmReadyPage() {
         });
     };
 
-    refresh();
-    const timer = window.setInterval(refresh, 30_000);
+    refresh(readStoreOrderDraft().pickupDate || undefined);
+    const timer = window.setInterval(
+      () => refresh(pickupDate || undefined),
+      30_000,
+    );
 
     return () => {
       active = false;
       window.clearInterval(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- pickupTime は refresh 内で draft から再取得
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   useEffect(() => {
@@ -134,6 +149,18 @@ export default function StoreOrderConfirmReadyPage() {
       ...readStoreOrderDraft(),
       pickupDate,
       pickupTime: time,
+    });
+  }
+
+  function selectPickupDate(ymd: string) {
+    setPickupDate(ymd);
+    const draft = readStoreOrderDraft();
+    const nextTime = pickValidTime(slots, "", slots[0] || "");
+    setPickupTime(nextTime);
+    writeStoreOrderDraft({
+      ...draft,
+      pickupDate: ymd,
+      pickupTime: nextTime,
     });
   }
 
@@ -166,18 +193,23 @@ export default function StoreOrderConfirmReadyPage() {
               ) : null}
 
               {bookingMode === "advance" ? (
-                <>
-                  <p className={styles.readyTimeLabel}>お受け取り日</p>
-                  <p className={styles.readyTimeValue}>
-                    {pickupDateLabel || pickupDate}
-                  </p>
-                  <p className={styles.readyTimeLabel} style={{ marginTop: 16 }}>
-                    最短のお受け取り時間
-                  </p>
-                  <p className={styles.readyTimeValue} style={{ fontSize: 34 }}>
-                    {earliestReadyTime || pickupTime}
-                  </p>
-                </>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="store-pickup-date">
+                    お受け取り日
+                  </label>
+                  <select
+                    id="store-pickup-date"
+                    className={styles.input}
+                    value={pickupDate}
+                    onChange={(e) => selectPickupDate(e.target.value)}
+                  >
+                    {bookableDates.map((d) => (
+                      <option key={d.ymd} value={d.ymd}>
+                        {d.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               ) : (
                 <>
                   <p className={styles.readyTimeLabel}>

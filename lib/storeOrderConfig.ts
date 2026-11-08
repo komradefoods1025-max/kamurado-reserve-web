@@ -24,3 +24,6 @@ export const STORE_ORDER_HOURS: StoreHoursWindow[] = [
 export const STORE_ORDER_FUTURE_PICKUP_HOURS: StoreHoursWindow[] = [
   { start: "17:00", end: "21:30" },
 ];
+
+/** 日付プルダウンに載せる日数（明日から） */
+export const STORE_ORDER_ADVANCE_DATE_CHOICES = 14;
