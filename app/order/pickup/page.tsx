@@ -192,4 +192,4 @@ export default function StoreOrderConfirmReadyPage() {
 }
 
 const STORE_ORDER_MIN_LEAD_LABEL =
-  "※17:30〜21:30の間で、ご注文から30分後以降の時間をお選びください（5分刻み）。";
+  "※17:30〜21:30の間で、ご注文から30分後以降の時間をお選びください（10分刻み）。";

@@ -85,7 +85,7 @@ function buildSlotsForDay(
   return slots;
 }
 
-/** 本日の受け取り可能スロット（最短 = いまから30分後・5分刻み） */
+/** 本日の受け取り可能スロット（最短 = いまから30分後・10分刻み） */
 export function listStorePickupSlots(
   now = new Date(),
   todayYmd = getTodayYmdJst(now),
