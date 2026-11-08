@@ -9,15 +9,14 @@ export default function StoreOrderLandingPage() {
         <Image
           src="/store-order/mobile-order-hero.png"
           alt="鉄板焼きダイニングかむらど 店内モバイルオーダーのご案内"
-          width={935}
-          height={1024}
+          fill
           priority
-          sizes="(max-width: 520px) 100vw, 520px"
+          sizes="100vw"
           className={styles.landingHeroImg}
         />
       </div>
 
-      <div className={styles.footerBar}>
+      <div className={styles.landingFooter}>
         <Link href="/order/menu" className={styles.landingMenuBtn}>
           商品ページはコチラ
         </Link>
