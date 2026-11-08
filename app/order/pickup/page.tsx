@@ -19,6 +19,8 @@ import styles from "../order.module.css";
 type ReadyResponse = {
   ok?: boolean;
   pickupDate?: string;
+  pickupDateLabel?: string | null;
+  bookingMode?: "today" | "advance";
   earliestReadyTime?: string | null;
   pickupTime?: string | null;
   slots?: string[];
@@ -46,6 +48,8 @@ export default function StoreOrderConfirmReadyPage() {
   const [closed, setClosed] = useState(false);
   const [closedMessage, setClosedMessage] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<StoreCartLine[]>([]);
+  const [bookingMode, setBookingMode] = useState<"today" | "advance">("today");
+  const [pickupDateLabel, setPickupDateLabel] = useState("");
 
   useEffect(() => {
     const draft = readStoreOrderDraft();
@@ -69,14 +73,26 @@ export default function StoreOrderConfirmReadyPage() {
               : [];
           const date = data.pickupDate || "";
           const defaultTime = data.pickupTime ? String(data.pickupTime) : "";
-          const current = readStoreOrderDraft().pickupTime || pickupTime;
+          const draftState = readStoreOrderDraft();
+          const current =
+            draftState.pickupDate === date && draftState.pickupTime
+              ? draftState.pickupTime
+              : pickupTime;
           const chosen = pickValidTime(list, current, defaultTime);
+          const mode = data.bookingMode === "advance" ? "advance" : "today";
 
           setPickupDate(date);
           setPickupTime(chosen);
           setSlots(list);
+          setBookingMode(mode);
+          setPickupDateLabel(
+            data.pickupDateLabel ? String(data.pickupDateLabel) : "",
+          );
           setClosed(Boolean(data.closedToday) || list.length === 0);
           setClosedMessage(data.message || null);
+          if (mode === "advance" && data.earliestReadyTime) {
+            setEarliestReadyTime(String(data.earliestReadyTime));
+          }
 
           if (chosen && date) {
             writeStoreOrderDraft({
@@ -102,13 +118,13 @@ export default function StoreOrderConfirmReadyPage() {
   }, [router]);
 
   useEffect(() => {
-    if (closed) return;
+    if (closed || bookingMode !== "today") return;
     const tick = () =>
       setEarliestReadyTime(formatStoreEarliestReadyWithSeconds());
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [closed]);
+  }, [closed, bookingMode]);
 
   const earliestReadyHm = earliestReadyTime.slice(0, 5);
 
@@ -145,17 +161,40 @@ export default function StoreOrderConfirmReadyPage() {
             </p>
           ) : (
             <>
-              <p className={styles.readyTimeLabel}>
-                ただいまの出来上がり予定時間
-              </p>
-              <p
-                className={`${styles.readyTimeValue} ${styles.readyTimeValueSeconds}`}
-              >
-                {earliestReadyTime}
-              </p>
+              {closedMessage ? (
+                <p className={styles.stepNote}>{closedMessage}</p>
+              ) : null}
+
+              {bookingMode === "advance" ? (
+                <>
+                  <p className={styles.readyTimeLabel}>お受け取り日</p>
+                  <p className={styles.readyTimeValue}>
+                    {pickupDateLabel || pickupDate}
+                  </p>
+                  <p className={styles.readyTimeLabel} style={{ marginTop: 16 }}>
+                    最短のお受け取り時間
+                  </p>
+                  <p className={styles.readyTimeValue} style={{ fontSize: 34 }}>
+                    {earliestReadyTime || pickupTime}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className={styles.readyTimeLabel}>
+                    ただいまの出来上がり予定時間
+                  </p>
+                  <p
+                    className={`${styles.readyTimeValue} ${styles.readyTimeValueSeconds}`}
+                  >
+                    {earliestReadyTime}
+                  </p>
+                </>
+              )}
 
               <p className={styles.label} style={{ marginTop: 20 }}>
-                お受け取り希望時間（{earliestReadyHm || "—"} 以降・10分刻み）
+                {bookingMode === "advance"
+                  ? "お受け取り希望時間（17:00〜21:30・10分刻み）"
+                  : `お受け取り希望時間（${earliestReadyHm || "—"} 以降・10分刻み）`}
               </p>
               <div
                 className={styles.slotGrid}

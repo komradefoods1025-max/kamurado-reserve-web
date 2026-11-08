@@ -6,6 +6,10 @@ import { useEffect, useState } from "react";
 import StoreOrderCartSummary from "../StoreOrderCartSummary";
 import StoreOrderDisclaimer from "../StoreOrderDisclaimer";
 import {
+  formatDateLabel,
+  getTodayYmdJst,
+} from "../../../lib/bookingDates";
+import {
   clearStoreOrderDraft,
   readStoreOrderDraft,
   storeCartQuantity,
@@ -45,7 +49,10 @@ export default function StoreOrderConfirmPage() {
           ? data.slots.map(String)
           : [];
         if (data.pickupDate && (slots.length || data.pickupTime)) {
-          const preferred = current.pickupTime || "";
+          const preferred =
+            current.pickupDate === String(data.pickupDate)
+              ? current.pickupTime || ""
+              : "";
           const fallback = data.pickupTime ? String(data.pickupTime) : "";
           const pickupTime =
             preferred && slots.includes(preferred)
@@ -112,6 +119,12 @@ export default function StoreOrderConfirmPage() {
     }
   }
 
+  const todayYmd = getTodayYmdJst();
+  const pickupDateLabel =
+    draft.pickupDate && draft.pickupDate !== todayYmd
+      ? formatDateLabel(draft.pickupDate)
+      : null;
+
   return (
     <main className={styles.page}>
       <header className={styles.header}>
@@ -120,6 +133,11 @@ export default function StoreOrderConfirmPage() {
 
       <section className={styles.section}>
         <div className={styles.panel}>
+          {pickupDateLabel ? (
+            <p className={styles.label} style={{ marginTop: 4 }}>
+              お受け取り日: {pickupDateLabel}
+            </p>
+          ) : null}
           <p className={styles.readyTimeLabel} style={{ marginTop: 4 }}>
             お受け取り時間
           </p>

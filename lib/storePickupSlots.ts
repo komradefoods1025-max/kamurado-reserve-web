@@ -1,9 +1,13 @@
-import { getTodayYmdJst } from "./bookingDates";
+import { addDaysYmd, getTodayYmdJst } from "./bookingDates";
 import {
+  STORE_ORDER_ADVANCE_BOOKING_MAX_DAYS,
+  STORE_ORDER_FUTURE_PICKUP_HOURS,
   STORE_ORDER_HOURS,
   STORE_ORDER_LAST_MINUTES_BEFORE_CLOSE,
   STORE_ORDER_MIN_LEAD_MINUTES,
   STORE_ORDER_SLOT_INTERVAL_MINUTES,
+  STORE_ORDER_SWITCH_TO_NEXT_DAY_AFTER,
+  type StoreHoursWindow,
 } from "./storeOrderConfig";
 import { isStoreOrderTestMode } from "./storeOrderTestMode";
 
@@ -47,6 +51,17 @@ function getJstHmFromDate(date: Date): string {
   return `${hour}:${minute}`;
 }
 
+function getJstTotalMinutesFromDate(date: Date): number {
+  return parseHm(getJstHmFromDate(date));
+}
+
+export function isAfterStoreOrderNextDayCutoff(now = new Date()): boolean {
+  return (
+    getJstTotalMinutesFromDate(now) >=
+    parseHm(STORE_ORDER_SWITCH_TO_NEXT_DAY_AFTER)
+  );
+}
+
 /** いま+30分を JST で HH:MM:SS 表示（画面のリアルタイム目安用） */
 export function formatStoreEarliestReadyWithSeconds(now = new Date()): string {
   const readyAt = new Date(
@@ -56,16 +71,14 @@ export function formatStoreEarliestReadyWithSeconds(now = new Date()): string {
   return `${hour}:${minute}:${second}`;
 }
 
-function getJstTotalMinutesFromDate(date: Date): number {
-  const hm = getJstHmFromDate(date);
-  return parseHm(hm);
-}
+export type StorePickupBookingMode = "today" | "advance";
 
 export type StorePickupSlotResult = {
   pickupDate: string;
-  /** いまからちょうど30分後（分まで・選択枠の目安表示用） */
+  bookingMode: StorePickupBookingMode;
+  /** いまからちょうど30分後（当日モードのみ・秒付き表示用） */
   earliestReadyTime: string | null;
-  /** デフォルト選択 = 選択可能枠の先頭（10分刻みに丸め） */
+  /** デフォルト選択 = 選択可能枠の先頭 */
   pickupTime: string | null;
   slots: string[];
   closedToday: boolean;
@@ -77,14 +90,15 @@ export type StoreReadyEstimate = Pick<
   "pickupDate" | "pickupTime" | "closedToday" | "message"
 >;
 
-function buildSlotsForDay(
+function buildSlotsForWindows(
+  windows: StoreHoursWindow[],
   earliestMinutes: number,
   interval: number,
 ): string[] {
   const slots: string[] = [];
   const seen = new Set<string>();
 
-  for (const window of STORE_ORDER_HOURS) {
+  for (const window of windows) {
     const winStart = parseHm(window.start);
     const winEnd = parseHm(window.end) - STORE_ORDER_LAST_MINUTES_BEFORE_CLOSE;
     if (winEnd < winStart) continue;
@@ -103,10 +117,31 @@ function buildSlotsForDay(
   return slots;
 }
 
-/** 本日の受け取り可能スロット（最短 = いまから30分後・10分刻み） */
+function findAdvancePickupDate(
+  fromYmd: string,
+  closedDates?: Set<string>,
+): string | null {
+  let cursor = fromYmd;
+  for (let i = 0; i < STORE_ORDER_ADVANCE_BOOKING_MAX_DAYS; i++) {
+    if (!closedDates || !closedDates.has(cursor)) return cursor;
+    cursor = addDaysYmd(cursor, 1);
+  }
+  return null;
+}
+
+function buildAdvanceSlots(interval: number): string[] {
+  return buildSlotsForWindows(
+    STORE_ORDER_FUTURE_PICKUP_HOURS,
+    parseHm(STORE_ORDER_FUTURE_PICKUP_HOURS[0]?.start ?? "17:00"),
+    interval,
+  );
+}
+
+/** 本日または翌日以降の受け取り可能スロット */
 export function listStorePickupSlots(
   now = new Date(),
   todayYmd = getTodayYmdJst(now),
+  closedDates?: Set<string>,
 ): StorePickupSlotResult {
   const readyAt = new Date(
     now.getTime() + STORE_ORDER_MIN_LEAD_MINUTES * 60 * 1000,
@@ -114,62 +149,83 @@ export function listStorePickupSlots(
   const readyYmd = getTodayYmdJst(readyAt);
   const earliestMinutes = getJstTotalMinutesFromDate(readyAt);
   const interval = STORE_ORDER_SLOT_INTERVAL_MINUTES;
-  const slots =
-    readyYmd === todayYmd
-      ? buildSlotsForDay(earliestMinutes, interval)
-      : [];
+  const afterCutoff = isAfterStoreOrderNextDayCutoff(now);
 
-  const earliestReadyTime =
-    readyYmd === todayYmd ? getJstHmFromDate(readyAt) : null;
-  const pickupTime = slots[0] ?? null;
+  const tryToday =
+    !afterCutoff &&
+    readyYmd === todayYmd &&
+    (!closedDates || !closedDates.has(todayYmd));
+  const todaySlots = tryToday
+    ? buildSlotsForWindows(STORE_ORDER_HOURS, earliestMinutes, interval)
+    : [];
 
   if (isStoreOrderTestMode()) {
-    const testSlots =
-      readyYmd === todayYmd
-        ? buildSlotsForDay(earliestMinutes, interval)
-        : buildSlotsForDay(parseHm("17:30"), interval);
-    const testEarliest = getJstHmFromDate(readyAt);
+    if (todaySlots.length) {
+      const testEarliest = getJstHmFromDate(readyAt);
+      return {
+        pickupDate: todayYmd,
+        bookingMode: "today",
+        earliestReadyTime: testEarliest,
+        pickupTime: todaySlots[0],
+        slots: todaySlots,
+        closedToday: false,
+        message: null,
+      };
+    }
+    const advanceDate =
+      findAdvancePickupDate(addDaysYmd(todayYmd, 1), closedDates) ??
+      addDaysYmd(todayYmd, 1);
+    const advanceSlots = buildAdvanceSlots(interval);
     return {
-      pickupDate: readyYmd,
-      earliestReadyTime: testEarliest,
-      pickupTime: testSlots[0] ?? testEarliest,
-      slots: testSlots.length ? testSlots : [testEarliest],
+      pickupDate: advanceDate,
+      bookingMode: "advance",
+      earliestReadyTime: advanceSlots[0] ?? "17:00",
+      pickupTime: advanceSlots[0] ?? null,
+      slots: advanceSlots,
       closedToday: false,
       message: null,
     };
   }
 
-  if (readyYmd !== todayYmd) {
+  if (todaySlots.length) {
     return {
       pickupDate: todayYmd,
+      bookingMode: "today",
+      earliestReadyTime: getJstHmFromDate(readyAt),
+      pickupTime: todaySlots[0],
+      slots: todaySlots,
+      closedToday: false,
+      message: null,
+    };
+  }
+
+  const advanceFrom = addDaysYmd(todayYmd, 1);
+  const advanceDate = findAdvancePickupDate(advanceFrom, closedDates);
+  const advanceSlots = buildAdvanceSlots(interval);
+
+  if (!advanceDate || !advanceSlots.length) {
+    return {
+      pickupDate: todayYmd,
+      bookingMode: "advance",
       earliestReadyTime: null,
       pickupTime: null,
       slots: [],
       closedToday: true,
       message:
-        "本日の受け取り可能な時間を過ぎました。営業時間内でもう一度お試しください。",
-    };
-  }
-
-  if (!slots.length) {
-    return {
-      pickupDate: todayYmd,
-      earliestReadyTime,
-      pickupTime: null,
-      slots: [],
-      closedToday: true,
-      message:
-        "本日の受け取り可能な時間帯がありません。営業時間内でもう一度お試しください。",
+        "現在、ご予約できるお受け取り日がありません。営業時間内でもう一度お試しください。",
     };
   }
 
   return {
-    pickupDate: todayYmd,
-    earliestReadyTime,
-    pickupTime,
-    slots,
+    pickupDate: advanceDate,
+    bookingMode: "advance",
+    earliestReadyTime: advanceSlots[0],
+    pickupTime: advanceSlots[0],
+    slots: advanceSlots,
     closedToday: false,
-    message: null,
+    message: afterCutoff
+      ? "21:01以降のご注文は、翌日以降のお受け取り時間（17:00〜）をお選びください。"
+      : "本日の受け取り枠は終了しました。翌日以降のお受け取り時間をお選びください。",
   };
 }
 
@@ -177,8 +233,9 @@ export function listStorePickupSlots(
 export function computeStoreReadyEstimate(
   now = new Date(),
   todayYmd = getTodayYmdJst(now),
+  closedDates?: Set<string>,
 ): StoreReadyEstimate {
-  const result = listStorePickupSlots(now, todayYmd);
+  const result = listStorePickupSlots(now, todayYmd, closedDates);
   return {
     pickupDate: result.pickupDate,
     pickupTime: result.pickupTime,
@@ -192,8 +249,9 @@ export function isAllowedStorePickupSlot(
   pickupTime: string,
   todayYmd = getTodayYmdJst(),
   now = new Date(),
+  closedDates?: Set<string>,
 ): boolean {
-  const result = listStorePickupSlots(now, todayYmd);
+  const result = listStorePickupSlots(now, todayYmd, closedDates);
   if (result.closedToday) return false;
   return (
     pickupDate === result.pickupDate &&

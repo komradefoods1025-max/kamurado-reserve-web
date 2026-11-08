@@ -10,6 +10,7 @@ import {
 } from "../../../lib/gasReservationSave";
 import { createStoreOrderReservationNo } from "../../../lib/storeReservationNo";
 import {
+  isAfterStoreOrderNextDayCutoff,
   isAllowedStorePickupSlot,
   listStorePickupSlots,
 } from "../../../lib/storePickupSlots";
@@ -108,14 +109,15 @@ export async function POST(req: NextRequest) {
 
     const today = getTodayYmdJst();
     const closed = await fetchSheetClosedDaysSet();
-    if (closed.has(today) && !isStoreOrderTestMode()) {
+    const afterCutoff = isAfterStoreOrderNextDayCutoff();
+    if (closed.has(today) && !isStoreOrderTestMode() && !afterCutoff) {
       return NextResponse.json(
         { ok: false, message: "本日はお休みのためご注文いただけません" },
         { status: 400 },
       );
     }
 
-    const slotsInfo = listStorePickupSlots();
+    const slotsInfo = listStorePickupSlots(new Date(), today, closed);
     if (slotsInfo.closedToday || !slotsInfo.slots.length) {
       return NextResponse.json(
         {
@@ -135,9 +137,16 @@ export async function POST(req: NextRequest) {
       body?.pickupTime || body?.time || "",
     ).trim();
 
+    if (closed.has(pickupDate) && !isStoreOrderTestMode()) {
+      return NextResponse.json(
+        { ok: false, message: "お選びいただいた日はお休みのためご注文いただけません" },
+        { status: 400 },
+      );
+    }
+
     if (
       !pickupTime ||
-      !isAllowedStorePickupSlot(pickupDate, pickupTime, today)
+      !isAllowedStorePickupSlot(pickupDate, pickupTime, today, new Date(), closed)
     ) {
       return NextResponse.json(
         {

@@ -60,6 +60,18 @@ export function getTodayYmdJst(now = new Date()): string {
   }).format(now);
 }
 
+export function addDaysYmd(ymd: string, days: number): string {
+  const match = String(ymd || "")
+    .trim()
+    .match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return ymd;
+  const date = new Date(
+    `${match[1]}-${match[2]}-${match[3]}T12:00:00+09:00`,
+  );
+  date.setUTCDate(date.getUTCDate() + days);
+  return getTodayYmdJst(date);
+}
+
 export function getWeekdayJst(ymd: string): number {
   const date = new Date(`${ymd}T12:00:00+09:00`);
   return date.getUTCDay();
