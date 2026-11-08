@@ -357,6 +357,12 @@
   color: #f5e6d3;
 }
 
+.readyTimeValueSeconds {
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
 .cartSummary {
   margin-top: 20px;
   padding-top: 16px;

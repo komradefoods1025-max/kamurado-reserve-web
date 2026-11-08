@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { formatStoreEarliestReadyWithSeconds } from "../../../lib/storePickupSlots";
 import { STORE_ORDER_READY_NOTE } from "../../../lib/storeOrderCopy";
 import StoreOrderCartSummary from "../StoreOrderCartSummary";
 import StoreOrderDisclaimer from "../StoreOrderDisclaimer";
@@ -67,15 +68,11 @@ export default function StoreOrderConfirmReadyPage() {
               ? [String(data.pickupTime)]
               : [];
           const date = data.pickupDate || "";
-          const ready = data.earliestReadyTime
-            ? String(data.earliestReadyTime)
-            : "";
           const defaultTime = data.pickupTime ? String(data.pickupTime) : "";
           const current = readStoreOrderDraft().pickupTime || pickupTime;
           const chosen = pickValidTime(list, current, defaultTime);
 
           setPickupDate(date);
-          setEarliestReadyTime(ready);
           setPickupTime(chosen);
           setSlots(list);
           setClosed(Boolean(data.closedToday) || list.length === 0);
@@ -103,6 +100,17 @@ export default function StoreOrderConfirmReadyPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- pickupTime は refresh 内で draft から再取得
   }, [router]);
+
+  useEffect(() => {
+    if (closed) return;
+    const tick = () =>
+      setEarliestReadyTime(formatStoreEarliestReadyWithSeconds());
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [closed]);
+
+  const earliestReadyHm = earliestReadyTime.slice(0, 5);
 
   function selectTime(time: string) {
     setPickupTime(time);
@@ -140,10 +148,14 @@ export default function StoreOrderConfirmReadyPage() {
               <p className={styles.readyTimeLabel}>
                 ただいまの出来上がり予定時間
               </p>
-              <p className={styles.readyTimeValue}>{earliestReadyTime}</p>
+              <p
+                className={`${styles.readyTimeValue} ${styles.readyTimeValueSeconds}`}
+              >
+                {earliestReadyTime}
+              </p>
 
               <p className={styles.label} style={{ marginTop: 20 }}>
-                お受け取り希望時間（{earliestReadyTime} 以降・10分刻み）
+                お受け取り希望時間（{earliestReadyHm || "—"} 以降・10分刻み）
               </p>
               <div
                 className={styles.slotGrid}

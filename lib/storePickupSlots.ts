@@ -26,19 +26,34 @@ function roundUpToInterval(totalMinutes: number, interval: number): number {
   return Math.ceil(totalMinutes / interval) * interval;
 }
 
-function getJstHmFromDate(date: Date): string {
+function jstTimeParts(date: Date) {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Tokyo",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: false,
   }).formatToParts(date);
 
-  const hour = pad2(Number(parts.find((p) => p.type === "hour")?.value ?? 0));
-  const minute = pad2(
-    Number(parts.find((p) => p.type === "minute")?.value ?? 0),
-  );
+  return {
+    hour: pad2(Number(parts.find((p) => p.type === "hour")?.value ?? 0)),
+    minute: pad2(Number(parts.find((p) => p.type === "minute")?.value ?? 0)),
+    second: pad2(Number(parts.find((p) => p.type === "second")?.value ?? 0)),
+  };
+}
+
+function getJstHmFromDate(date: Date): string {
+  const { hour, minute } = jstTimeParts(date);
   return `${hour}:${minute}`;
+}
+
+/** いま+30分を JST で HH:MM:SS 表示（画面のリアルタイム目安用） */
+export function formatStoreEarliestReadyWithSeconds(now = new Date()): string {
+  const readyAt = new Date(
+    now.getTime() + STORE_ORDER_MIN_LEAD_MINUTES * 60 * 1000,
+  );
+  const { hour, minute, second } = jstTimeParts(readyAt);
+  return `${hour}:${minute}:${second}`;
 }
 
 function getJstTotalMinutesFromDate(date: Date): number {
