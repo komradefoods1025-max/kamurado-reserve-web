@@ -108,7 +108,7 @@ export function listStorePickupSlots(
     const testSlots =
       readyYmd === todayYmd
         ? buildSlotsForDay(earliestMinutes, interval)
-        : buildSlotsForDay(parseHm("11:00"), interval);
+        : buildSlotsForDay(parseHm("17:30"), interval);
     return {
       pickupDate: readyYmd,
       pickupTime: testSlots[0] ?? getJstHmFromDate(readyAt),
