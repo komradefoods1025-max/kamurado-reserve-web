@@ -1,16 +1,31 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isWebReservationMaintenance } from "./lib/reservationMaintenance";
+import { isStoreOrderMaintenance } from "./lib/storeOrderMaintenance";
 
 const BLOCKED_PATH =
   /^\/(menu|reserve\/(menu|schedule|cart|customer|datetime))(\/|$)/;
 
+const STORE_ORDER_BLOCKED = /^\/order(\/|$)/;
+
 export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  if (
+    isStoreOrderMaintenance() &&
+    STORE_ORDER_BLOCKED.test(pathname) &&
+    pathname !== "/order/maintenance"
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/order/maintenance";
+    return NextResponse.rewrite(url);
+  }
+
   if (!isWebReservationMaintenance()) {
     return NextResponse.next();
   }
 
-  if (BLOCKED_PATH.test(request.nextUrl.pathname)) {
+  if (BLOCKED_PATH.test(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/reserve/maintenance";
     return NextResponse.rewrite(url);
@@ -33,5 +48,7 @@ export const config = {
     "/reserve/customer/:path*",
     "/reserve/datetime",
     "/reserve/datetime/:path*",
+    "/order",
+    "/order/:path*",
   ],
 };

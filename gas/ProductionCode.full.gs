@@ -825,9 +825,7 @@ function getReservations_(paramsOrUserId) {
       const reservationNo = String(display[1] || row[1] || '').trim();
       const items = safeParseJson_(row[17] || '[]') || [];
 
-      const source = reservationNo.toUpperCase().startsWith('WEB-')
-        ? 'WEB'
-        : 'LINE';
+      const source = inferReservationSource_(reservationNo);
 
       reservations.push({
         savedAt: display[0] || row[0],
@@ -937,7 +935,7 @@ function resolveLookupPhoneForReservation_(rawValues, displayValues, userId, pho
 function buildLatestReservationPayload_(row, display, index) {
   const items = safeParseJson_(row[17] || "[]") || [];
   const reservationNo = String(display[1] || row[1] || "").trim();
-  const source = reservationNo.toUpperCase().indexOf("WEB-") === 0 ? "WEB" : "LINE";
+  const source = inferReservationSource_(reservationNo);
 
   return {
     ok: true,
@@ -2242,6 +2240,14 @@ function applyReservationRowColor_(sheet, row) {
   }
 
   range.setBackground(rowColor);
+}
+
+function inferReservationSource_(reservationNo) {
+  const no = String(reservationNo || '').trim().toUpperCase();
+  if (no.indexOf('WEB-') === 0) return 'WEB';
+  if (no.indexOf('STO-') === 0) return 'STORE';
+  if (no.indexOf('MOB-') === 0) return 'MOBILE';
+  return 'LINE';
 }
 
 function createReservationNo_() {
