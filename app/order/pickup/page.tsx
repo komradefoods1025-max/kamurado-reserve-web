@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { formatStoreEarliestReadyWithSeconds } from "../../../lib/storePickupSlots";
+import { getTodayYmdJst } from "../../../lib/bookingDates";
+import {
+  formatStoreEarliestReadyWithSeconds,
+  getStoreSlotsForPickupDate,
+} from "../../../lib/storePickupSlots";
 import { STORE_ORDER_READY_NOTE } from "../../../lib/storeOrderCopy";
 import StoreOrderCartSummary from "../StoreOrderCartSummary";
 import StoreOrderDisclaimer from "../StoreOrderDisclaimer";
@@ -153,9 +157,16 @@ export default function StoreOrderConfirmReadyPage() {
   }
 
   function selectPickupDate(ymd: string) {
-    setPickupDate(ymd);
+    const todayYmd = getTodayYmdJst();
+    const newSlots = getStoreSlotsForPickupDate(ymd, todayYmd);
     const draft = readStoreOrderDraft();
-    const nextTime = pickValidTime(slots, "", slots[0] || "");
+    const nextTime = pickValidTime(
+      newSlots,
+      draft.pickupDate === ymd ? draft.pickupTime || "" : "",
+      newSlots[0] || "",
+    );
+    setPickupDate(ymd);
+    setSlots(newSlots);
     setPickupTime(nextTime);
     writeStoreOrderDraft({
       ...draft,
@@ -225,7 +236,9 @@ export default function StoreOrderConfirmReadyPage() {
 
               <p className={styles.label} style={{ marginTop: 20 }}>
                 {bookingMode === "advance"
-                  ? "お受け取り希望時間（17:00〜21:30・10分刻み）"
+                  ? pickupDate === getTodayYmdJst()
+                    ? "お受け取り希望時間（17:30〜21:30・10分刻み）"
+                    : "お受け取り希望時間（17:00〜21:30・10分刻み）"
                   : `お受け取り希望時間（${earliestReadyHm || "—"} 以降・10分刻み）`}
               </p>
               <div

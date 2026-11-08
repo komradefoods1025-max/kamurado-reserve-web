@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  getStoreSlotsForPickupDate,
   isAfterStoreOrderNextDayCutoff,
+  isStoreOrderSameDayLiveWindow,
   listStorePickupSlots,
 } from "../../../../lib/storePickupSlots";
 import { fetchSheetClosedDaysSet } from "../../../../lib/sheetClosedDays";
@@ -16,7 +18,12 @@ export async function GET(req: NextRequest) {
   const closed = await fetchSheetClosedDaysSet();
   const afterCutoff = isAfterStoreOrderNextDayCutoff();
 
-  if (closed.has(today) && !isStoreOrderTestMode() && !afterCutoff) {
+  if (
+    closed.has(today) &&
+    !isStoreOrderTestMode() &&
+    !afterCutoff &&
+    isStoreOrderSameDayLiveWindow()
+  ) {
     return NextResponse.json({
       ok: true,
       pickupDate: today,
@@ -42,6 +49,11 @@ export async function GET(req: NextRequest) {
     pickupDate = requestedDate;
   }
 
+  const slots =
+    estimate.bookingMode === "advance" && pickupDate
+      ? getStoreSlotsForPickupDate(pickupDate, today)
+      : estimate.slots;
+
   return NextResponse.json({
     ok: true,
     pickupDate,
@@ -50,8 +62,8 @@ export async function GET(req: NextRequest) {
     bookingMode: estimate.bookingMode,
     bookableDates: estimate.bookableDates,
     earliestReadyTime: estimate.earliestReadyTime,
-    pickupTime: estimate.pickupTime,
-    slots: estimate.slots,
+    pickupTime: slots[0] ?? estimate.pickupTime,
+    slots,
     closedToday: estimate.closedToday,
     disclaimer: STORE_ORDER_BUSY_DISCLAIMER,
     message: estimate.message,

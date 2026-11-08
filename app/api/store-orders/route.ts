@@ -12,6 +12,7 @@ import { createStoreOrderReservationNo } from "../../../lib/storeReservationNo";
 import {
   isAfterStoreOrderNextDayCutoff,
   isAllowedStorePickupSlot,
+  isStoreOrderSameDayLiveWindow,
   listStorePickupSlots,
 } from "../../../lib/storePickupSlots";
 import { getTodayYmdJst } from "../../../lib/bookingDates";
@@ -110,7 +111,12 @@ export async function POST(req: NextRequest) {
     const today = getTodayYmdJst();
     const closed = await fetchSheetClosedDaysSet();
     const afterCutoff = isAfterStoreOrderNextDayCutoff();
-    if (closed.has(today) && !isStoreOrderTestMode() && !afterCutoff) {
+    if (
+      closed.has(today) &&
+      !isStoreOrderTestMode() &&
+      !afterCutoff &&
+      isStoreOrderSameDayLiveWindow()
+    ) {
       return NextResponse.json(
         { ok: false, message: "本日はお休みのためご注文いただけません" },
         { status: 400 },
