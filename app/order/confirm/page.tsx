@@ -5,10 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import StoreOrderCartSummary from "../StoreOrderCartSummary";
 import StoreOrderDisclaimer from "../StoreOrderDisclaimer";
-import {
-  formatDateLabel,
-  getTodayYmdJst,
-} from "../../../lib/bookingDates";
+import { formatDateLabel } from "../../../lib/bookingDates";
 import {
   clearStoreOrderDraft,
   readStoreOrderDraft,
@@ -41,18 +38,29 @@ export default function StoreOrderConfirmPage() {
       }
 
       try {
-        const res = await fetch("/api/store-orders/pickup-slots", {
+        const dateQs = current.pickupDate
+          ? `?date=${encodeURIComponent(current.pickupDate)}`
+          : "";
+        const res = await fetch(`/api/store-orders/pickup-slots${dateQs}`, {
           cache: "no-store",
         });
         const data = await res.json();
         const slots: string[] = Array.isArray(data.slots)
           ? data.slots.map(String)
           : [];
-        if (data.pickupDate && (slots.length || data.pickupTime)) {
-          const preferred =
-            current.pickupDate === String(data.pickupDate)
-              ? current.pickupTime || ""
-              : "";
+        const bookable: string[] = Array.isArray(data.bookableDates)
+          ? data.bookableDates.map((d: { ymd: string }) => d.ymd)
+          : [];
+        const keepDate =
+          current.pickupDate &&
+          (bookable.includes(current.pickupDate) ||
+            data.bookingMode !== "advance")
+            ? current.pickupDate
+            : data.pickupDate
+              ? String(data.pickupDate)
+              : current.pickupDate;
+        if (keepDate && (slots.length || data.pickupTime)) {
+          const preferred = current.pickupTime || "";
           const fallback = data.pickupTime ? String(data.pickupTime) : "";
           const pickupTime =
             preferred && slots.includes(preferred)
@@ -62,7 +70,7 @@ export default function StoreOrderConfirmPage() {
                 : slots[0] || fallback;
           const next = {
             ...current,
-            pickupDate: String(data.pickupDate),
+            pickupDate: keepDate,
             pickupTime,
           };
           setDraft(next);
@@ -119,11 +127,9 @@ export default function StoreOrderConfirmPage() {
     }
   }
 
-  const todayYmd = getTodayYmdJst();
-  const pickupDateLabel =
-    draft.pickupDate && draft.pickupDate !== todayYmd
-      ? formatDateLabel(draft.pickupDate)
-      : null;
+  const pickupDateLabel = draft.pickupDate
+    ? formatDateLabel(draft.pickupDate)
+    : null;
 
   return (
     <main className={styles.page}>
@@ -133,15 +139,23 @@ export default function StoreOrderConfirmPage() {
 
       <section className={styles.section}>
         <div className={styles.panel}>
+          <p className={styles.readyTimeLabel} style={{ marginTop: 4 }}>
+            お受け取り日時
+          </p>
           {pickupDateLabel ? (
-            <p className={styles.label} style={{ marginTop: 4 }}>
-              お受け取り日: {pickupDateLabel}
+            <p
+              className={styles.readyTimeValue}
+              style={{ fontSize: 26, marginTop: 4 }}
+            >
+              {pickupDateLabel}
             </p>
           ) : null}
-          <p className={styles.readyTimeLabel} style={{ marginTop: 4 }}>
-            お受け取り時間
+          <p
+            className={styles.readyTimeValue}
+            style={pickupDateLabel ? { fontSize: 34, marginTop: 6 } : undefined}
+          >
+            {draft.pickupTime || "—"}
           </p>
-          <p className={styles.readyTimeValue}>{draft.pickupTime || "—"}</p>
           <StoreOrderDisclaimer />
           <p className={styles.label} style={{ marginTop: 8 }}>
             {draft.customerName} 様 / {draft.phone}
