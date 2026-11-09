@@ -76,6 +76,9 @@ export default function StoreOrderLandingSections({
                   <source src={section.src} type="video/mp4" />
                 </video>
               </div>
+              {isMenu && section.menuCaption ? (
+                <p className={styles.menuPromoCaption}>{section.menuCaption}</p>
+              ) : null}
             </section>
           );
         }

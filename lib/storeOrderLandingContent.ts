@@ -23,6 +23,8 @@ export type StoreOrderLandingVideo = {
   controls?: boolean;
   /** メニュー表示時の枠比率（例: "9 / 16"）。未指定は 9/16 */
   menuAspectRatio?: string;
+  /** メニューで動画直下に表示する注記 */
+  menuCaption?: string;
 };
 
 /** YouTube 埋め込み（動画 ID のみ。src と同時に使わない想定） */

@@ -151,6 +151,15 @@
   background: transparent;
 }
 
+.menuPromoCaption {
+  margin: 8px 4px 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #b8a898;
+  text-align: center;
+}
+
 .menuHeroCard {
   margin-bottom: 12px;
   border-radius: 14px;

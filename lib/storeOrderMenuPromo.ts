@@ -22,6 +22,7 @@ export const STORE_ORDER_MENU_PROMO_BY_CATEGORY: Partial<
       loop: true,
       muted: true,
       controls: false,
+      menuCaption: "※動画は豚玉に温玉トッピングしてあります",
     },
   ],
 };
