@@ -49,33 +49,41 @@ export default function StoreOrderLandingSections({
               {section.title ? (
                 <h2 className={styles.landingVideoTitle}>{section.title}</h2>
               ) : null}
-              <div
-                className={
-                  isMenu ? styles.menuPromoVideoWrap : styles.landingVideoWrap
-                }
-                style={
-                  isMenu && section.menuAspectRatio
-                    ? { aspectRatio: section.menuAspectRatio }
-                    : undefined
-                }
-              >
-                <video
-                  className={
-                    isMenu ? styles.menuPromoVideo : styles.landingVideo
-                  }
-                  autoPlay={autoplay}
-                  loop={loop}
-                  muted={muted}
-                  controls={controls}
-                  playsInline
-                  preload={autoplay ? "auto" : "metadata"}
-                  poster={
-                    autoplay ? undefined : section.poster || undefined
-                  }
-                >
-                  <source src={section.src} type="video/mp4" />
-                </video>
-              </div>
+              {isMenu ? (
+                <div className={styles.menuHeroCard}>
+                  <video
+                    className={styles.menuHeroImage}
+                    autoPlay={autoplay}
+                    loop={loop}
+                    muted={muted}
+                    controls={controls}
+                    playsInline
+                    preload={autoplay ? "auto" : "metadata"}
+                    poster={
+                      autoplay ? undefined : section.poster || undefined
+                    }
+                  >
+                    <source src={section.src} type="video/mp4" />
+                  </video>
+                </div>
+              ) : (
+                <div className={styles.landingVideoWrap}>
+                  <video
+                    className={styles.landingVideo}
+                    autoPlay={autoplay}
+                    loop={loop}
+                    muted={muted}
+                    controls={controls}
+                    playsInline
+                    preload={autoplay ? "auto" : "metadata"}
+                    poster={
+                      autoplay ? undefined : section.poster || undefined
+                    }
+                  >
+                    <source src={section.src} type="video/mp4" />
+                  </video>
+                </div>
+              )}
               {isMenu && section.menuCaption ? (
                 <p className={styles.menuPromoCaption}>{section.menuCaption}</p>
               ) : null}
