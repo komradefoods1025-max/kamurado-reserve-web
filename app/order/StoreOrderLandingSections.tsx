@@ -41,7 +41,7 @@ export default function StoreOrderLandingSections({
               key={`vid-${index}`}
               className={
                 isMenu
-                  ? `${styles.landingVideoSection} ${styles.menuPromoVideoSection}`
+                  ? styles.menuPromoVideoSection
                   : styles.landingVideoSection
               }
               aria-label={section.title || "動画"}
@@ -51,16 +51,17 @@ export default function StoreOrderLandingSections({
               ) : null}
               <div
                 className={
-                  isMenu
-                    ? `${styles.landingVideoWrap} ${styles.menuPromoVideoWrap}`
-                    : styles.landingVideoWrap
+                  isMenu ? styles.menuPromoVideoWrap : styles.landingVideoWrap
+                }
+                style={
+                  isMenu && section.menuAspectRatio
+                    ? { aspectRatio: section.menuAspectRatio }
+                    : undefined
                 }
               >
                 <video
                   className={
-                    isMenu
-                      ? `${styles.landingVideo} ${styles.menuPromoVideo}`
-                      : styles.landingVideo
+                    isMenu ? styles.menuPromoVideo : styles.landingVideo
                   }
                   autoPlay={autoplay}
                   loop={loop}

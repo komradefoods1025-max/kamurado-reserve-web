@@ -21,6 +21,8 @@ export type StoreOrderLandingVideo = {
   muted?: boolean;
   /** 未指定時: autoplay なら false、それ以外 true */
   controls?: boolean;
+  /** メニュー表示時の枠比率（例: "9 / 16"）。未指定は 9/16 */
+  menuAspectRatio?: string;
 };
 
 /** YouTube 埋め込み（動画 ID のみ。src と同時に使わない想定） */

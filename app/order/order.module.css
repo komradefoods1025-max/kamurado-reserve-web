@@ -132,14 +132,22 @@
 }
 
 .menuPromoVideoWrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
   border: none;
   border-radius: 14px;
-  background: transparent;
-  aspect-ratio: 4 / 3;
+  background: #2f2620;
+  aspect-ratio: 9 / 16;
 }
 
 .menuPromoVideo {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+  object-position: center;
+  vertical-align: top;
   background: transparent;
 }
 
