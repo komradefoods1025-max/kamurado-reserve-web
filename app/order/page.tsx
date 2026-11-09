@@ -55,16 +55,8 @@ export default function StoreOrderLandingPage() {
               店頭で待つことなく、スムーズにお受け取りいただけます！
             </p>
           </div>
-
-          <p className={styles.landingDisclaimer}>
-            ※ご注文が混み合っている場合、お受け取り時間が前後する可能性がございます。あらかじめご了承ください🙇‍♂️
-          </p>
         </section>
-      ) : (
-        <p className={styles.landingDisclaimerOnly}>
-          ※ご注文が混み合っている場合、お受け取り時間が前後する可能性がございます。あらかじめご了承ください🙇‍♂️
-        </p>
-      )}
+      ) : null}
 
       <div className={`${styles.footerBar} ${styles.landingFooterBar}`}>
         <Link href="/order/menu" className={styles.landingMenuBtn}>
