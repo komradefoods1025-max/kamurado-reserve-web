@@ -22,7 +22,7 @@ export type StoreMenuItem = {
 };
 
 /** public/store-menu を差し替えたら rev を上げる（ブラウザ・Next 画像キャッシュ対策） */
-const STORE_MENU_IMAGE_REV = "20261109-6";
+const STORE_MENU_IMAGE_REV = "20261109-7";
 
 const IMG = (n: number) =>
   `/store-menu/${String(n).padStart(2, "0")}.jpg?v=${STORE_MENU_IMAGE_REV}`;
@@ -54,6 +54,7 @@ const OKONOMIYAKI_TOPPING_MENU_ITEMS: StoreMenuItem[] = (
     ["top_baby_star", "ベビースター", 150],
     ["top_mochi", "餅", 150],
     ["top_curry_powder", "カレー粉", 200],
+    ["top_shiso", "しそ", 200],
     ["top_sakura_ebi", "桜エビ", 200],
     ["top_oroshi_garlic", "おろしにんにく", 200],
     ["top_beni_shoga", "紅生姜", 200],
@@ -79,19 +80,20 @@ const OKONOMIYAKI_TOPPING_MENU_ITEMS: StoreMenuItem[] = (
 
 const TEPPANYAKI_MENU_ITEMS: StoreMenuItem[] = (
   [
-    ["dashimaki_tamago", "だし巻き卵", 33, 600],
-    ["dashimaki_negi", "だし巻きねぎ", 36, 680],
+    ["dashimaki_tamago", "だし巻き卵", 33, 630],
+    ["dashimaki_negi", "だし巻きねぎ", 36, 690],
     ["dashimaki_mentai_cheese", "だし巻き明太チーズ", 30, 880],
-    ["ita_gyoza", "自家製ぎょうざ", 31, 580],
+    ["ita_gyoza", "自家製板ぎょうざ", 31, 680],
     ["jaga_mentai_cheese", "じゃが明太チーズ", 34, 890],
-    ["sunagimo_nagaimo_yuzu", "砂肝と長芋の柚子胡椒焼き", 32, 790],
-    ["seseri_basil_chicken", "せせりのバジルチキン", 38, 680],
-    ["tonpeiyaki", "とんぺい焼き", 37, 870],
+    ["sunagimo_nagaimo_yuzu", "砂肝と長芋の柚子胡椒焼き", 32, 890],
+    ["seseri_basil_chicken", "せせりのバジルチキン", 38, 880],
+    ["tonpeiyaki", "とんぺい焼き", 37, 880],
     ["yakiniku_harami", "焼き肉屋さんの牛ハラミ", 35, 1250],
     ["ebi_ika_garlic_saute", "エビとイカのガーリックソテー", 41, 1020],
     ["hotate_asparagus_butter", "ホタテとアスパラのバター焼き", 40, 1200],
-    ["ajillo_today", "本日のアヒージョ", 39, 1280],
-    ["buta_moyashi_oimayo", "豚ともやしのこく旨オイマヨ炒め", 42, 820],
+    ["ajillo_today", "本日のアヒージョ パン4枚付き", 39, 1280],
+    ["buta_moyashi_oimayo", "豚ともやしのオイマヨ炒め", 42, 890],
+    ["buta_tomato_tamago_chuka", "豚とトマトの卵中華炒め", 37, 890],
   ] as const
 ).map(([id, name, n, price]) => ({
   id,
@@ -105,7 +107,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
   {
     id: "celery_asazuke",
     name: "セロリの浅漬け",
-    price: 420,
+    price: 520,
     image: IMG(1),
     category: "otsumami",
   },
@@ -119,7 +121,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
   {
     id: "kyuri_ipponzuke",
     name: "きゅうりの一本漬け",
-    price: 420,
+    price: 480,
     image: IMG(3),
     category: "otsumami",
   },
@@ -128,6 +130,13 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     name: "自家製鶏ハム",
     price: 580,
     image: IMG(4),
+    category: "otsumami",
+  },
+  {
+    id: "jikasei_chicken_ham_half",
+    name: "自家製鶏ハム（ハーフ）",
+    price: 380,
+    image: "",
     category: "otsumami",
   },
   {
@@ -145,8 +154,15 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     category: "otsumami",
   },
   {
-    id: "sunagimo_kara_ponzu",
-    name: "おつまみ砂肝旨辛ポン酢",
+    id: "quail_umezu_half",
+    name: "ひと口うずらの旨酢漬け（ハーフ）",
+    price: 380,
+    image: "",
+    category: "otsumami",
+  },
+  {
+    id: "sunagimo_chanja",
+    name: "おつまみ砂肝チャンジャ",
     price: 480,
     image: IMG(7),
     category: "otsumami",
@@ -154,8 +170,15 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
   {
     id: "karikari_cheese",
     name: "カリカリチーズ",
-    price: 360,
+    price: 420,
     image: IMG(8),
+    category: "otsumami",
+  },
+  {
+    id: "tori_ume_kyuri",
+    name: "鶏梅きゅう",
+    price: 530,
+    image: IMG(10),
     category: "otsumami",
   },
   {
@@ -166,17 +189,17 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     category: "otsumami",
   },
   {
-    id: "tori_ume_kyuri",
-    name: "鶏梅きゅうり",
-    price: 530,
-    image: IMG(10),
+    id: "green_salad",
+    name: "グリーンサラダ",
+    price: 830,
+    image: IMG(12),
     category: "salad",
   },
   {
-    id: "potato_salad",
-    name: "ポテトサラダ",
-    price: 480,
-    image: IMG(11),
+    id: "green_salad_half",
+    name: "グリーンサラダ（ハーフ）",
+    price: 430,
+    image: "",
     category: "salad",
   },
   {
@@ -184,6 +207,20 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     name: "チョレギサラダ",
     price: 830,
     image: IMG(12),
+    category: "salad",
+  },
+  {
+    id: "choregi_salad_half",
+    name: "チョレギサラダ（ハーフ）",
+    price: 430,
+    image: "",
+    category: "salad",
+  },
+  {
+    id: "potato_salad",
+    name: "ポテトサラダ",
+    price: 510,
+    image: IMG(11),
     category: "salad",
   },
   {
@@ -241,7 +278,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
   {
     id: "french_fries",
     name: "フライドポテト",
-    price: 500,
+    price: 530,
     image: IMG(14),
     category: "fried",
   },
@@ -253,10 +290,31 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     category: "fried",
   },
   {
+    id: "fries_ika_shiokara_butter",
+    name: "フライドポテト イカの塩辛バター",
+    price: 680,
+    image: IMG(14),
+    category: "fried",
+  },
+  {
+    id: "kamurado_karaage_half",
+    name: "かむらどの特製からあげ（ハーフ2個）",
+    price: 510,
+    image: "",
+    category: "fried",
+  },
+  {
     id: "satoimo_karaage",
     name: "里芋のから揚げ",
-    price: 590,
+    price: 610,
     image: IMG(16),
+    category: "fried",
+  },
+  {
+    id: "chicken_nanban_half",
+    name: "チキン南蛮（ハーフ）",
+    price: 550,
+    image: "",
     category: "fried",
   },
   {
@@ -267,6 +325,48 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     category: "fried",
   },
   {
+    id: "ume_onigiri",
+    name: "梅干しおにぎり",
+    price: 430,
+    image: IMG(20),
+    category: "rice",
+  },
+  {
+    id: "yaki_onigiri",
+    name: "焼きおにぎり",
+    price: 430,
+    image: IMG(20),
+    category: "rice",
+  },
+  {
+    id: "mentai_onigiri",
+    name: "明太おにぎり",
+    price: 480,
+    image: IMG(20),
+    category: "rice",
+  },
+  {
+    id: "garlic_rice",
+    name: "ガーリックライス",
+    price: 1080,
+    image: IMG(18),
+    category: "rice",
+  },
+  {
+    id: "mentai_butter_rice",
+    name: "明太バターライス",
+    price: 1130,
+    image: IMG(18),
+    category: "rice",
+  },
+  {
+    id: "takana_chahan",
+    name: "高菜チャーハン",
+    price: 1130,
+    image: IMG(19),
+    category: "rice",
+  },
+  {
     id: "kimchi_chahan",
     name: "キムチチャーハン",
     price: 1200,
@@ -274,23 +374,23 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     category: "rice",
   },
   {
-    id: "mentai_butter_rice",
-    name: "明太バターライス",
-    price: 1100,
-    image: IMG(18),
+    id: "rice_large",
+    name: "ライス（大）",
+    price: 300,
+    image: IMG(20),
     category: "rice",
   },
   {
-    id: "takana_chahan",
-    name: "高菜チャーハン",
-    price: 1100,
-    image: IMG(19),
+    id: "rice_medium",
+    name: "ライス（中）",
+    price: 200,
+    image: IMG(20),
     category: "rice",
   },
   {
-    id: "onigiri_various",
-    name: "おにぎり各種",
-    price: 380,
+    id: "rice_small",
+    name: "ライス（小）",
+    price: 150,
     image: IMG(20),
     category: "rice",
   },
@@ -313,6 +413,13 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     name: "ねぎ塩焼きそば",
     price: 1400,
     image: IMG(23),
+    category: "noodle",
+  },
+  {
+    id: "yakisoba_medama_topping",
+    name: "目玉焼きトッピング",
+    price: 150,
+    image: "",
     category: "noodle",
   },
 ];
