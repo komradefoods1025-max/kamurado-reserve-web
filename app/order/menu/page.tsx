@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   STORE_MENU_CATEGORY_LABEL,
   STORE_MENU_CATEGORY_NOTE,
@@ -14,6 +15,7 @@ import {
   computeStoreCartMoney,
   type StoreMenuCategory,
 } from "../../../lib/storeMenuCatalog";
+import { STORE_ORDER_MENU_PROMO_SECTIONS } from "../../../lib/storeOrderLandingContent";
 import {
   clearStoreOrderDraft,
   readStoreOrderDraft,
@@ -21,7 +23,7 @@ import {
   writeStoreOrderDraft,
   type StoreCartLine,
 } from "../../../lib/storeOrderDraft";
-import CategoryBrushLine from "../CategoryBrushLine";
+import StoreOrderMenuPromo from "../StoreOrderMenuPromo";
 import styles from "../order.module.css";
 
 const CATEGORY_ORDER: StoreMenuCategory[] = [
@@ -35,8 +37,44 @@ const CATEGORY_ORDER: StoreMenuCategory[] = [
   "noodle",
 ];
 
+const CATEGORY_SHORT: Partial<Record<StoreMenuCategory, string>> = {
+  otsumami: "おつまみ",
+  salad: "サラダ",
+  okonomiyaki: "お好み\n焼き",
+  topping: "トッピ\nング",
+  teppanyaki: "鉄板\n焼き",
+  fried: "揚げ物",
+  rice: "ご飯",
+  noodle: "麺",
+};
+
+function isValidCategory(v: string | null): v is StoreMenuCategory {
+  return CATEGORY_ORDER.includes(v as StoreMenuCategory);
+}
+
 export default function StoreOrderMenuPage() {
+  return (
+    <Suspense fallback={<main className={styles.page}>読み込み中…</main>}>
+      <StoreOrderMenuPageInner />
+    </Suspense>
+  );
+}
+
+function StoreOrderMenuPageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [cart, setCart] = useState<StoreCartLine[]>([]);
+  const [activeCategory, setActiveCategory] = useState<StoreMenuCategory>(
+    "otsumami",
+  );
+
+  const visibleCategories = useMemo(
+    () =>
+      CATEGORY_ORDER.filter((c) =>
+        STORE_MENU_ITEMS.some((m) => m.category === c),
+      ),
+    [],
+  );
 
   useEffect(() => {
     const draft = readStoreOrderDraft();
@@ -45,6 +83,17 @@ export default function StoreOrderMenuPage() {
     );
     setCart(synced);
   }, []);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("category");
+    if (isValidCategory(fromUrl) && visibleCategories.includes(fromUrl)) {
+      setActiveCategory(fromUrl);
+      return;
+    }
+    if (visibleCategories.length) {
+      setActiveCategory(visibleCategories[0]);
+    }
+  }, [searchParams, visibleCategories]);
 
   const cartTotalLabel = useMemo(
     () => formatStoreOrderCartTotal(cart),
@@ -58,6 +107,18 @@ export default function StoreOrderMenuPage() {
   }, [cart]);
 
   const totalQty = storeCartQuantity(cart);
+
+  const activeItems = useMemo(
+    () => STORE_MENU_ITEMS.filter((m) => m.category === activeCategory),
+    [activeCategory],
+  );
+
+  const showPromo = STORE_ORDER_MENU_PROMO_SECTIONS.some((s) => {
+    if (s.kind === "image") return Boolean(s.src);
+    if (s.kind === "video") return Boolean(s.src.trim());
+    if (s.kind === "youtube") return Boolean(s.videoId.trim());
+    return false;
+  });
 
   function persist(next: StoreCartLine[]) {
     const synced = syncStoreCartWithCatalog(next);
@@ -101,69 +162,142 @@ export default function StoreOrderMenuPage() {
     setCart([]);
   }
 
+  function selectCategory(category: StoreMenuCategory) {
+    setActiveCategory(category);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("category", category);
+    router.replace(`/order/menu?${params.toString()}`, { scroll: false });
+  }
+
+  const isTopping = activeCategory === "topping";
+  const imageItems = isTopping
+    ? []
+    : activeItems.filter((i) => i.image);
+  const textOnlyItems = isTopping
+    ? activeItems
+    : activeItems.filter((i) => !i.image);
+  const heroItem = imageItems[0];
+  const gridImageItems = imageItems.slice(1);
+
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>店内メニュー</h1>
-        <p className={styles.sub}>
-          選ぶ → 注文確認 → お名前・電話 → 店頭でお支払い
-        </p>
+    <main className={`${styles.page} ${styles.menuPage}`}>
+      <header className={styles.menuTopBar}>
+        <Link href="/order" className={styles.menuTopBack}>
+          TOP
+        </Link>
+        <h1 className={styles.menuTopTitle}>メニュー</h1>
       </header>
 
-      {CATEGORY_ORDER.map((category) => {
-        const items = STORE_MENU_ITEMS.filter((m) => m.category === category);
-        if (!items.length) return null;
+      <div className={styles.menuSplit}>
+        <nav className={styles.menuNav} aria-label="カテゴリー">
+          {visibleCategories.map((category) => {
+            const short =
+              CATEGORY_SHORT[category] ||
+              STORE_MENU_CATEGORY_LABEL[category].replace(/(.{4})/g, "$1\n");
+            return (
+              <button
+                key={category}
+                type="button"
+                className={
+                  activeCategory === category
+                    ? `${styles.menuNavBtn} ${styles.menuNavBtnActive}`
+                    : styles.menuNavBtn
+                }
+                onClick={() => selectCategory(category)}
+              >
+                {short.split("\n").map((line, i) => (
+                  <span key={i} className={styles.menuNavLine}>
+                    {line}
+                  </span>
+                ))}
+              </button>
+            );
+          })}
+        </nav>
 
-        return (
-          <section key={category} className={styles.categorySection}>
-            <h2 className={styles.categoryHeading}>
-              <span className={styles.categoryHeadingInner}>
-                <CategoryBrushLine idSuffix={category} />
-                <span className={styles.categoryHeadingText}>
-                  {STORE_MENU_CATEGORY_LABEL[category]}
-                </span>
-              </span>
-            </h2>
-            {STORE_MENU_CATEGORY_NOTE[category] ? (
-              <p className={styles.categoryNote}>
-                {STORE_MENU_CATEGORY_NOTE[category]}
-              </p>
-            ) : null}
-            <div
-              className={
-                category === "topping" ? styles.toppingGrid : styles.grid
-              }
-            >
-              {items.map((item) => {
+        <div className={styles.menuMain}>
+          <h2 className={styles.menuCategoryTitle}>
+            {STORE_MENU_CATEGORY_LABEL[activeCategory]}
+          </h2>
+          {STORE_MENU_CATEGORY_NOTE[activeCategory] ? (
+            <p className={styles.categoryNote}>{STORE_MENU_CATEGORY_NOTE[activeCategory]}</p>
+          ) : null}
+
+          {showPromo ? (
+            <StoreOrderMenuPromo sections={STORE_ORDER_MENU_PROMO_SECTIONS} />
+          ) : null}
+
+          {heroItem ? (
+            <article className={styles.menuHeroCard}>
+              <Image
+                src={heroItem.image}
+                alt={heroItem.name}
+                width={800}
+                height={500}
+                sizes="(max-width: 520px) 70vw, 360px"
+                className={styles.menuHeroImage}
+              />
+              <div className={styles.cardBody}>
+                <MenuItemBody
+                  item={heroItem}
+                  qty={qtyById.get(heroItem.id) ?? 0}
+                  onChange={changeQty}
+                />
+              </div>
+            </article>
+          ) : null}
+
+          {gridImageItems.length > 0 ? (
+            <div className={styles.menuProductGrid}>
+              {gridImageItems.map((item) => {
                 const qty = qtyById.get(item.id) ?? 0;
-                const textOnly = category === "topping" || !item.image;
                 return (
-                  <article
-                    key={item.id}
-                    className={
-                      textOnly ? styles.toppingCard : styles.card
-                    }
-                  >
-                    {!textOnly ? (
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        width={400}
-                        height={400}
-                        sizes="(max-width: 640px) 50vw, (max-width: 900px) 33vw, 220px"
-                        className={styles.cardImage}
-                      />
-                    ) : null}
+                  <article key={item.id} className={styles.card}>
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      width={400}
+                      height={400}
+                      sizes="(max-width: 520px) 40vw, 200px"
+                      className={styles.cardImage}
+                    />
                     <div className={styles.cardBody}>
-                      <Tools item={item} qty={qty} onChange={changeQty} />
+                      <MenuItemBody
+                        item={item}
+                        qty={qty}
+                        onChange={changeQty}
+                      />
                     </div>
                   </article>
                 );
               })}
             </div>
-          </section>
-        );
-      })}
+          ) : null}
+
+          {textOnlyItems.length > 0 ? (
+            <div
+              className={
+                isTopping ? styles.toppingGrid : styles.menuProductGrid
+              }
+            >
+              {textOnlyItems.map((item) => {
+                const qty = qtyById.get(item.id) ?? 0;
+                return (
+                  <article key={item.id} className={styles.toppingCard}>
+                    <div className={styles.cardBody}>
+                      <MenuItemBody
+                        item={item}
+                        qty={qty}
+                        onChange={changeQty}
+                      />
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      </div>
 
       <div className={styles.footerBar}>
         {totalQty > 0 ? (
@@ -201,7 +335,7 @@ export default function StoreOrderMenuPage() {
   );
 }
 
-function Tools({
+function MenuItemBody({
   item,
   qty,
   onChange,
