@@ -26,7 +26,7 @@ export type StoreMenuItem = {
 export const GREEN_SALAD_DRESSINGS = ["ゴマ", "シーザー", "ワサビ"] as const;
 
 /** public/store-menu を差し替えたら rev を上げる（ブラウザ・Next 画像キャッシュ対策） */
-const STORE_MENU_IMAGE_REV = "20261109-8";
+const STORE_MENU_IMAGE_REV = "20261109-9";
 
 const IMG = (n: number) =>
   `/store-menu/${String(n).padStart(2, "0")}.jpg?v=${STORE_MENU_IMAGE_REV}`;
@@ -97,7 +97,7 @@ const TEPPANYAKI_MENU_ITEMS: StoreMenuItem[] = (
     ["hotate_asparagus_butter", "ホタテとアスパラのバター焼き", 40, 1200],
     ["ajillo_today", "本日のアヒージョ パン4枚付き", 39, 1280],
     ["buta_moyashi_oimayo", "豚ともやしのオイマヨ炒め", 42, 890],
-    ["buta_tomato_tamago_chuka", "豚とトマトの卵中華炒め", 37, 890],
+    ["buta_tomato_tamago_chuka", "豚とトマトの卵中華炒め", 45, 890],
   ] as const
 ).map(([id, name, n, price]) => ({
   id,
