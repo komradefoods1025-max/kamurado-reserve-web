@@ -593,6 +593,52 @@
   text-align: center;
 }
 
+.landingDisclaimerOnly {
+  margin: 0;
+  padding: 14px 16px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.65;
+  color: #a89888;
+  text-align: center;
+}
+
+.landingVideoSection {
+  padding: 16px 16px 4px;
+}
+
+.landingVideoTitle {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 800;
+  text-align: center;
+  color: #faf3e8;
+}
+
+.landingVideoWrap {
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #120c0a;
+  aspect-ratio: 16 / 9;
+}
+
+.landingVideo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+.landingVideoIframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 .landingMenuBtn {
   display: flex;
   align-items: center;

@@ -1,5 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
+import {
+  STORE_ORDER_LANDING_SECTIONS,
+  STORE_ORDER_LANDING_SHOW_TEXT_STEPS,
+} from "../../lib/storeOrderLandingContent";
+import StoreOrderLandingSections from "./StoreOrderLandingSections";
 import styles from "./order.module.css";
 
 const STEPS = [
@@ -24,47 +28,43 @@ const STEPS = [
 export default function StoreOrderLandingPage() {
   return (
     <main className={`${styles.page} ${styles.landingPage}`}>
-      <div className={styles.landingHeroWrap}>
-        <Image
-          src="/store-order/mobile-order-hero.png?v=20261109-new"
-          alt="鉄板焼きダイニングかむらど 店内モバイルオーダーのご案内"
-          width={723}
-          height={1024}
-          priority
-          sizes="(max-width: 520px) 100vw, 520px"
-          className={styles.landingHeroImg}
-        />
-      </div>
+      <StoreOrderLandingSections sections={STORE_ORDER_LANDING_SECTIONS} />
 
-      <section className={styles.landingFlow} aria-labelledby="landing-flow-title">
-        <h2 id="landing-flow-title" className={styles.landingFlowTitle}>
-          📱 モバイルオーダー ご注文の流れ
-        </h2>
+      {STORE_ORDER_LANDING_SHOW_TEXT_STEPS ? (
+        <section className={styles.landingFlow} aria-labelledby="landing-flow-title">
+          <h2 id="landing-flow-title" className={styles.landingFlowTitle}>
+            📱 モバイルオーダー ご注文の流れ
+          </h2>
 
-        <ol className={styles.landingSteps}>
-          {STEPS.map((step) => (
-            <li key={step.title} className={styles.landingStep}>
-              <p className={styles.landingStepTitle}>{step.title}</p>
-              <p className={styles.landingStepBody}>{step.body}</p>
-            </li>
-          ))}
-        </ol>
+          <ol className={styles.landingSteps}>
+            {STEPS.map((step) => (
+              <li key={step.title} className={styles.landingStep}>
+                <p className={styles.landingStepTitle}>{step.title}</p>
+                <p className={styles.landingStepBody}>{step.body}</p>
+              </li>
+            ))}
+          </ol>
 
-        <div className={styles.landingHighlight}>
-          <p className={styles.landingHighlightLead}>
-            ⏰ 事前注文で待ち時間を短縮！
+          <div className={styles.landingHighlight}>
+            <p className={styles.landingHighlightLead}>
+              ⏰ 事前注文で待ち時間を短縮！
+            </p>
+            <p className={styles.landingHighlightBody}>
+              スマホで簡単注文！
+              <br />
+              店頭で待つことなく、スムーズにお受け取りいただけます！
+            </p>
+          </div>
+
+          <p className={styles.landingDisclaimer}>
+            ※ご注文が混み合っている場合、お受け取り時間が前後する可能性がございます。あらかじめご了承ください🙇‍♂️
           </p>
-          <p className={styles.landingHighlightBody}>
-            スマホで簡単注文！
-            <br />
-            店頭で待つことなく、スムーズにお受け取りいただけます！
-          </p>
-        </div>
-
-        <p className={styles.landingDisclaimer}>
+        </section>
+      ) : (
+        <p className={styles.landingDisclaimerOnly}>
           ※ご注文が混み合っている場合、お受け取り時間が前後する可能性がございます。あらかじめご了承ください🙇‍♂️
         </p>
-      </section>
+      )}
 
       <div className={`${styles.footerBar} ${styles.landingFooterBar}`}>
         <Link href="/order/menu" className={styles.landingMenuBtn}>
