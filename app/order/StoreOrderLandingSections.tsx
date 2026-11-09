@@ -4,9 +4,13 @@ import styles from "./order.module.css";
 
 export default function StoreOrderLandingSections({
   sections,
+  presentation = "landing",
 }: {
   sections: StoreOrderLandingSection[];
+  /** menu = 枠なし・商品画像並みの大きさ */
+  presentation?: "landing" | "menu";
 }) {
+  const isMenu = presentation === "menu";
   return (
     <>
       {sections.map((section, index) => {
@@ -27,22 +31,46 @@ export default function StoreOrderLandingSections({
         }
 
         if (section.kind === "video" && section.src.trim()) {
+          const autoplay = section.autoplay ?? false;
+          const loop = section.loop ?? false;
+          const muted = section.muted ?? autoplay;
+          const controls = section.controls ?? !autoplay;
+
           return (
             <section
               key={`vid-${index}`}
-              className={styles.landingVideoSection}
+              className={
+                isMenu
+                  ? `${styles.landingVideoSection} ${styles.menuPromoVideoSection}`
+                  : styles.landingVideoSection
+              }
               aria-label={section.title || "動画"}
             >
               {section.title ? (
                 <h2 className={styles.landingVideoTitle}>{section.title}</h2>
               ) : null}
-              <div className={styles.landingVideoWrap}>
+              <div
+                className={
+                  isMenu
+                    ? `${styles.landingVideoWrap} ${styles.menuPromoVideoWrap}`
+                    : styles.landingVideoWrap
+                }
+              >
                 <video
-                  className={styles.landingVideo}
-                  controls
+                  className={
+                    isMenu
+                      ? `${styles.landingVideo} ${styles.menuPromoVideo}`
+                      : styles.landingVideo
+                  }
+                  autoPlay={autoplay}
+                  loop={loop}
+                  muted={muted}
+                  controls={controls}
                   playsInline
-                  preload="metadata"
-                  poster={section.poster || undefined}
+                  preload={autoplay ? "auto" : "metadata"}
+                  poster={
+                    autoplay ? undefined : section.poster || undefined
+                  }
                 >
                   <source src={section.src} type="video/mp4" />
                 </video>

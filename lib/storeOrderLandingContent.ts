@@ -15,6 +15,12 @@ export type StoreOrderLandingVideo = {
   src: string;
   poster?: string;
   title?: string;
+  /** スマホ自動再生には muted + playsInline が必要 */
+  autoplay?: boolean;
+  loop?: boolean;
+  muted?: boolean;
+  /** 未指定時: autoplay なら false、それ以外 true */
+  controls?: boolean;
 };
 
 /** YouTube 埋め込み（動画 ID のみ。src と同時に使わない想定） */

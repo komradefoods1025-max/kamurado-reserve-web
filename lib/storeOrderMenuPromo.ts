@@ -17,8 +17,11 @@ export const STORE_ORDER_MENU_PROMO_BY_CATEGORY: Partial<
     {
       kind: "video",
       src: "/store-order/okonomiyaki.mp4",
-      poster: "/store-menu/26.jpg",
       title: "",
+      autoplay: true,
+      loop: true,
+      muted: true,
+      controls: false,
     },
   ],
 };

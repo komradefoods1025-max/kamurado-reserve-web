@@ -126,6 +126,23 @@
   overflow: hidden;
 }
 
+.menuPromoVideoSection {
+  padding: 0 !important;
+  margin: 0 0 12px;
+}
+
+.menuPromoVideoWrap {
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  aspect-ratio: 4 / 3;
+}
+
+.menuPromoVideo {
+  object-fit: cover;
+  background: transparent;
+}
+
 .menuHeroCard {
   margin-bottom: 12px;
   border-radius: 14px;

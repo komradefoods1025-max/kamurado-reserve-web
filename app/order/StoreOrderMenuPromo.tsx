@@ -9,7 +9,7 @@ export default function StoreOrderMenuPromo({
 }) {
   return (
     <div className={styles.menuPromo}>
-      <StoreOrderLandingSections sections={sections} />
+      <StoreOrderLandingSections sections={sections} presentation="menu" />
     </div>
   );
 }
