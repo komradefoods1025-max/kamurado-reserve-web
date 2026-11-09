@@ -47,6 +47,3 @@ export const STORE_ORDER_LANDING_SECTIONS: StoreOrderLandingSection[] = [
 
 /** チラシ画像に手順が含まれる場合は false 推奨 */
 export const STORE_ORDER_LANDING_SHOW_TEXT_STEPS = false;
-
-/** `/order/menu` カテゴリ上部の PR（動画・画像）。空なら非表示 */
-export const STORE_ORDER_MENU_PROMO_SECTIONS: StoreOrderLandingSection[] = [];

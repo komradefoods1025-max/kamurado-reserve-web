@@ -15,7 +15,10 @@ import {
   computeStoreCartMoney,
   type StoreMenuCategory,
 } from "../../../lib/storeMenuCatalog";
-import { STORE_ORDER_MENU_PROMO_SECTIONS } from "../../../lib/storeOrderLandingContent";
+import {
+  getStoreOrderMenuPromoSections,
+  hasVisibleStoreOrderMenuPromo,
+} from "../../../lib/storeOrderMenuPromo";
 import {
   clearStoreOrderDraft,
   readStoreOrderDraft,
@@ -113,12 +116,12 @@ function StoreOrderMenuPageInner() {
     [activeCategory],
   );
 
-  const showPromo = STORE_ORDER_MENU_PROMO_SECTIONS.some((s) => {
-    if (s.kind === "image") return Boolean(s.src);
-    if (s.kind === "video") return Boolean(s.src.trim());
-    if (s.kind === "youtube") return Boolean(s.videoId.trim());
-    return false;
-  });
+  const promoSections = useMemo(
+    () => getStoreOrderMenuPromoSections(activeCategory),
+    [activeCategory],
+  );
+
+  const showPromo = hasVisibleStoreOrderMenuPromo(activeCategory);
 
   function persist(next: StoreCartLine[]) {
     const synced = syncStoreCartWithCatalog(next);
@@ -224,7 +227,7 @@ function StoreOrderMenuPageInner() {
           ) : null}
 
           {showPromo ? (
-            <StoreOrderMenuPromo sections={STORE_ORDER_MENU_PROMO_SECTIONS} />
+            <StoreOrderMenuPromo sections={promoSections} />
           ) : null}
 
           {heroItem ? (
