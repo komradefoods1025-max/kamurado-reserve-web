@@ -40,6 +40,8 @@ const CATEGORY_ORDER: StoreMenuCategory[] = [
   "fried",
   "rice",
   "noodle",
+  "dessert",
+  "drink",
 ];
 
 const CATEGORY_SHORT: Partial<Record<StoreMenuCategory, string>> = {
@@ -51,6 +53,8 @@ const CATEGORY_SHORT: Partial<Record<StoreMenuCategory, string>> = {
   fried: "揚げ物",
   rice: "ご飯",
   noodle: "麺",
+  dessert: "デザ\nート",
+  drink: "ドリンク",
 };
 
 function isValidCategory(v: string | null): v is StoreMenuCategory {

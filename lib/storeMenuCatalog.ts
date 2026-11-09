@@ -6,9 +6,15 @@ export type StoreMenuCategory =
   | "teppanyaki"
   | "fried"
   | "rice"
-  | "noodle";
+  | "noodle"
+  | "dessert"
+  | "drink";
 
 import type { StoreCartLine } from "./storeOrderDraft";
+import {
+  DESSERT_MENU_ITEMS,
+  DRINK_MENU_ITEMS,
+} from "./storeDrinkDessertMenu";
 
 export type StoreMenuItem = {
   id: string;
@@ -46,6 +52,8 @@ export const STORE_MENU_CATEGORY_LABEL: Record<StoreMenuCategory, string> = {
   fried: "揚げ物",
   rice: "ご飯",
   noodle: "麺",
+  dessert: "デザート",
+  drink: "ドリンク",
 };
 
 /** カテゴリ見出し直下に表示する注記（任意） */
@@ -54,6 +62,10 @@ export const STORE_MENU_CATEGORY_NOTE: Partial<
 > = {
   okonomiyaki: "※焼いた状態でご提供となります",
   topping: "お好み焼きに追加できます",
+  dessert:
+    "※鉄板ハニートーストは下部のトッピングを追加できます。食後のコーヒー類もこちらです",
+  drink:
+    "※割り方は選択してください。メガサイズ対応のドリンクはスタッフへお声がけください",
 };
 
 const OKONOMIYAKI_TOPPING_MENU_ITEMS: StoreMenuItem[] = (
@@ -427,6 +439,8 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     image: "",
     category: "noodle",
   },
+  ...DESSERT_MENU_ITEMS,
+  ...DRINK_MENU_ITEMS,
 ];
 
 export function formatStoreItemPrice(price: number | null): string {
