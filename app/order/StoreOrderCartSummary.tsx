@@ -5,7 +5,7 @@ import {
   formatStoreOrderLineTotal,
   formatStoreOrderUnitPrice,
 } from "../../lib/storeMenuCatalog";
-import type { StoreCartLine } from "../../lib/storeOrderDraft";
+import { storeCartLineKey, type StoreCartLine } from "../../lib/storeOrderDraft";
 import styles from "./order.module.css";
 
 function enrichCartLines(items: StoreCartLine[]): StoreCartLine[] {
@@ -35,7 +35,7 @@ export default function StoreOrderCartSummary({
       <h2 className={styles.cartSummaryTitle}>ご注文内容</h2>
       <ul className={styles.cartSummaryList}>
         {lines.map((item) => (
-          <li key={item.id} className={styles.cartSummaryRow}>
+          <li key={storeCartLineKey(item)} className={styles.cartSummaryRow}>
             <div className={styles.cartSummaryThumb}>
               {item.image ? (
                 <Image

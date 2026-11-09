@@ -380,6 +380,44 @@
   color: #d4c4b0;
 }
 
+.dressingPick {
+  margin-top: 6px;
+}
+
+.dressingLabel {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #a89888;
+  letter-spacing: 0.04em;
+}
+
+.dressingOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dressingBtn {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 5px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.2);
+  color: #d4c4b0;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dressingBtnActive {
+  border-color: #d4a062;
+  background: rgba(212, 160, 98, 0.22);
+  color: #faf3e8;
+}
+
 .footerBar {
   position: fixed;
   left: 50%;

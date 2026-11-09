@@ -13,6 +13,7 @@ import {
   formatStoreOrderLineTotal,
   syncStoreCartWithCatalog,
   computeStoreCartMoney,
+  GREEN_SALAD_DRESSINGS,
   type StoreMenuCategory,
 } from "../../../lib/storeMenuCatalog";
 import {
@@ -70,6 +71,7 @@ function StoreOrderMenuPageInner() {
   const [activeCategory, setActiveCategory] = useState<StoreMenuCategory>(
     "otsumami",
   );
+  const [dressingPick, setDressingPick] = useState<Record<string, string>>({});
 
   const visibleCategories = useMemo(
     () =>
@@ -103,11 +105,22 @@ function StoreOrderMenuPageInner() {
     [cart],
   );
 
-  const qtyById = useMemo(() => {
-    const map = new Map<string, number>();
-    cart.forEach((line) => map.set(line.id, line.quantity));
-    return map;
-  }, [cart]);
+  function selectedDressing(item: (typeof STORE_MENU_ITEMS)[number]) {
+    if (!item.dressingOptions?.length) return undefined;
+    return dressingPick[item.id] ?? item.dressingOptions[0] ?? GREEN_SALAD_DRESSINGS[0];
+  }
+
+  function cartQty(
+    id: string,
+    dressing?: string,
+  ): number {
+    const line = cart.find(
+      (c) =>
+        c.id === id &&
+        (dressing ? c.dressing === dressing : !c.dressing),
+    );
+    return line?.quantity ?? 0;
+  }
 
   const totalQty = storeCartQuantity(cart);
 
@@ -140,10 +153,15 @@ function StoreOrderMenuPageInner() {
     const item = STORE_MENU_ITEMS.find((m) => m.id === id);
     if (!item) return;
 
-    const current = cart.find((c) => c.id === id);
+    const dressing = selectedDressing(item);
+    const matchesLine = (c: StoreCartLine) =>
+      c.id === id &&
+      (dressing ? c.dressing === dressing : !c.dressing);
+
+    const current = cart.find(matchesLine);
     const nextQty = (current?.quantity ?? 0) + delta;
     if (nextQty <= 0) {
-      persist(cart.filter((c) => c.id !== id));
+      persist(cart.filter((c) => !matchesLine(c)));
       return;
     }
 
@@ -153,10 +171,15 @@ function StoreOrderMenuPageInner() {
       price: item.price,
       quantity: nextQty,
       image: item.image,
+      ...(dressing ? { dressing } : {}),
     };
 
-    const others = cart.filter((c) => c.id !== id);
+    const others = cart.filter((c) => !matchesLine(c));
     persist([...others, line]);
+  }
+
+  function setDressingForItem(itemId: string, dressing: string) {
+    setDressingPick((prev) => ({ ...prev, [itemId]: dressing }));
   }
 
   function emptyCart() {
@@ -236,7 +259,9 @@ function StoreOrderMenuPageInner() {
               <div className={styles.cardBody}>
                 <MenuItemBody
                   item={heroItem}
-                  qty={qtyById.get(heroItem.id) ?? 0}
+                  qty={cartQty(heroItem.id, selectedDressing(heroItem))}
+                  dressing={selectedDressing(heroItem)}
+                  onDressingChange={setDressingForItem}
                   onChange={changeQty}
                 />
               </div>
@@ -246,7 +271,8 @@ function StoreOrderMenuPageInner() {
           {gridImageItems.length > 0 ? (
             <div className={styles.menuProductGrid}>
               {gridImageItems.map((item) => {
-                const qty = qtyById.get(item.id) ?? 0;
+                const dressing = selectedDressing(item);
+                const qty = cartQty(item.id, dressing);
                 return (
                   <article key={item.id} className={styles.card}>
                     <MenuItemImage item={item} />
@@ -254,6 +280,8 @@ function StoreOrderMenuPageInner() {
                       <MenuItemBody
                         item={item}
                         qty={qty}
+                        dressing={dressing}
+                        onDressingChange={setDressingForItem}
                         onChange={changeQty}
                       />
                     </div>
@@ -270,13 +298,16 @@ function StoreOrderMenuPageInner() {
               }
             >
               {textOnlyItems.map((item) => {
-                const qty = qtyById.get(item.id) ?? 0;
+                const dressing = selectedDressing(item);
+                const qty = cartQty(item.id, dressing);
                 return (
                   <article key={item.id} className={styles.toppingCard}>
                     <div className={styles.cardBody}>
                       <MenuItemBody
                         item={item}
                         qty={qty}
+                        dressing={dressing}
+                        onDressingChange={setDressingForItem}
                         onChange={changeQty}
                       />
                     </div>
@@ -355,17 +386,43 @@ function MenuItemImage({
 function MenuItemBody({
   item,
   qty,
+  dressing,
+  onDressingChange,
   onChange,
 }: {
   item: (typeof STORE_MENU_ITEMS)[number];
   qty: number;
+  dressing?: string;
+  onDressingChange: (itemId: string, dressing: string) => void;
   onChange: (id: string, delta: number) => void;
 }) {
   const priceLabel = formatStoreItemPrice(item.price);
+  const dressings = item.dressingOptions;
 
   return (
     <>
       <div className={styles.cardName}>{item.name}</div>
+      {dressings?.length ? (
+        <div className={styles.dressingPick}>
+          <span className={styles.dressingLabel}>ドレッシング</span>
+          <div className={styles.dressingOptions} role="group" aria-label="ドレッシング">
+            {dressings.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className={
+                  dressing === opt
+                    ? `${styles.dressingBtn} ${styles.dressingBtnActive}`
+                    : styles.dressingBtn
+                }
+                onClick={() => onDressingChange(item.id, opt)}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       {priceLabel ? (
         <div className={styles.cardPrice}>{priceLabel}</div>
       ) : null}

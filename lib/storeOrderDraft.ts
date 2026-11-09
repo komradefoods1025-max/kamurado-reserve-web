@@ -4,7 +4,13 @@ export type StoreCartLine = {
   price: number | null;
   quantity: number;
   image?: string;
+  /** グリーンサラダ等のドレッシング */
+  dressing?: string;
 };
+
+export function storeCartLineKey(line: Pick<StoreCartLine, "id" | "dressing">) {
+  return line.dressing ? `${line.id}::${line.dressing}` : line.id;
+}
 
 export type StoreOrderDraft = {
   items: StoreCartLine[];

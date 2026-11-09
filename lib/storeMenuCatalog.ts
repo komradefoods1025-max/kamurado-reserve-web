@@ -19,10 +19,14 @@ export type StoreMenuItem = {
   category: StoreMenuCategory;
   /** 写真上に重ねるラベル（例: 人気商品） */
   badge?: string;
+  /** 注文時に選ぶオプション（例: ドレッシング） */
+  dressingOptions?: readonly string[];
 };
 
+export const GREEN_SALAD_DRESSINGS = ["ゴマ", "シーザー", "ワサビ"] as const;
+
 /** public/store-menu を差し替えたら rev を上げる（ブラウザ・Next 画像キャッシュ対策） */
-const STORE_MENU_IMAGE_REV = "20261109-7";
+const STORE_MENU_IMAGE_REV = "20261109-8";
 
 const IMG = (n: number) =>
   `/store-menu/${String(n).padStart(2, "0")}.jpg?v=${STORE_MENU_IMAGE_REV}`;
@@ -192,8 +196,9 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     id: "green_salad",
     name: "グリーンサラダ",
     price: 830,
-    image: IMG(12),
+    image: IMG(44),
     category: "salad",
+    dressingOptions: GREEN_SALAD_DRESSINGS,
   },
   {
     id: "green_salad_half",
@@ -201,6 +206,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 430,
     image: "",
     category: "salad",
+    dressingOptions: GREEN_SALAD_DRESSINGS,
   },
   {
     id: "choregi_salad",
@@ -472,15 +478,27 @@ export function computeStoreCartMoney(
   return { amount, priced };
 }
 
+function storeCartDisplayName(
+  catalog: StoreMenuItem,
+  dressing?: string,
+): string {
+  if (catalog.dressingOptions?.length && dressing) {
+    return `${catalog.name}（ドレッシング:${dressing}）`;
+  }
+  return catalog.name;
+}
+
 export function syncStoreCartWithCatalog(items: StoreCartLine[]): StoreCartLine[] {
   return items.map((line) => {
     const catalog = STORE_MENU_ITEMS.find((m) => m.id === line.id);
     if (!catalog) return line;
+    const dressing = line.dressing;
     return {
       ...line,
-      name: catalog.name,
+      name: storeCartDisplayName(catalog, dressing),
       price: catalog.price,
-      image: catalog.image,
+      image: catalog.image || line.image,
+      dressing,
     };
   });
 }
