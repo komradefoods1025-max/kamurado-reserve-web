@@ -32,7 +32,7 @@ export const GREEN_SALAD_DRESSINGS = ["ゴマ", "シーザー", "ワサビ"] as 
 export const ONIGIRI_KINDS = ["焼き", "梅干し", "明太"] as const;
 
 /** public/store-menu を差し替えたら rev を上げる（ブラウザ・Next 画像キャッシュ対策） */
-const STORE_MENU_IMAGE_REV = "20261109-9";
+const STORE_MENU_IMAGE_REV = "20261109-10";
 
 const IMG = (n: number) =>
   `/store-menu/${String(n).padStart(2, "0")}.jpg?v=${STORE_MENU_IMAGE_REV}`;
@@ -354,7 +354,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     id: "garlic_rice",
     name: "ガーリックライス",
     price: 1080,
-    image: IMG(18),
+    image: IMG(46),
     category: "rice",
   },
   {
