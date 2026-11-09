@@ -19,11 +19,17 @@ export type StoreMenuItem = {
   category: StoreMenuCategory;
   /** 写真上に重ねるラベル（例: 人気商品） */
   badge?: string;
-  /** 注文時に選ぶオプション（例: ドレッシング） */
+  /** 注文時に選ぶオプション（例: ドレッシング・おにぎりの種類） */
   dressingOptions?: readonly string[];
+  /** dressingOptions の見出し（未指定時は「ドレッシング」） */
+  optionLabel?: string;
+  /** 種類ごとに価格が違う場合（例: おにぎり） */
+  optionPrices?: Partial<Record<string, number>>;
 };
 
 export const GREEN_SALAD_DRESSINGS = ["ゴマ", "シーザー", "ワサビ"] as const;
+
+export const ONIGIRI_KINDS = ["焼き", "梅干し", "明太"] as const;
 
 /** public/store-menu を差し替えたら rev を上げる（ブラウザ・Next 画像キャッシュ対策） */
 const STORE_MENU_IMAGE_REV = "20261109-9";
@@ -331,24 +337,17 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     category: "fried",
   },
   {
-    id: "ume_onigiri",
-    name: "梅干しおにぎり",
-    price: 430,
-    image: IMG(20),
+    id: "takana_chahan",
+    name: "高菜チャーハン",
+    price: 1130,
+    image: IMG(19),
     category: "rice",
   },
   {
-    id: "yaki_onigiri",
-    name: "焼きおにぎり",
-    price: 430,
-    image: IMG(20),
-    category: "rice",
-  },
-  {
-    id: "mentai_onigiri",
-    name: "明太おにぎり",
-    price: 480,
-    image: IMG(20),
+    id: "kimchi_chahan",
+    name: "キムチチャーハン",
+    price: 1200,
+    image: IMG(17),
     category: "rice",
   },
   {
@@ -366,38 +365,38 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     category: "rice",
   },
   {
-    id: "takana_chahan",
-    name: "高菜チャーハン",
-    price: 1130,
-    image: IMG(19),
+    id: "onigiri_various",
+    name: "おにぎり各種",
+    price: 430,
+    image: IMG(20),
     category: "rice",
-  },
-  {
-    id: "kimchi_chahan",
-    name: "キムチチャーハン",
-    price: 1200,
-    image: IMG(17),
-    category: "rice",
+    optionLabel: "種類",
+    dressingOptions: ONIGIRI_KINDS,
+    optionPrices: {
+      焼き: 430,
+      梅干し: 430,
+      明太: 480,
+    },
   },
   {
     id: "rice_large",
     name: "ライス（大）",
     price: 300,
-    image: IMG(20),
+    image: "",
     category: "rice",
   },
   {
     id: "rice_medium",
     name: "ライス（中）",
     price: 200,
-    image: IMG(20),
+    image: "",
     category: "rice",
   },
   {
     id: "rice_small",
     name: "ライス（小）",
     price: 150,
-    image: IMG(20),
+    image: "",
     category: "rice",
   },
   {
@@ -483,9 +482,20 @@ function storeCartDisplayName(
   dressing?: string,
 ): string {
   if (catalog.dressingOptions?.length && dressing) {
-    return `${catalog.name}（ドレッシング:${dressing}）`;
+    const label = catalog.optionLabel ?? "ドレッシング";
+    return `${catalog.name}（${label}:${dressing}）`;
   }
   return catalog.name;
+}
+
+export function storeMenuItemUnitPrice(
+  item: StoreMenuItem,
+  option?: string,
+): number | null {
+  if (option && item.optionPrices?.[option] != null) {
+    return item.optionPrices[option]!;
+  }
+  return item.price;
 }
 
 export function syncStoreCartWithCatalog(items: StoreCartLine[]): StoreCartLine[] {
@@ -493,10 +503,11 @@ export function syncStoreCartWithCatalog(items: StoreCartLine[]): StoreCartLine[
     const catalog = STORE_MENU_ITEMS.find((m) => m.id === line.id);
     if (!catalog) return line;
     const dressing = line.dressing;
+    const price = storeMenuItemUnitPrice(catalog, dressing);
     return {
       ...line,
       name: storeCartDisplayName(catalog, dressing),
-      price: catalog.price,
+      price,
       image: catalog.image || line.image,
       dressing,
     };

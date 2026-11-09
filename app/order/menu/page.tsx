@@ -9,6 +9,7 @@ import {
   STORE_MENU_CATEGORY_NOTE,
   STORE_MENU_ITEMS,
   formatStoreItemPrice,
+  storeMenuItemUnitPrice,
   formatStoreOrderCartTotal,
   formatStoreOrderLineTotal,
   syncStoreCartWithCatalog,
@@ -107,7 +108,9 @@ function StoreOrderMenuPageInner() {
 
   function selectedDressing(item: (typeof STORE_MENU_ITEMS)[number]) {
     if (!item.dressingOptions?.length) return undefined;
-    return dressingPick[item.id] ?? item.dressingOptions[0] ?? GREEN_SALAD_DRESSINGS[0];
+    const fallback =
+      item.dressingOptions[0] ?? GREEN_SALAD_DRESSINGS[0];
+    return dressingPick[item.id] ?? fallback;
   }
 
   function cartQty(
@@ -168,7 +171,7 @@ function StoreOrderMenuPageInner() {
     const line: StoreCartLine = {
       id: item.id,
       name: item.name,
-      price: item.price,
+      price: storeMenuItemUnitPrice(item, dressing),
       quantity: nextQty,
       image: item.image,
       ...(dressing ? { dressing } : {}),
@@ -396,15 +399,17 @@ function MenuItemBody({
   onDressingChange: (itemId: string, dressing: string) => void;
   onChange: (id: string, delta: number) => void;
 }) {
-  const priceLabel = formatStoreItemPrice(item.price);
+  const unitPrice = storeMenuItemUnitPrice(item, dressing);
+  const priceLabel = formatStoreItemPrice(unitPrice);
   const dressings = item.dressingOptions;
+  const pickLabel = item.optionLabel ?? "ドレッシング";
 
   return (
     <>
       <div className={styles.cardName}>{item.name}</div>
       {dressings?.length ? (
         <div className={styles.dressingPick}>
-          <span className={styles.dressingLabel}>ドレッシング</span>
+          <span className={styles.dressingLabel}>{pickLabel}</span>
           <div className={styles.dressingOptions} role="group" aria-label="ドレッシング">
             {dressings.map((opt) => (
               <button
@@ -428,7 +433,7 @@ function MenuItemBody({
       ) : null}
       {qty > 0 ? (
         <div className={styles.cardSubtotal}>
-          小計 {formatStoreOrderLineTotal(item.price, qty)}
+          小計 {formatStoreOrderLineTotal(unitPrice, qty)}
         </div>
       ) : null}
       <div className={styles.qtyControl}>
