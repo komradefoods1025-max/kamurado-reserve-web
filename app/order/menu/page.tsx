@@ -232,14 +232,7 @@ function StoreOrderMenuPageInner() {
 
           {heroItem ? (
             <article className={styles.menuHeroCard}>
-              <Image
-                src={heroItem.image}
-                alt={heroItem.name}
-                width={800}
-                height={500}
-                sizes="(max-width: 520px) 70vw, 360px"
-                className={styles.menuHeroImage}
-              />
+              <MenuItemImage item={heroItem} hero />
               <div className={styles.cardBody}>
                 <MenuItemBody
                   item={heroItem}
@@ -256,14 +249,7 @@ function StoreOrderMenuPageInner() {
                 const qty = qtyById.get(item.id) ?? 0;
                 return (
                   <article key={item.id} className={styles.card}>
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      width={400}
-                      height={400}
-                      sizes="(max-width: 520px) 40vw, 200px"
-                      className={styles.cardImage}
-                    />
+                    <MenuItemImage item={item} />
                     <div className={styles.cardBody}>
                       <MenuItemBody
                         item={item}
@@ -335,6 +321,34 @@ function StoreOrderMenuPageInner() {
         ) : null}
       </div>
     </main>
+  );
+}
+
+function MenuItemImage({
+  item,
+  hero = false,
+}: {
+  item: (typeof STORE_MENU_ITEMS)[number];
+  hero?: boolean;
+}) {
+  return (
+    <div className={styles.cardMedia}>
+      <Image
+        src={item.image}
+        alt={item.name}
+        width={hero ? 800 : 400}
+        height={hero ? 500 : 400}
+        sizes={
+          hero
+            ? "(max-width: 520px) 70vw, 360px"
+            : "(max-width: 520px) 40vw, 200px"
+        }
+        className={hero ? styles.menuHeroImage : styles.cardImage}
+      />
+      {item.badge ? (
+        <span className={styles.menuItemBadge}>{item.badge}</span>
+      ) : null}
+    </div>
   );
 }
 

@@ -17,6 +17,8 @@ export type StoreMenuItem = {
   price: number | null;
   image: string;
   category: StoreMenuCategory;
+  /** 写真上に重ねるラベル（例: 人気商品） */
+  badge?: string;
 };
 
 /** public/store-menu を差し替えたら rev を上げる（ブラウザ・Next 画像キャッシュ対策） */
@@ -185,11 +187,12 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     category: "salad",
   },
   {
-    id: "gyusuji_negi_yaki",
-    name: "牛すじねぎ焼き",
+    id: "buta_tama",
+    name: "豚玉",
     price: null,
-    image: IMG(24),
+    image: IMG(29),
     category: "okonomiyaki",
+    badge: "当店一番人気‼️",
   },
   {
     id: "ika_tama",
@@ -220,10 +223,10 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     category: "okonomiyaki",
   },
   {
-    id: "buta_tama",
-    name: "豚玉",
+    id: "gyusuji_negi_yaki",
+    name: "牛すじねぎ焼き",
     price: null,
-    image: IMG(29),
+    image: IMG(24),
     category: "okonomiyaki",
   },
   ...OKONOMIYAKI_TOPPING_MENU_ITEMS,
