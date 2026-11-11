@@ -128,7 +128,7 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
     image: "/store-menu/honey-toast.png?v=20261112",
     imageWidth: 500,
     imageHeight: 500,
-    hideCardName: true,
+    showCardName: true,
   }),
   item("dessert", "honey_toast_topping", "ハニートースト トッピング", 50, {
     optionLabel: "種類",

@@ -83,6 +83,8 @@ export type StoreMenuItem = {
   menuCatalogInline?: boolean;
   /** 画像内に商品名があるためカード見出しを非表示 */
   hideCardName?: boolean;
+  /** カテゴリ先頭など、写真上に名前がなく見出しを表示する */
+  showCardName?: boolean;
 };
 
 export const GREEN_SALAD_DRESSINGS = ["ゴマ", "シーザー", "ワサビ"] as const;
@@ -189,6 +191,7 @@ const TEPPANYAKI_MENU_ITEMS: StoreMenuItem[] = (
   price,
   image: IMG(n),
   category: "teppanyaki" as const,
+  ...(id === "dashimaki_tamago" ? { showCardName: true as const } : {}),
 }));
 
 export const STORE_MENU_ITEMS: StoreMenuItem[] = [
@@ -282,6 +285,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 830,
     image: IMG(44),
     category: "salad",
+    showCardName: true,
     dressingOptions: GREEN_SALAD_DRESSINGS,
   },
   {
@@ -319,6 +323,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1100,
     image: IMG(29),
     category: "okonomiyaki",
+    showCardName: true,
     badge: "当店一番人気‼️",
   },
   {
@@ -364,6 +369,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 790,
     image: IMG(13),
     category: "fried",
+    showCardName: true,
   },
   {
     id: "french_fries",
@@ -420,6 +426,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1130,
     image: IMG(19),
     category: "rice",
+    showCardName: true,
   },
   {
     id: "kimchi_chahan",
@@ -520,6 +527,7 @@ const STORE_MENU_NAMED_PHOTO_FOOD_CATEGORIES = new Set<StoreMenuCategory>([
 
 /** 写真に商品名が入っている想定（おつまみ〜ご飯など） */
 export function storeMenuShouldHideCardName(item: StoreMenuItem): boolean {
+  if (item.showCardName) return false;
   if (item.hideCardName) return true;
   if (!item.image.trim()) return false;
   return STORE_MENU_NAMED_PHOTO_FOOD_CATEGORIES.has(item.category);
