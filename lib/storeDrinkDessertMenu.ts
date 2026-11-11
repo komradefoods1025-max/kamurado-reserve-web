@@ -103,6 +103,7 @@ function highball(
       レギュラー: price,
       メガ: price + HIGHBALL_MEGA_SURCHARGE,
     },
+    hideCardName: true,
     ...extra,
   });
 }
@@ -127,6 +128,7 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
     image: "/store-menu/honey-toast.png?v=20261112",
     imageWidth: 500,
     imageHeight: 500,
+    hideCardName: true,
   }),
   item("dessert", "honey_toast_topping", "ハニートースト トッピング", 50, {
     optionLabel: "種類",
@@ -148,12 +150,14 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
     imageWidth: 500,
     imageHeight: 500,
     menuCatalogInline: true,
+    hideCardName: true,
   }),
   item("dessert", "espresso", "エスプレッソ", 200, {
     image: "/store-menu/espresso.png?v=20261112",
     imageWidth: 500,
     imageHeight: 500,
     menuCatalogInline: true,
+    hideCardName: true,
   }),
   item("dessert", "latte_macchiato", "ラテマキアート", 500),
 ];

@@ -81,6 +81,8 @@ export type StoreMenuItem = {
   menuListFullWidth?: boolean;
   /** 画像があってもカタログ順のグリッド／全幅フローに含める */
   menuCatalogInline?: boolean;
+  /** 画像内に商品名があるためカード見出しを非表示 */
+  hideCardName?: boolean;
 };
 
 export const GREEN_SALAD_DRESSINGS = ["ゴマ", "シーザー", "ワサビ"] as const;

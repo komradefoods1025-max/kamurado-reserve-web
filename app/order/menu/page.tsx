@@ -777,7 +777,9 @@ function MenuItemBody({
 
   return (
     <>
-      <div className={styles.cardName}>{item.name}</div>
+      {item.hideCardName ? null : (
+        <div className={styles.cardName}>{item.name}</div>
+      )}
       {dressings?.length ? (
         <OptionPickGroup
           label={pickLabel}
