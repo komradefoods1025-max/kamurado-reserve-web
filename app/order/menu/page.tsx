@@ -38,7 +38,6 @@ import {
 } from "../../../lib/storeOrderTables";
 import {
   persistStoreOrderTableId,
-  readStoreOrderTableCookie,
   readStoreOrderTableSession,
 } from "../../../lib/storeOrderTableSession";
 import styles from "../order.module.css";
@@ -113,42 +112,32 @@ function StoreOrderMenuPageInner() {
   );
 
   useEffect(() => {
-    const draft = readStoreOrderDraft();
-    const sessionTable =
-      readStoreOrderTableSession() || readStoreOrderTableCookie();
-    let next = draft;
-    if (sessionTable && !normalizeStoreTableId(draft.tableId)) {
-      next = {
-        ...draft,
-        tableId: sessionTable,
-        seatLabel: storeTableLabel(sessionTable),
-      };
-      writeStoreOrderDraft(next);
-    }
-    const synced = syncStoreCartWithCatalog(
-      next.items.length ? next.items : [],
-    );
-    setCart(synced);
-    const id = normalizeStoreTableId(next.tableId || next.seatLabel);
-    if (id) setSeatBanner(next.seatLabel || storeTableLabel(id));
-  }, []);
-
-  useEffect(() => {
     const tableRaw =
       searchParams.get("table") ??
       searchParams.get("tableId") ??
       searchParams.get("seat");
-    const tableId = normalizeStoreTableId(tableRaw);
-    if (!tableId) return;
-    persistStoreOrderTableId(tableId);
+    const fromUrl = normalizeStoreTableId(tableRaw);
     const draft = readStoreOrderDraft();
-    const label = storeTableLabel(tableId);
-    writeStoreOrderDraft({
-      ...draft,
-      tableId,
-      seatLabel: label,
-    });
-    setSeatBanner(label);
+    const fromDraft = normalizeStoreTableId(draft.tableId || draft.seatLabel);
+    const fromSession = readStoreOrderTableSession();
+    const tableId = fromUrl || fromDraft || fromSession;
+
+    let next = draft;
+    if (tableId) {
+      if (fromUrl) persistStoreOrderTableId(fromUrl);
+      next = {
+        ...draft,
+        tableId,
+        seatLabel: storeTableLabel(tableId),
+      };
+      writeStoreOrderDraft(next);
+      setSeatBanner(storeTableLabel(tableId));
+    }
+
+    const synced = syncStoreCartWithCatalog(
+      next.items.length ? next.items : [],
+    );
+    setCart(synced);
   }, [searchParams]);
 
   useEffect(() => {
@@ -204,15 +193,10 @@ function StoreOrderMenuPageInner() {
     const synced = syncStoreCartWithCatalog(next);
     const { amount } = computeStoreCartMoney(synced);
     const draft = readStoreOrderDraft();
-    const sessionTable =
-      readStoreOrderTableSession() || readStoreOrderTableCookie();
-    const tableId =
-      normalizeStoreTableId(draft.tableId || draft.seatLabel) || sessionTable;
+    const tableId = normalizeStoreTableId(draft.tableId || draft.seatLabel);
     writeStoreOrderDraft({
       ...draft,
-      ...(tableId
-        ? { tableId, seatLabel: storeTableLabel(tableId) }
-        : {}),
+      ...(tableId ? { tableId, seatLabel: storeTableLabel(tableId) } : {}),
       items: synced,
       totalQuantity: storeCartQuantity(synced),
       totalAmount: amount,

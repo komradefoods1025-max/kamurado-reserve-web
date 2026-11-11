@@ -20,7 +20,6 @@ import {
 } from "../../../lib/storeOrderTables";
 import {
   clearStoreOrderTableSession,
-  readStoreOrderTableCookie,
   readStoreOrderTableSession,
 } from "../../../lib/storeOrderTableSession";
 import styles from "../order.module.css";
@@ -127,9 +126,16 @@ export default function StoreOrderConfirmPage() {
       const live = readStoreOrderDraft();
       const tableId =
         normalizeStoreTableId(live.tableId || live.seatLabel) ||
-        readStoreOrderTableSession() ||
-        readStoreOrderTableCookie();
+        readStoreOrderTableSession();
       const seatLabel = tableId ? storeTableLabel(tableId) : live.seatLabel;
+
+      if (dineIn && !tableId) {
+        setError(
+          "席番が取得できません。お手数ですが QR（/order/t/卓番）から開き直してください。",
+        );
+        setSubmitting(false);
+        return;
+      }
 
       const res = await fetch("/api/store-orders", {
         method: "POST",
