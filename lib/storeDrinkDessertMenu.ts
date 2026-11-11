@@ -107,16 +107,37 @@ function highball(
   });
 }
 
+const ICE_CREAM_FLAVORS = ["バニラ", "チョコ"] as const;
+
+const HONEY_TOAST_TOPPINGS = [
+  "チョコソース",
+  "はちみつ",
+  "ホイップ",
+  "バニラアイス",
+] as const;
+
 export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
   item("dessert", "mochi_anko_yaki", "もちあんこ焼き", 550),
-  item("dessert", "vanilla_ice", "バニラアイス", 380),
-  item("dessert", "matcha_ice", "抹茶アイス", 380),
+  item("dessert", "ice_cream", "アイスクリーム", 380, {
+    optionLabel: "種類",
+    dressingOptions: ICE_CREAM_FLAVORS,
+    optionPrices: {
+      バニラ: 380,
+      チョコ: 380,
+    },
+  }),
   item("dessert", "honey_toast", "鉄板ハニートースト", 680),
   item("dessert", "hotteok", "ホットク", 680),
-  item("dessert", "honey_toast_choco", "ハニートースト チョコソース", 50),
-  item("dessert", "honey_toast_honey", "ハニートースト はちみつ", 50),
-  item("dessert", "honey_toast_whip", "ハニートースト ホイップ", 100),
-  item("dessert", "honey_toast_ice", "ハニートースト バニラアイス", 150),
+  item("dessert", "honey_toast_topping", "ハニートースト トッピング", 50, {
+    optionLabel: "種類",
+    dressingOptions: HONEY_TOAST_TOPPINGS,
+    optionPrices: {
+      チョコソース: 50,
+      はちみつ: 50,
+      ホイップ: 100,
+      バニラアイス: 150,
+    },
+  }),
   item("dessert", "hot_coffee", "ホットコーヒー", 300),
   item("dessert", "ice_coffee", "アイスコーヒー", 350),
   item("dessert", "cappuccino", "カプチーノ", 400),
