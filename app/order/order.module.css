@@ -478,6 +478,19 @@
   width: 100%;
 }
 
+.dressingOptionsOneCol {
+  flex-direction: column;
+}
+
+.dressingOptionsOneCol .dressingBtn {
+  flex: none;
+  width: 100%;
+}
+
+.menuTextOnlyFull {
+  margin-bottom: 12px;
+}
+
 .dressingBtn {
   flex: 1 1 auto;
   min-width: 0;

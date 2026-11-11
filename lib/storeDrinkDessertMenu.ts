@@ -107,7 +107,7 @@ function highball(
   });
 }
 
-const ICE_CREAM_FLAVORS = ["バニラ", "チョコ"] as const;
+const ICE_CREAM_FLAVORS = ["バニラ", "抹茶"] as const;
 
 const HONEY_TOAST_TOPPINGS = [
   "チョコソース",
@@ -123,7 +123,7 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
     dressingOptions: ICE_CREAM_FLAVORS,
     optionPrices: {
       バニラ: 380,
-      チョコ: 380,
+      抹茶: 380,
     },
   }),
   item("dessert", "honey_toast", "鉄板ハニートースト", 680),
@@ -131,6 +131,8 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
   item("dessert", "honey_toast_topping", "ハニートースト トッピング", 50, {
     optionLabel: "種類",
     dressingOptions: HONEY_TOAST_TOPPINGS,
+    dressingOptionsColumn: true,
+    menuListFullWidth: true,
     optionPrices: {
       チョコソース: 50,
       はちみつ: 50,

@@ -75,6 +75,10 @@ export type StoreMenuItem = {
   imageBanner?: boolean;
   imageWidth?: number;
   imageHeight?: number;
+  /** 選択肢を縦1列で表示 */
+  dressingOptionsColumn?: boolean;
+  /** テキストのみ商品を2列グリッドではなく全幅1行で表示 */
+  menuListFullWidth?: boolean;
 };
 
 export const GREEN_SALAD_DRESSINGS = ["ゴマ", "シーザー", "ワサビ"] as const;

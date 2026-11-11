@@ -329,6 +329,8 @@ function StoreOrderMenuPageInner() {
   const textOnlyItems = isTopping
     ? activeItems
     : activeItems.filter((i) => !i.image);
+  const textOnlyFullWidthItems = textOnlyItems.filter((i) => i.menuListFullWidth);
+  const textOnlyGridItems = textOnlyItems.filter((i) => !i.menuListFullWidth);
   /** ビール・ハイボール: 画像付き商品をすべて大型カード */
   const fullWidthImageMenu =
     activeCategory === "drink_beer" ||
@@ -487,13 +489,38 @@ function StoreOrderMenuPageInner() {
             </div>
           ) : null}
 
-          {textOnlyItems.length > 0 ? (
+          {textOnlyFullWidthItems.map((item) => {
+            const dressing = selectedDressing(item);
+            const secondaryDressing = selectedSecondaryDressing(item);
+            const qty = cartQty(item.id, dressing, secondaryDressing);
+            return (
+              <article
+                key={item.id}
+                className={`${styles.menuHeroCard} ${styles.menuTextOnlyFull}`}
+              >
+                <div className={styles.cardBody}>
+                  <MenuItemBody
+                    item={item}
+                    qty={qty}
+                    dressing={dressing}
+                    secondaryDressing={secondaryDressing}
+                    onDressingChange={setDressingForItem}
+                    onSecondaryDressingChange={setSecondaryDressingForItem}
+                    onSecondaryStepperChange={changeSecondaryQty}
+                    onChange={changeQty}
+                  />
+                </div>
+              </article>
+            );
+          })}
+
+          {textOnlyGridItems.length > 0 ? (
             <div
               className={
                 isTopping ? styles.toppingGrid : styles.menuProductGrid
               }
             >
-              {textOnlyItems.map((item) => {
+              {textOnlyGridItems.map((item) => {
                 const dressing = selectedDressing(item);
                 const secondaryDressing = selectedSecondaryDressing(item);
                 const qty = cartQty(item.id, dressing, secondaryDressing);
@@ -615,6 +642,7 @@ function OptionPickGroup({
   value,
   optionPrices,
   ariaLabel,
+  column,
   onPick,
 }: {
   label: string;
@@ -622,10 +650,12 @@ function OptionPickGroup({
   value?: string;
   optionPrices?: Partial<Record<string, number>>;
   ariaLabel: string;
+  column?: boolean;
   onPick: (opt: string) => void;
 }) {
-  const optionsClass =
-    options.length === 2
+  const optionsClass = column
+    ? `${styles.dressingOptions} ${styles.dressingOptionsOneCol}`
+    : options.length === 2
       ? `${styles.dressingOptions} ${styles.dressingOptionsTwoCol}`
       : styles.dressingOptions;
 
@@ -700,6 +730,7 @@ function MenuItemBody({
           value={dressing}
           optionPrices={item.optionPrices}
           ariaLabel={pickLabel}
+          column={item.dressingOptionsColumn}
           onPick={(opt) => onDressingChange(item.id, opt)}
         />
       ) : null}
