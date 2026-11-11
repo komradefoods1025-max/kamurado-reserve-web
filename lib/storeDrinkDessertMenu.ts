@@ -22,6 +22,8 @@ const SHOCHU_SPLITS = [
 
 const FRUIT_LIQUOR_SPLITS = [...SHOCHU_SPLITS] as const;
 
+const WINE_COLORS = ["赤", "白"] as const;
+
 const BOTTLE_BEER_BRANDS = [
   "アサヒ マルエフ",
   "サッポロ 赤星",
@@ -193,10 +195,19 @@ const DRINK_HIGHBALL: StoreMenuItem[] = [
 ];
 
 const DRINK_WINE: StoreMenuItem[] = [
-  item("drink_wine", "wine_glass_red", "グラスワイン 赤", 580),
-  item("drink_wine", "wine_glass_white", "グラスワイン 白", 580),
-  item("drink_wine", "wine_decanter_red", "デキャンタ 赤", 2500),
-  item("drink_wine", "wine_decanter_white", "デキャンタ 白", 2500),
+  item("drink_wine", "wine_glass", "グラスワイン", 580, {
+    image: "/store-menu/wine.png?v=20261112",
+    imageFit: "contain",
+    imageBanner: true,
+    imageWidth: 760,
+    imageHeight: 507,
+    optionLabel: "種類",
+    dressingOptions: WINE_COLORS,
+  }),
+  item("drink_wine", "wine_decanter", "デキャンタ", 2500, {
+    optionLabel: "種類",
+    dressingOptions: WINE_COLORS,
+  }),
 ];
 
 const DRINK_COCKTAIL: StoreMenuItem[] = [

@@ -353,7 +353,9 @@ function StoreOrderMenuPageInner() {
     : activeItems.filter((i) => !i.image);
   /** ビール・ハイボール: 画像付き商品をすべて大型カード */
   const fullWidthImageMenu =
-    activeCategory === "drink_beer" || activeCategory === "drink_highball";
+    activeCategory === "drink_beer" ||
+    activeCategory === "drink_highball" ||
+    activeCategory === "drink_wine";
   /** ホッピー白・黒: 2列横並び */
   const hoppyPairLayout = activeCategory === "drink_hoppy";
 
