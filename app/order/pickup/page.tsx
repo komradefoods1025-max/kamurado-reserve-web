@@ -13,6 +13,10 @@ import {
   STORE_ORDER_READY_NOTE_DINE_IN,
   STORE_ORDER_READY_NOTE_PICKUP,
 } from "../../../lib/storeOrderCopy";
+import {
+  STORE_ORDER_FUTURE_PICKUP_HOURS,
+  STORE_ORDER_HOURS,
+} from "../../../lib/storeOrderConfig";
 import StoreOrderCartSummary from "../StoreOrderCartSummary";
 import StoreOrderDisclaimer from "../StoreOrderDisclaimer";
 import StoreOrderTestBanner from "../StoreOrderTestBanner";
@@ -247,9 +251,13 @@ export default function StoreOrderConfirmReadyPage() {
 
               <p className={styles.label} style={{ marginTop: 20 }}>
                 {bookingMode === "advance"
-                  ? pickupDate === getTodayYmdJst()
-                    ? "お受け取り希望時間（17:30〜21:30・10分刻み）"
-                    : "お受け取り希望時間（17:00〜21:30・10分刻み）"
+                  ? (() => {
+                      const w =
+                        pickupDate === getTodayYmdJst()
+                          ? STORE_ORDER_HOURS[0]
+                          : STORE_ORDER_FUTURE_PICKUP_HOURS[0];
+                      return `お受け取り希望時間（${w?.start ?? "17:00"}〜${w?.end ?? "21:30"}・10分刻み）`;
+                    })()
                   : `お受け取り希望時間（${earliestReadyHm || "—"} 以降・10分刻み）`}
               </p>
               <div

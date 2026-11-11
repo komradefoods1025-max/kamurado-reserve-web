@@ -49,11 +49,11 @@ export function getStoreDineInServiceStatus(
   }
 
   const minutes = getJstTotalMinutesFromDate(now);
-  const open = parseHm(STORE_ORDER_HOURS[0]?.start ?? "17:30");
+  const open = parseHm(STORE_ORDER_HOURS[0]?.start ?? "17:00");
   const drinkEnd = parseHm(STORE_ORDER_DINE_IN_DRINK_LAST_ORDER);
 
   if (minutes < open && !isStoreOrderTestMode()) {
-    const hm = STORE_ORDER_HOURS[0]?.start ?? "17:30";
+    const hm = STORE_ORDER_HOURS[0]?.start ?? "17:00";
     return {
       ok: false,
       message: `オーダー受付は ${hm} からです。`,

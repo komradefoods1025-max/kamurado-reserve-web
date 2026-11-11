@@ -64,10 +64,10 @@ export function isAfterStoreOrderNextDayCutoff(now = new Date()): boolean {
   );
 }
 
-/** 当日の「いま+30分」で選ぶ時間帯（17:30〜21:01未満） */
+/** 当日の「いま+30分」で選ぶ時間帯（開店〜21:01未満） */
 export function isStoreOrderSameDayLiveWindow(now = new Date()): boolean {
   const m = getJstTotalMinutesFromDate(now);
-  const open = parseHm(STORE_ORDER_HOURS[0]?.start ?? "17:30");
+  const open = parseHm(STORE_ORDER_HOURS[0]?.start ?? "17:00");
   const cutoff = parseHm(STORE_ORDER_SWITCH_TO_NEXT_DAY_AFTER);
   return m >= open && m < cutoff;
 }
@@ -78,7 +78,7 @@ export function advanceBookingStartYmd(todayYmd: string, now: Date): string {
     : todayYmd;
 }
 
-/** 予約モードで選んだ日の時間枠（当日=17:30〜、翌日以降=17:00〜） */
+/** 予約モードで選んだ日の時間枠（当日・翌日以降とも config の start〜） */
 export function getStoreSlotsForPickupDate(
   pickupYmd: string,
   todayYmd = getTodayYmdJst(),
@@ -87,7 +87,7 @@ export function getStoreSlotsForPickupDate(
   if (pickupYmd === todayYmd) {
     return buildSlotsForWindows(
       STORE_ORDER_HOURS,
-      parseHm(STORE_ORDER_HOURS[0]?.start ?? "17:30"),
+      parseHm(STORE_ORDER_HOURS[0]?.start ?? "17:00"),
       interval,
     );
   }

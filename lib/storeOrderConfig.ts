@@ -21,7 +21,7 @@ export type StoreHoursWindow = {
 
 /** 当日の受け取り（注文から30分後以降） */
 export const STORE_ORDER_HOURS: StoreHoursWindow[] = [
-  { start: "17:30", end: "21:30" },
+  { start: "17:00", end: "21:30" },
 ];
 
 /** 翌日以降の予約受け取り */
