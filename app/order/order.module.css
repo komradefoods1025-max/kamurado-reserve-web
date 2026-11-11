@@ -82,7 +82,7 @@
   max-width: 36vw;
   max-height: calc(100dvh - 52px);
   overflow-y: auto;
-  padding: 8px 5px 24px;
+  padding: 8px calc(5px + 2mm) 24px 5px;
   background: rgba(32, 18, 14, 0.82);
   border-right: 1px solid var(--o-line-warm);
 }
