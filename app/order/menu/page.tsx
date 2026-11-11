@@ -355,10 +355,11 @@ function StoreOrderMenuPageInner() {
   const fullWidthImageMenu =
     activeCategory === "drink_beer" ||
     activeCategory === "drink_highball" ||
-    activeCategory === "drink_wine" ||
-    activeCategory === "drink_cocktail";
+    activeCategory === "drink_wine";
   /** ホッピー白・黒: 2列横並び */
   const hoppyPairLayout = activeCategory === "drink_hoppy";
+  /** カクテル等: 画像付きを2列グリッド */
+  const twoColumnImageMenu = activeCategory === "drink_cocktail";
 
   let heroItems = imageItems;
   let hoppyRowItems: typeof imageItems = [];
@@ -369,6 +370,9 @@ function StoreOrderMenuPageInner() {
   } else if (hoppyPairLayout) {
     heroItems = [];
     hoppyRowItems = imageItems;
+  } else if (twoColumnImageMenu) {
+    heroItems = [];
+    gridImageItems = imageItems;
   } else {
     const first = imageItems[0];
     heroItems = first ? [first] : [];
@@ -649,10 +653,15 @@ function OptionPickGroup({
   ariaLabel: string;
   onPick: (opt: string) => void;
 }) {
+  const optionsClass =
+    options.length === 2
+      ? `${styles.dressingOptions} ${styles.dressingOptionsTwoCol}`
+      : styles.dressingOptions;
+
   return (
     <div className={styles.dressingPick}>
       <span className={styles.dressingLabel}>{label}</span>
-      <div className={styles.dressingOptions} role="group" aria-label={ariaLabel}>
+      <div className={optionsClass} role="group" aria-label={ariaLabel}>
         {options.map((opt) => {
           const optPrice = optionPrices?.[opt];
           const text =
