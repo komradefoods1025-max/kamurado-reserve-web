@@ -121,10 +121,6 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
   item("dessert", "ice_cream", "アイスクリーム", 380, {
     optionLabel: "種類",
     dressingOptions: ICE_CREAM_FLAVORS,
-    optionPrices: {
-      バニラ: 380,
-      抹茶: 380,
-    },
   }),
   item("dessert", "honey_toast", "鉄板ハニートースト", 680),
   item("dessert", "honey_toast_topping", "ハニートースト トッピング", 50, {
