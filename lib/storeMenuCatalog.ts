@@ -42,6 +42,10 @@ export type StoreMenuItem = {
   optionPrices?: Partial<Record<string, number>>;
   /** 白背景の瓶写真などは contain */
   imageFit?: "cover" | "contain";
+  /** 横長バナー（ヒーローで 4:3 枠・白背景を使わない） */
+  imageBanner?: boolean;
+  imageWidth?: number;
+  imageHeight?: number;
 };
 
 export const GREEN_SALAD_DRESSINGS = ["ゴマ", "シーザー", "ワサビ"] as const;

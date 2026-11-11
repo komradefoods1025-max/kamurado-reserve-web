@@ -515,25 +515,32 @@ function MenuItemImage({
   hero?: boolean;
 }) {
   const contain = item.imageFit === "contain";
+  const banner = Boolean(item.imageBanner);
+  const imgW = item.imageWidth ?? (hero ? 800 : 400);
+  const imgH = item.imageHeight ?? (hero ? 500 : 400);
   const imageClass = hero
-    ? contain
-      ? `${styles.menuHeroImage} ${styles.menuHeroImageContain}`
-      : styles.menuHeroImage
+    ? banner
+      ? `${styles.menuHeroImage} ${styles.menuHeroImageBanner}`
+      : contain
+        ? `${styles.menuHeroImage} ${styles.menuHeroImageContain}`
+        : styles.menuHeroImage
     : contain
       ? `${styles.cardImage} ${styles.cardImageContain}`
       : styles.cardImage;
 
+  const mediaClass = banner
+    ? `${styles.cardMedia} ${styles.cardMediaBanner}`
+    : contain
+      ? `${styles.cardMedia} ${styles.cardMediaProduct}`
+      : styles.cardMedia;
+
   return (
-    <div
-      className={
-        contain ? `${styles.cardMedia} ${styles.cardMediaProduct}` : styles.cardMedia
-      }
-    >
+    <div className={mediaClass}>
       <Image
         src={item.image}
         alt={item.name}
-        width={hero ? 800 : 400}
-        height={hero ? 500 : 400}
+        width={imgW}
+        height={imgH}
         sizes={
           hero
             ? "(max-width: 520px) 70vw, 360px"

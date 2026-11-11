@@ -137,6 +137,9 @@ const DRINK_HIGHBALL: StoreMenuItem[] = [
   item("drink_highball", "kaku_highball", "角ハイボール", 600, {
     image: "/store-menu/kaku-highball.png?v=20261112",
     imageFit: "contain",
+    imageBanner: true,
+    imageWidth: 750,
+    imageHeight: 264,
   }),
   item("drink_highball", "black_nikka_highball", "ブラックニッカハイボール", 520),
   item("drink_highball", "ginger_highball", "ジンジャーハイボール", 620),

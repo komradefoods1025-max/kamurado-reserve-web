@@ -183,8 +183,20 @@
   background: #fff;
 }
 
+.menuHeroImageBanner {
+  aspect-ratio: auto;
+  height: auto;
+  object-fit: cover;
+  background: transparent;
+}
+
 .cardMediaProduct {
   background: #fff;
+}
+
+.cardMediaBanner {
+  background: transparent;
+  line-height: 0;
 }
 
 .menuProductGrid {
