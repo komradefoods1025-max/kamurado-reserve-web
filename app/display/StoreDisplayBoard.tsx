@@ -19,19 +19,21 @@ const COUNTER_VISIBLE: StoreDisplayOrder["status"][] = [
   "調理中",
 ];
 
+/** 店舗表示 UI 世代（キャッシュ確認用・ヘッダーに表示） */
+const DISPLAY_UI_REV = "quad-2x2";
+
 export default function StoreDisplayBoard({
   mode,
   title,
   tableId = null,
-  groupByTable = false,
 }: {
   mode: BoardMode;
   title: string;
-  /** 単一卓フィルタ（groupByTable 時は未使用） */
+  /** 指定時のみその卓に絞る（通常は未使用） */
   tableId?: string | null;
-  /** 1画面で全卓を列表示 */
-  groupByTable?: boolean;
 }) {
+  const showTableQuad =
+    (mode === "kitchen" || mode === "counter") && !tableId;
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
@@ -79,7 +81,7 @@ export default function StoreDisplayBoard({
           ? list.filter((o) => o.status !== "提供済み")
           : list.filter((o) => COUNTER_VISIBLE.includes(o.status));
 
-      if (!groupByTable && tableId) {
+      if (!showTableQuad && tableId) {
         filtered = filtered.filter((o) => orderMatchesStoreTable(o, tableId));
       }
 
@@ -92,7 +94,7 @@ export default function StoreDisplayBoard({
       });
       return filtered;
     },
-    [mode, tableId, groupByTable],
+    [mode, tableId, showTableQuad],
   );
 
   const refresh = useCallback(async () => {
@@ -211,17 +213,22 @@ export default function StoreDisplayBoard({
           <div className={styles.headerTitle}>{title}</div>
           <div className={styles.headerMeta}>
             {mode === "kitchen" ? "調理・盛り付け" : "レジ・お席への提供"}
-            {groupByTable ? "（全卓）" : ""}
+            {showTableQuad ? "・4卓分割" : ""}
           </div>
         </div>
-        <div className={styles.headerMeta}>{clock}</div>
+        <div className={styles.headerMeta}>
+          {showTableQuad ? (
+            <span className={styles.headerRev}>{DISPLAY_UI_REV}</span>
+          ) : null}{" "}
+          {clock}
+        </div>
       </header>
 
       {queueWarning ? <p className={styles.warn}>{queueWarning}</p> : null}
 
-      {groupByTable ? (
+      {showTableQuad ? (
         <>
-          <div className={styles.tableGrid}>
+          <div className={styles.tableGrid} data-layout="quad-2x2">
             {tableIds.map((tid) => {
               const columnOrders = orders.filter((o) =>
                 orderMatchesStoreTable(o, tid),
