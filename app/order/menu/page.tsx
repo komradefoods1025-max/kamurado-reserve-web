@@ -36,6 +36,10 @@ import {
   normalizeStoreTableId,
   storeTableLabel,
 } from "../../../lib/storeOrderTables";
+import {
+  persistStoreOrderTableId,
+  readStoreOrderTableSession,
+} from "../../../lib/storeOrderTableSession";
 import styles from "../order.module.css";
 
 const CATEGORY_ORDER: StoreMenuCategory[] = [
@@ -109,12 +113,22 @@ function StoreOrderMenuPageInner() {
 
   useEffect(() => {
     const draft = readStoreOrderDraft();
+    const sessionTable = readStoreOrderTableSession();
+    let next = draft;
+    if (sessionTable && !normalizeStoreTableId(draft.tableId)) {
+      next = {
+        ...draft,
+        tableId: sessionTable,
+        seatLabel: storeTableLabel(sessionTable),
+      };
+      writeStoreOrderDraft(next);
+    }
     const synced = syncStoreCartWithCatalog(
-      draft.items.length ? draft.items : [],
+      next.items.length ? next.items : [],
     );
     setCart(synced);
-    const id = draft.tableId;
-    if (id) setSeatBanner(draft.seatLabel || `${id}卓`);
+    const id = normalizeStoreTableId(next.tableId || next.seatLabel);
+    if (id) setSeatBanner(next.seatLabel || storeTableLabel(id));
   }, []);
 
   useEffect(() => {
@@ -124,6 +138,7 @@ function StoreOrderMenuPageInner() {
       searchParams.get("seat");
     const tableId = normalizeStoreTableId(tableRaw);
     if (!tableId) return;
+    persistStoreOrderTableId(tableId);
     const draft = readStoreOrderDraft();
     const label = storeTableLabel(tableId);
     writeStoreOrderDraft({
@@ -187,8 +202,14 @@ function StoreOrderMenuPageInner() {
     const synced = syncStoreCartWithCatalog(next);
     const { amount } = computeStoreCartMoney(synced);
     const draft = readStoreOrderDraft();
+    const sessionTable = readStoreOrderTableSession();
+    const tableId =
+      normalizeStoreTableId(draft.tableId || draft.seatLabel) || sessionTable;
     writeStoreOrderDraft({
       ...draft,
+      ...(tableId
+        ? { tableId, seatLabel: storeTableLabel(tableId) }
+        : {}),
       items: synced,
       totalQuantity: storeCartQuantity(synced),
       totalAmount: amount,

@@ -10,6 +10,7 @@ import {
   readStoreOrderDraft,
   writeStoreOrderDraft,
 } from "../../../../lib/storeOrderDraft";
+import { persistStoreOrderTableId } from "../../../../lib/storeOrderTableSession";
 import styles from "../../order.module.css";
 
 export default function StoreOrderTableEntryPage() {
@@ -22,6 +23,7 @@ export default function StoreOrderTableEntryPage() {
       router.replace("/order");
       return;
     }
+    persistStoreOrderTableId(tableId);
     writeStoreOrderDraft({
       ...readStoreOrderDraft(),
       tableId,

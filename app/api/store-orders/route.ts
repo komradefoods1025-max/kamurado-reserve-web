@@ -231,16 +231,15 @@ export async function POST(req: NextRequest) {
     const totalQty = items.reduce((s, i) => s + i.qty, 0);
     const total = items.reduce((s, i) => s + i.total, 0);
 
-    const tableId = dineIn
-      ? normalizeStoreTableId(
-          body?.tableId ?? body?.table ?? body?.seatLabel ?? body?.seat,
-        )
-      : null;
-    const seatLabel = dineIn
-      ? tableId
-        ? storeTableLabel(tableId)
-        : ""
-      : String(body?.seatLabel || body?.seat || "").trim();
+    const tableFromBody = normalizeStoreTableId(
+      body?.tableId ?? body?.table ?? body?.seatLabel ?? body?.seat,
+    );
+    const tableId = dineIn ? tableFromBody : tableFromBody;
+    const seatLabel = tableId
+      ? storeTableLabel(tableId)
+      : dineIn
+        ? ""
+        : String(body?.seatLabel || body?.seat || "").trim();
 
     const noteParts = [
       "店内モバイルオーダー",

@@ -14,6 +14,14 @@ import {
   storeCartQuantity,
 } from "../../../lib/storeOrderDraft";
 import { isStoreOrderDineInClient } from "../../../lib/storeOrderDineIn";
+import {
+  normalizeStoreTableId,
+  storeTableLabel,
+} from "../../../lib/storeOrderTables";
+import {
+  clearStoreOrderTableSession,
+  readStoreOrderTableSession,
+} from "../../../lib/storeOrderTableSession";
 import styles from "../order.module.css";
 
 type SubmitResponse = {
@@ -115,11 +123,17 @@ export default function StoreOrderConfirmPage() {
     setError("");
 
     try {
+      const live = readStoreOrderDraft();
+      const tableId =
+        normalizeStoreTableId(live.tableId || live.seatLabel) ||
+        readStoreOrderTableSession();
+      const seatLabel = tableId ? storeTableLabel(tableId) : live.seatLabel;
+
       const res = await fetch("/api/store-orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: draft.items.map((item) => ({
+          items: (live.items.length ? live : draft).items.map((item) => ({
             id: item.id,
             menuKey: item.id,
             name: item.name,
@@ -128,18 +142,18 @@ export default function StoreOrderConfirmPage() {
             quantity: item.quantity,
             dressing: item.dressing || "",
           })),
-          pickupDate: draft.pickupDate,
-          pickupTime: draft.pickupTime,
+          pickupDate: live.pickupDate || draft.pickupDate,
+          pickupTime: live.pickupTime || draft.pickupTime,
           ...(dineIn
             ? {
-                tableId: draft.tableId || draft.seatLabel,
-                seatLabel: draft.seatLabel,
+                tableId: tableId || "",
+                seatLabel: seatLabel || "",
               }
             : {
-                seatLabel: draft.seatLabel,
-                name: draft.customerName,
-                phone: draft.phone,
-                note: draft.note,
+                seatLabel: seatLabel || live.seatLabel,
+                name: live.customerName || draft.customerName,
+                phone: live.phone || draft.phone,
+                note: live.note || draft.note,
               }),
         }),
       });
@@ -152,6 +166,7 @@ export default function StoreOrderConfirmPage() {
 
       const no = data.reservationNo || "";
       clearStoreOrderDraft();
+      clearStoreOrderTableSession();
       const completeQs = dineIn
         ? `?no=${encodeURIComponent(no)}`
         : `?no=${encodeURIComponent(no)}&time=${encodeURIComponent(draft.pickupTime || "")}`;

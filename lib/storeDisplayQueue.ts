@@ -1,5 +1,9 @@
 import { getTodayYmdJst } from "./bookingDates";
 import {
+  resolveStoreOrderTableId,
+  storeTableLabel,
+} from "./storeOrderTables";
+import {
   blobEnqueueStoreDisplayOrder,
   blobListStoreDisplayOrders,
   blobUpdateStoreDisplayOrderStatus,
@@ -181,9 +185,10 @@ function memoryUpdateStatus(
 export async function enqueueStoreDisplayOrder(
   order: StoreDisplayOrder,
 ): Promise<boolean> {
+  const enriched = withResolvedTable(order);
   if (isStoreDisplayRedisQueueEnabled()) {
-    const key = dayKey(order.pickupDate || getTodayYmdJst());
-    const payload = JSON.stringify(order);
+    const key = dayKey(enriched.pickupDate || getTodayYmdJst());
+    const payload = JSON.stringify(enriched);
     const pushed = await redisCmd<number>(
       `lpush/${key}/${encodeRedisValue(payload)}`,
     );
@@ -192,10 +197,10 @@ export async function enqueueStoreDisplayOrder(
     return true;
   }
   if (isStoreDisplayBlobQueueEnabled()) {
-    return blobEnqueueStoreDisplayOrder(order);
+    return blobEnqueueStoreDisplayOrder(enriched);
   }
   if (isStoreDisplayMemoryQueueActive()) {
-    return memoryEnqueue(order);
+    return memoryEnqueue(enriched);
   }
   return false;
 }
@@ -218,13 +223,15 @@ export async function listStoreDisplayOrders(
         /* skip */
       }
     }
-    return dedupeSort(orders);
+    return dedupeSort(orders.map(withResolvedTable));
   }
   if (isStoreDisplayBlobQueueEnabled()) {
-    return dedupeSort(await blobListStoreDisplayOrders(ymd));
+    return dedupeSort(
+      (await blobListStoreDisplayOrders(ymd)).map(withResolvedTable),
+    );
   }
   if (isStoreDisplayMemoryQueueActive()) {
-    return memoryList(ymd);
+    return memoryList(ymd).map(withResolvedTable);
   }
   return [];
 }
@@ -289,16 +296,26 @@ export function storeDisplayQueueHintMessage(): string {
   return "注文キュー未設定 — Vercel で Blob または Upstash Redis をプロジェクトに接続してください";
 }
 
+function withResolvedTable(order: StoreDisplayOrder): StoreDisplayOrder {
+  const resolved = resolveStoreOrderTableId(order);
+  if (!resolved) return order;
+  return {
+    ...order,
+    tableId: resolved,
+    seatLabel: storeTableLabel(resolved),
+  };
+}
+
 export function buildStoreDisplayOrderFromPayload(
   payload: Record<string, unknown>,
 ): StoreDisplayOrder {
   const items = (Array.isArray(payload.items) ? payload.items : []) as StoreDisplayItem[];
-  return {
+  const raw: StoreDisplayOrder = {
     reservationNo: String(payload.reservationNo || ""),
     name: String(payload.name || ""),
     phone: String(payload.phone || ""),
-    seatLabel: payload.seatLabel ? String(payload.seatLabel) : undefined,
-    tableId: payload.tableId ? String(payload.tableId) : undefined,
+    seatLabel: String(payload.seatLabel || "").trim() || undefined,
+    tableId: String(payload.tableId || "").trim() || undefined,
     pickupDate: String(payload.date || payload.pickupDate || ""),
     pickupTime: String(payload.time || payload.pickupTime || ""),
     items,
@@ -313,4 +330,5 @@ export function buildStoreDisplayOrderFromPayload(
     status: "受付済み",
     submittedAt: String(payload.submittedAt || new Date().toISOString()),
   };
+  return withResolvedTable(raw);
 }

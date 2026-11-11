@@ -16,8 +16,11 @@ export function storeTableLabel(tableId: string): string {
 
 function tableIdFromOrderNote(note: unknown): string | null {
   const text = String(note ?? "");
-  const m = text.match(/席[:：]\s*(\d+)\s*卓?/);
-  return m ? normalizeStoreTableId(m[1]) : null;
+  const seat = text.match(/席[:：]\s*(\d+)\s*卓?/);
+  if (seat) return normalizeStoreTableId(seat[1]);
+  const labeled = text.match(/(\d+)\s*卓/);
+  if (labeled) return normalizeStoreTableId(labeled[1]);
+  return null;
 }
 
 /** 表示用: tableId → seatLabel → 備考欄の「席:N卓」 */
