@@ -70,28 +70,6 @@ const CATEGORY_ORDER: StoreMenuCategory[] = [
   "drink_fruit",
 ];
 
-const CATEGORY_SHORT: Partial<Record<StoreMenuCategory, string>> = {
-  otsumami: "おつまみ",
-  salad: "サラダ",
-  okonomiyaki: "お好み\n焼き",
-  topping: "トッピ\nング",
-  teppanyaki: "鉄板\n焼き",
-  fried: "揚げ物",
-  rice: "ご飯",
-  noodle: "麺",
-  dessert: "デザ\nート",
-  drink_beer: "ビール",
-  drink_hoppy: "ホッピー",
-  drink_highball: "ハイ\nボール",
-  drink_wine: "ワイン",
-  drink_cocktail: "カク\nテル",
-  drink_sour: "サワー",
-  drink_shochu_mugi: "麦\n焼酎",
-  drink_shochu_imo: "芋\n焼酎",
-  drink_mixer: "割り\nもの",
-  drink_fruit: "果実\n酒",
-};
-
 function isValidCategory(v: string | null): v is StoreMenuCategory {
   return CATEGORY_ORDER.includes(v as StoreMenuCategory);
 }
@@ -404,11 +382,7 @@ function StoreOrderMenuPageInner() {
 
       <div className={styles.menuSplit}>
         <nav className={styles.menuNav} aria-label="カテゴリー">
-          {visibleCategories.map((category) => {
-            const short =
-              CATEGORY_SHORT[category] ||
-              STORE_MENU_CATEGORY_LABEL[category].replace(/(.{4})/g, "$1\n");
-            return (
+          {visibleCategories.map((category) => (
               <button
                 key={category}
                 type="button"
@@ -419,14 +393,11 @@ function StoreOrderMenuPageInner() {
                 }
                 onClick={() => selectCategory(category)}
               >
-                {short.split("\n").map((line, i) => (
-                  <span key={i} className={styles.menuNavLine}>
-                    {line}
-                  </span>
-                ))}
+                <span className={styles.menuNavLine}>
+                  {STORE_MENU_CATEGORY_LABEL[category]}
+                </span>
               </button>
-            );
-          })}
+            ))}
         </nav>
 
         <div className={styles.menuMain}>
