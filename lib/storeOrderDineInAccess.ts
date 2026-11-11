@@ -4,7 +4,10 @@ import {
   STORE_ORDER_HOURS,
 } from "./storeOrderConfig";
 import { isStoreMenuItemDrink, storeMenuCategoryForItemId } from "./storeMenuCatalog";
-import { isStoreOrderTestMode } from "./storeOrderTestMode";
+import {
+  isStoreOrderBypassLastOrder,
+  isStoreOrderTestMode,
+} from "./storeOrderTestMode";
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -57,7 +60,7 @@ export function getStoreDineInServiceStatus(
     };
   }
 
-  if (minutes >= drinkEnd && !isStoreOrderTestMode()) {
+  if (minutes >= drinkEnd && !isStoreOrderBypassLastOrder()) {
     return {
       ok: false,
       message: `ドリンクラストオーダー（${STORE_ORDER_DINE_IN_DRINK_LAST_ORDER}）を過ぎたため、ご注文をお受けできません。`,
@@ -78,7 +81,7 @@ export function validateStoreDineInCart(
   const minutes = getJstTotalMinutesFromDate(now);
   const foodEnd = parseHm(STORE_ORDER_DINE_IN_FOOD_LAST_ORDER);
 
-  if (minutes >= foodEnd && !isStoreOrderTestMode()) {
+  if (minutes >= foodEnd && !isStoreOrderBypassLastOrder()) {
     const hasNonDrink = menuKeys.some((key) => !isStoreMenuLineDrink(key));
     if (hasNonDrink) {
       return {

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import StoreOrderCartSummary from "../StoreOrderCartSummary";
 import StoreOrderDisclaimer from "../StoreOrderDisclaimer";
 import StoreOrderLastOrderNote from "../StoreOrderLastOrderNote";
+import StoreOrderTestBanner from "../StoreOrderTestBanner";
 import { formatDateLabel } from "../../../lib/bookingDates";
 import {
   clearStoreOrderDraft,
@@ -165,6 +166,7 @@ export default function StoreOrderConfirmPage() {
 
   return (
     <main className={styles.page}>
+      <StoreOrderTestBanner />
       <header className={styles.header}>
         <h1 className={styles.title}>ご注文内容の確認</h1>
       </header>

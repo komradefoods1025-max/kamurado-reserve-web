@@ -10,7 +10,10 @@ import {
 import { fetchSheetClosedDaysSet } from "../../../../lib/sheetClosedDays";
 import { formatDateLabel, getTodayYmdJst } from "../../../../lib/bookingDates";
 import { STORE_ORDER_BUSY_DISCLAIMER } from "../../../../lib/storeOrderCopy";
-import { isStoreOrderTestMode } from "../../../../lib/storeOrderTestMode";
+import {
+  isStoreOrderBypassLastOrder,
+  isStoreOrderTestMode,
+} from "../../../../lib/storeOrderTestMode";
 import { isStoreOrderDineInServer } from "../../../../lib/storeOrderDineIn";
 import { getStoreDineInServiceStatus } from "../../../../lib/storeOrderDineInAccess";
 import {
@@ -42,6 +45,8 @@ export async function GET(req: NextRequest) {
       lastOrderLines: [...STORE_ORDER_LAST_ORDER_LINES],
       message: access.ok ? null : access.message,
       disclaimer: STORE_ORDER_BUSY_DISCLAIMER,
+      testMode: isStoreOrderTestMode(),
+      bypassLastOrder: isStoreOrderBypassLastOrder(),
     });
   }
 
