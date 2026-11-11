@@ -10,6 +10,7 @@ export type StoreMenuCategory =
   | "dessert"
   | "drink_beer"
   | "drink_hoppy"
+  | "drink_highball"
   | "drink_cocktail"
   | "drink_sour"
   | "drink_shochu_mugi"
@@ -64,6 +65,7 @@ export const STORE_MENU_CATEGORY_LABEL: Record<StoreMenuCategory, string> = {
   dessert: "デザート",
   drink_beer: "ビール",
   drink_hoppy: "ホッピー",
+  drink_highball: "ハイボール",
   drink_cocktail: "カクテル",
   drink_sour: "サワー",
   drink_shochu_mugi: "焼酎（麦）",
@@ -80,8 +82,8 @@ export const STORE_MENU_CATEGORY_NOTE: Partial<
   topping: "お好み焼きに追加できます",
   dessert:
     "※鉄板ハニートーストは下部のトッピングを追加できます。食後のコーヒー類もこちらです",
-  drink_cocktail:
-    "※ハイボール・カクテルは割り方を選択してください。メガサイズはスタッフへ",
+  drink_highball: "※メガサイズはスタッフへお声がけください",
+  drink_cocktail: "※カクテルは割り方を選択してください",
   drink_sour: "※サワー・お茶ハイ等。メガサイズはスタッフへお声がけください",
   drink_shochu_mugi: "※割り方を選択してください",
   drink_shochu_imo: "※割り方を選択してください",

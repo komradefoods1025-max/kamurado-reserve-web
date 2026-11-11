@@ -3,6 +3,7 @@ import type { StoreMenuItem } from "./storeMenuCatalog";
 type DrinkCategory =
   | "drink_beer"
   | "drink_hoppy"
+  | "drink_highball"
   | "drink_cocktail"
   | "drink_sour"
   | "drink_shochu_mugi"
@@ -131,17 +132,20 @@ const DRINK_HOPPY: StoreMenuItem[] = [
   item("drink_hoppy", "hoppy_naka", "ホッピー 中", 250),
 ];
 
+const DRINK_HIGHBALL: StoreMenuItem[] = [
+  item("drink_highball", "kaku_highball", "角ハイボール", 600),
+  item("drink_highball", "black_nikka_highball", "ブラックニッカハイボール", 520),
+  item("drink_highball", "ginger_highball", "ジンジャーハイボール", 620),
+  item("drink_highball", "coke_highball", "コークハイボール", 620),
+  item("drink_highball", "riku_highball", "陸ハイボール", 750),
+  item("drink_highball", "chita_highball", "知多ハイボール", 800),
+  item("drink_highball", "yamazaki_highball_nv", "山崎ハイボール（NV）", 1100),
+  item("drink_highball", "yamazaki_highball_12", "山崎ハイボール（12年）", 2200),
+  item("drink_highball", "hakushu_highball_nv", "白州ハイボール（NV）", 1100),
+  item("drink_highball", "hakushu_highball_12", "白州ハイボール（12年）", 2200),
+];
+
 const DRINK_COCKTAIL: StoreMenuItem[] = [
-  item("drink_cocktail", "kaku_highball", "角ハイボール", 600),
-  item("drink_cocktail", "black_nikka_highball", "ブラックニッカハイボール", 520),
-  item("drink_cocktail", "ginger_highball", "ジンジャーハイボール", 620),
-  item("drink_cocktail", "coke_highball", "コークハイボール", 620),
-  item("drink_cocktail", "riku_highball", "陸ハイボール", 750),
-  item("drink_cocktail", "chita_highball", "知多ハイボール", 800),
-  item("drink_cocktail", "yamazaki_highball_nv", "山崎ハイボール（NV）", 1100),
-  item("drink_cocktail", "yamazaki_highball_12", "山崎ハイボール（12年）", 2200),
-  item("drink_cocktail", "hakushu_highball_nv", "白州ハイボール（NV）", 1100),
-  item("drink_cocktail", "hakushu_highball_12", "白州ハイボール（12年）", 2200),
   item("drink_cocktail", "wine_glass_red", "グラスワイン 赤", 580),
   item("drink_cocktail", "wine_glass_white", "グラスワイン 白", 580),
   item("drink_cocktail", "wine_decanter_red", "デキャンタ 赤", 2500),
@@ -209,6 +213,7 @@ const DRINK_FRUIT: StoreMenuItem[] = [
 export const DRINK_MENU_ITEMS: StoreMenuItem[] = [
   ...DRINK_BEER,
   ...DRINK_HOPPY,
+  ...DRINK_HIGHBALL,
   ...DRINK_COCKTAIL,
   ...DRINK_SOUR,
   ...DRINK_SHOCHU_MUGI,
