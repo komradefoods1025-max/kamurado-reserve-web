@@ -26,6 +26,7 @@ import {
   resolveActiveStoreTableId,
   storeOrderMenuHref,
 } from "../../../lib/storeOrderMenuUrl";
+import { storeCartDressingSummary } from "../../../lib/storeMenuCatalog";
 import styles from "../order.module.css";
 
 type SubmitResponse = {
@@ -157,7 +158,7 @@ export default function StoreOrderConfirmPage() {
             menuName: item.name,
             price: item.price ?? 0,
             quantity: item.quantity,
-            dressing: item.dressing || "",
+            dressing: storeCartDressingSummary(item),
           })),
           pickupDate: live.pickupDate || draft.pickupDate,
           pickupTime: live.pickupTime || draft.pickupTime,

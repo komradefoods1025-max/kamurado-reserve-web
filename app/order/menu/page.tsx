@@ -111,6 +111,9 @@ function StoreOrderMenuPageInner() {
     "otsumami",
   );
   const [dressingPick, setDressingPick] = useState<Record<string, string>>({});
+  const [secondaryDressingPick, setSecondaryDressingPick] = useState<
+    Record<string, string>
+  >({});
   const [seatBanner, setSeatBanner] = useState("");
 
   const visibleCategories = useMemo(
@@ -183,14 +186,31 @@ function StoreOrderMenuPageInner() {
     return dressingPick[item.id] ?? fallback;
   }
 
+  function selectedSecondaryDressing(item: (typeof STORE_MENU_ITEMS)[number]) {
+    if (!item.secondaryDressingOptions?.length) return undefined;
+    return secondaryDressingPick[item.id] ?? item.secondaryDressingOptions[0];
+  }
+
+  function cartLineOptionsMatch(
+    c: StoreCartLine,
+    id: string,
+    dressing?: string,
+    secondaryDressing?: string,
+  ) {
+    if (c.id !== id) return false;
+    return (
+      (c.dressing ?? "") === (dressing ?? "") &&
+      (c.secondaryDressing ?? "") === (secondaryDressing ?? "")
+    );
+  }
+
   function cartQty(
     id: string,
     dressing?: string,
+    secondaryDressing?: string,
   ): number {
-    const line = cart.find(
-      (c) =>
-        c.id === id &&
-        (dressing ? c.dressing === dressing : !c.dressing),
+    const line = cart.find((c) =>
+      cartLineOptionsMatch(c, id, dressing, secondaryDressing),
     );
     return line?.quantity ?? 0;
   }
@@ -229,9 +249,9 @@ function StoreOrderMenuPageInner() {
     if (!item) return;
 
     const dressing = selectedDressing(item);
+    const secondaryDressing = selectedSecondaryDressing(item);
     const matchesLine = (c: StoreCartLine) =>
-      c.id === id &&
-      (dressing ? c.dressing === dressing : !c.dressing);
+      cartLineOptionsMatch(c, id, dressing, secondaryDressing);
 
     const current = cart.find(matchesLine);
     const nextQty = (current?.quantity ?? 0) + delta;
@@ -247,6 +267,7 @@ function StoreOrderMenuPageInner() {
       quantity: nextQty,
       image: item.image,
       ...(dressing ? { dressing } : {}),
+      ...(secondaryDressing ? { secondaryDressing } : {}),
     };
 
     const others = cart.filter((c) => !matchesLine(c));
@@ -255,6 +276,10 @@ function StoreOrderMenuPageInner() {
 
   function setDressingForItem(itemId: string, dressing: string) {
     setDressingPick((prev) => ({ ...prev, [itemId]: dressing }));
+  }
+
+  function setSecondaryDressingForItem(itemId: string, dressing: string) {
+    setSecondaryDressingPick((prev) => ({ ...prev, [itemId]: dressing }));
   }
 
   function emptyCart() {
@@ -377,15 +402,18 @@ function StoreOrderMenuPageInner() {
 
           {heroItems.map((item) => {
             const dressing = selectedDressing(item);
+            const secondaryDressing = selectedSecondaryDressing(item);
             return (
               <article key={item.id} className={styles.menuHeroCard}>
                 <MenuItemImage item={item} hero />
                 <div className={styles.cardBody}>
                   <MenuItemBody
                     item={item}
-                    qty={cartQty(item.id, dressing)}
+                    qty={cartQty(item.id, dressing, secondaryDressing)}
                     dressing={dressing}
+                    secondaryDressing={secondaryDressing}
                     onDressingChange={setDressingForItem}
+                    onSecondaryDressingChange={setSecondaryDressingForItem}
                     onChange={changeQty}
                   />
                 </div>
@@ -397,15 +425,18 @@ function StoreOrderMenuPageInner() {
             <div className={styles.menuHoppyRow}>
               {hoppyRowItems.map((item) => {
                 const dressing = selectedDressing(item);
+                const secondaryDressing = selectedSecondaryDressing(item);
                 return (
                   <article key={item.id} className={styles.menuHoppyCard}>
                     <MenuItemImage item={item} />
                     <div className={styles.cardBody}>
                       <MenuItemBody
                         item={item}
-                        qty={cartQty(item.id, dressing)}
+                        qty={cartQty(item.id, dressing, secondaryDressing)}
                         dressing={dressing}
+                        secondaryDressing={secondaryDressing}
                         onDressingChange={setDressingForItem}
+                        onSecondaryDressingChange={setSecondaryDressingForItem}
                         onChange={changeQty}
                       />
                     </div>
@@ -419,7 +450,8 @@ function StoreOrderMenuPageInner() {
             <div className={styles.menuProductGrid}>
               {gridImageItems.map((item) => {
                 const dressing = selectedDressing(item);
-                const qty = cartQty(item.id, dressing);
+                const secondaryDressing = selectedSecondaryDressing(item);
+                const qty = cartQty(item.id, dressing, secondaryDressing);
                 return (
                   <article key={item.id} className={styles.card}>
                     <MenuItemImage item={item} />
@@ -428,7 +460,9 @@ function StoreOrderMenuPageInner() {
                         item={item}
                         qty={qty}
                         dressing={dressing}
+                        secondaryDressing={secondaryDressing}
                         onDressingChange={setDressingForItem}
+                        onSecondaryDressingChange={setSecondaryDressingForItem}
                         onChange={changeQty}
                       />
                     </div>
@@ -446,7 +480,8 @@ function StoreOrderMenuPageInner() {
             >
               {textOnlyItems.map((item) => {
                 const dressing = selectedDressing(item);
-                const qty = cartQty(item.id, dressing);
+                const secondaryDressing = selectedSecondaryDressing(item);
+                const qty = cartQty(item.id, dressing, secondaryDressing);
                 return (
                   <article key={item.id} className={styles.toppingCard}>
                     <div className={styles.cardBody}>
@@ -454,7 +489,9 @@ function StoreOrderMenuPageInner() {
                         item={item}
                         qty={qty}
                         dressing={dressing}
+                        secondaryDressing={secondaryDressing}
                         onDressingChange={setDressingForItem}
+                        onSecondaryDressingChange={setSecondaryDressingForItem}
                         onChange={changeQty}
                       />
                     </div>
@@ -556,54 +593,96 @@ function MenuItemImage({
   );
 }
 
+function OptionPickGroup({
+  label,
+  options,
+  value,
+  optionPrices,
+  ariaLabel,
+  onPick,
+}: {
+  label: string;
+  options: readonly string[];
+  value?: string;
+  optionPrices?: Partial<Record<string, number>>;
+  ariaLabel: string;
+  onPick: (opt: string) => void;
+}) {
+  return (
+    <div className={styles.dressingPick}>
+      <span className={styles.dressingLabel}>{label}</span>
+      <div className={styles.dressingOptions} role="group" aria-label={ariaLabel}>
+        {options.map((opt) => {
+          const optPrice = optionPrices?.[opt];
+          const text =
+            optPrice != null
+              ? `${opt} ¥${optPrice.toLocaleString("ja-JP")}`
+              : opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              className={
+                value === opt
+                  ? `${styles.dressingBtn} ${styles.dressingBtnActive}`
+                  : styles.dressingBtn
+              }
+              onClick={() => onPick(opt)}
+            >
+              {text}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function MenuItemBody({
   item,
   qty,
   dressing,
+  secondaryDressing,
   onDressingChange,
+  onSecondaryDressingChange,
   onChange,
 }: {
   item: (typeof STORE_MENU_ITEMS)[number];
   qty: number;
   dressing?: string;
+  secondaryDressing?: string;
   onDressingChange: (itemId: string, dressing: string) => void;
+  onSecondaryDressingChange: (itemId: string, dressing: string) => void;
   onChange: (id: string, delta: number) => void;
 }) {
   const unitPrice = storeMenuItemUnitPrice(item, dressing);
   const priceLabel = formatStoreItemPrice(unitPrice);
   const dressings = item.dressingOptions;
   const pickLabel = item.optionLabel ?? "ドレッシング";
+  const secondaryOptions = item.secondaryDressingOptions;
+  const secondaryLabel = item.secondaryOptionLabel ?? "オプション";
 
   return (
     <>
       <div className={styles.cardName}>{item.name}</div>
       {dressings?.length ? (
-        <div className={styles.dressingPick}>
-          <span className={styles.dressingLabel}>{pickLabel}</span>
-          <div className={styles.dressingOptions} role="group" aria-label="ドレッシング">
-            {dressings.map((opt) => {
-              const optPrice = item.optionPrices?.[opt];
-              const label =
-                optPrice != null
-                  ? `${opt} ¥${optPrice.toLocaleString("ja-JP")}`
-                  : opt;
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  className={
-                    dressing === opt
-                      ? `${styles.dressingBtn} ${styles.dressingBtnActive}`
-                      : styles.dressingBtn
-                  }
-                  onClick={() => onDressingChange(item.id, opt)}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <OptionPickGroup
+          label={pickLabel}
+          options={dressings}
+          value={dressing}
+          optionPrices={item.optionPrices}
+          ariaLabel={pickLabel}
+          onPick={(opt) => onDressingChange(item.id, opt)}
+        />
+      ) : null}
+      {secondaryOptions?.length ? (
+        <OptionPickGroup
+          label={secondaryLabel}
+          options={secondaryOptions}
+          value={secondaryDressing}
+          ariaLabel={secondaryLabel}
+          onPick={(opt) => onSecondaryDressingChange(item.id, opt)}
+        />
       ) : null}
       {priceLabel ? (
         <div className={styles.cardPrice}>{priceLabel}</div>

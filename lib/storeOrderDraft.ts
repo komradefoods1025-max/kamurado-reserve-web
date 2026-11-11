@@ -6,10 +6,17 @@ export type StoreCartLine = {
   image?: string;
   /** グリーンサラダ等のドレッシング */
   dressing?: string;
+  /** 2つ目の選択（例: 瓶ビールのグラス数） */
+  secondaryDressing?: string;
 };
 
-export function storeCartLineKey(line: Pick<StoreCartLine, "id" | "dressing">) {
-  return line.dressing ? `${line.id}::${line.dressing}` : line.id;
+export function storeCartLineKey(
+  line: Pick<StoreCartLine, "id" | "dressing" | "secondaryDressing">,
+) {
+  const a = line.dressing ?? "";
+  const b = line.secondaryDressing ?? "";
+  if (!a && !b) return line.id;
+  return `${line.id}::${a}::${b}`;
 }
 
 export type StoreOrderDraft = {

@@ -28,6 +28,8 @@ const BOTTLE_BEER_BRANDS = [
   "麒麟 晴れ風",
 ] as const;
 
+const BOTTLE_BEER_GLASS_COUNTS = ["1個", "2個", "3個", "4個", "0個"] as const;
+
 const NAMA_BEER_SIZES = ["小ジョッキ", "中ジョッキ", "メガ"] as const;
 
 const CASSIS_MIX = ["ウーロン", "ソーダ", "オレンジ", "ミルク"] as const;
@@ -117,6 +119,8 @@ const DRINK_BEER: StoreMenuItem[] = [
     imageFit: "contain",
     optionLabel: "銘柄",
     dressingOptions: BOTTLE_BEER_BRANDS,
+    secondaryOptionLabel: "グラス",
+    secondaryDressingOptions: BOTTLE_BEER_GLASS_COUNTS,
   }),
 ];
 

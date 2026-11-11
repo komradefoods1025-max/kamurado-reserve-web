@@ -38,6 +38,8 @@ export type StoreMenuItem = {
   dressingOptions?: readonly string[];
   /** dressingOptions の見出し（未指定時は「ドレッシング」） */
   optionLabel?: string;
+  secondaryDressingOptions?: readonly string[];
+  secondaryOptionLabel?: string;
   /** 種類ごとに価格が違う場合（例: おにぎり） */
   optionPrices?: Partial<Record<string, number>>;
   /** 白背景の瓶写真などは contain */
@@ -520,14 +522,28 @@ export function computeStoreCartMoney(
   return { amount, priced };
 }
 
+export function storeCartDressingSummary(line: Pick<
+  StoreCartLine,
+  "dressing" | "secondaryDressing"
+>): string {
+  return [line.dressing, line.secondaryDressing].filter(Boolean).join(" / ");
+}
+
 function storeCartDisplayName(
   catalog: StoreMenuItem,
   dressing?: string,
+  secondaryDressing?: string,
 ): string {
+  const parts: string[] = [];
   if (catalog.dressingOptions?.length && dressing) {
     const label = catalog.optionLabel ?? "ドレッシング";
-    return `${catalog.name}（${label}:${dressing}）`;
+    parts.push(`${label}:${dressing}`);
   }
+  if (catalog.secondaryDressingOptions?.length && secondaryDressing) {
+    const label = catalog.secondaryOptionLabel ?? "オプション";
+    parts.push(`${label}:${secondaryDressing}`);
+  }
+  if (parts.length) return `${catalog.name}（${parts.join("・")}）`;
   return catalog.name;
 }
 
@@ -556,10 +572,11 @@ export function syncStoreCartWithCatalog(items: StoreCartLine[]): StoreCartLine[
     const catalog = STORE_MENU_ITEMS.find((m) => m.id === line.id);
     if (!catalog) return line;
     const dressing = line.dressing;
+    const secondaryDressing = line.secondaryDressing;
     const price = storeMenuItemUnitPrice(catalog, dressing);
     return {
       ...line,
-      name: storeCartDisplayName(catalog, dressing),
+      name: storeCartDisplayName(catalog, dressing, secondaryDressing),
       price,
       image: catalog.image || line.image,
       dressing,
