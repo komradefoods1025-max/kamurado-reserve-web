@@ -11,7 +11,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#1c1410",
+  themeColor: "#3a2218",
 };
 
 export default function StoreOrderLayout({
