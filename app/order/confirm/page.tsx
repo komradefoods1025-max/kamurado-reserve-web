@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import StoreOrderCartSummary from "../StoreOrderCartSummary";
 import StoreOrderDisclaimer from "../StoreOrderDisclaimer";
+import StoreOrderLastOrderNote from "../StoreOrderLastOrderNote";
 import { formatDateLabel } from "../../../lib/bookingDates";
 import {
   clearStoreOrderDraft,
@@ -36,6 +37,11 @@ export default function StoreOrderConfirmPage() {
         !current.phone
       ) {
         router.replace("/order/menu");
+        return;
+      }
+
+      if (dineIn) {
+        setDraft(current);
         return;
       }
 
@@ -84,7 +90,7 @@ export default function StoreOrderConfirmPage() {
       setDraft(current);
     };
     void sync();
-  }, [router]);
+  }, [router, dineIn]);
 
   async function submitOrder() {
     setSubmitting(true);
@@ -121,9 +127,10 @@ export default function StoreOrderConfirmPage() {
 
       const no = data.reservationNo || "";
       clearStoreOrderDraft();
-      router.replace(
-        `/order/complete?no=${encodeURIComponent(no)}&time=${encodeURIComponent(draft.pickupTime || "")}`,
-      );
+      const completeQs = dineIn
+        ? `?no=${encodeURIComponent(no)}`
+        : `?no=${encodeURIComponent(no)}&time=${encodeURIComponent(draft.pickupTime || "")}`;
+      router.replace(`/order/complete${completeQs}`);
     } catch {
       setError("通信エラーが発生しました");
     } finally {
@@ -142,24 +149,35 @@ export default function StoreOrderConfirmPage() {
       </header>
 
       <section className={styles.section}>
+        {dineIn ? <StoreOrderLastOrderNote /> : null}
         <div className={styles.panel}>
-          <p className={styles.readyTimeLabel} style={{ marginTop: 4 }}>
-            {dineIn ? "お料理の目安" : "お受け取り日時"}
-          </p>
-          {!dineIn && pickupDateLabel ? (
-            <p
-              className={styles.readyTimeValue}
-              style={{ fontSize: 26, marginTop: 4 }}
-            >
-              {pickupDateLabel}
+          {!dineIn ? (
+            <>
+              <p className={styles.readyTimeLabel} style={{ marginTop: 4 }}>
+                お受け取り日時
+              </p>
+              {pickupDateLabel ? (
+                <p
+                  className={styles.readyTimeValue}
+                  style={{ fontSize: 26, marginTop: 4 }}
+                >
+                  {pickupDateLabel}
+                </p>
+              ) : null}
+              <p
+                className={styles.readyTimeValue}
+                style={
+                  pickupDateLabel ? { fontSize: 34, marginTop: 6 } : undefined
+                }
+              >
+                {draft.pickupTime || "—"}
+              </p>
+            </>
+          ) : (
+            <p className={styles.stepNote} style={{ marginTop: 4 }}>
+              ご注文後、お席へお持ちします。
             </p>
-          ) : null}
-          <p
-            className={styles.readyTimeValue}
-            style={pickupDateLabel && !dineIn ? { fontSize: 34, marginTop: 6 } : undefined}
-          >
-            {draft.pickupTime || "—"}
-          </p>
+          )}
           <StoreOrderDisclaimer />
           <p className={styles.label} style={{ marginTop: 8 }}>
             {draft.customerName} 様 / {draft.phone}

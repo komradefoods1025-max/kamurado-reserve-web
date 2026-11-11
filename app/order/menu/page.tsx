@@ -29,6 +29,8 @@ import {
   type StoreCartLine,
 } from "../../../lib/storeOrderDraft";
 import StoreOrderMenuPromo from "../StoreOrderMenuPromo";
+import StoreOrderLastOrderNote from "../StoreOrderLastOrderNote";
+import { isStoreOrderDineInClient } from "../../../lib/storeOrderDineIn";
 import styles from "../order.module.css";
 
 const CATEGORY_ORDER: StoreMenuCategory[] = [
@@ -82,6 +84,7 @@ export default function StoreOrderMenuPage() {
 }
 
 function StoreOrderMenuPageInner() {
+  const dineIn = isStoreOrderDineInClient();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [cart, setCart] = useState<StoreCartLine[]>([]);
@@ -232,6 +235,12 @@ function StoreOrderMenuPageInner() {
         </Link>
         <h1 className={styles.menuTopTitle}>メニュー</h1>
       </header>
+
+      {dineIn ? (
+        <div style={{ padding: "0 12px 8px" }}>
+          <StoreOrderLastOrderNote />
+        </div>
+      ) : null}
 
       <div className={styles.menuSplit}>
         <nav className={styles.menuNav} aria-label="カテゴリー">

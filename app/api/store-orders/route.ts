@@ -15,6 +15,10 @@ import {
   isStoreOrderSameDayLiveWindow,
   listStorePickupSlots,
 } from "../../../lib/storePickupSlots";
+import {
+  formatStoreDineInOrderTimeLabel,
+  validateStoreDineInCart,
+} from "../../../lib/storeOrderDineInAccess";
 import { getTodayYmdJst } from "../../../lib/bookingDates";
 import { fetchSheetClosedDaysSet } from "../../../lib/sheetClosedDays";
 import {
@@ -118,57 +122,85 @@ export async function POST(req: NextRequest) {
 
     const today = getTodayYmdJst();
     const closed = await fetchSheetClosedDaysSet();
-    const afterCutoff = isAfterStoreOrderNextDayCutoff();
-    if (
-      closed.has(today) &&
-      !isStoreOrderTestMode() &&
-      !afterCutoff &&
-      isStoreOrderSameDayLiveWindow()
-    ) {
-      return NextResponse.json(
-        { ok: false, message: "本日はお休みのためご注文いただけません" },
-        { status: 400 },
-      );
-    }
+    const now = new Date();
+    const dineIn = isStoreOrderDineInServer();
 
-    const slotsInfo = listStorePickupSlots(new Date(), today, closed);
-    if (slotsInfo.closedToday || !slotsInfo.slots.length) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message:
-            slotsInfo.message ||
-            "現在、ご注文をお受けできる時間帯がありません。",
-        },
-        { status: 400 },
-      );
-    }
+    let pickupDate = "";
+    let pickupTime = "";
 
-    const pickupDate = String(
-      body?.pickupDate || body?.date || slotsInfo.pickupDate,
-    ).trim();
-    const pickupTime = String(
-      body?.pickupTime || body?.time || "",
-    ).trim();
+    if (dineIn) {
+      if (closed.has(today) && !isStoreOrderTestMode()) {
+        return NextResponse.json(
+          { ok: false, message: "本日はお休みのためご注文いただけません" },
+          { status: 400 },
+        );
+      }
 
-    if (closed.has(pickupDate) && !isStoreOrderTestMode()) {
-      return NextResponse.json(
-        { ok: false, message: "お選びいただいた日はお休みのためご注文いただけません" },
-        { status: 400 },
-      );
-    }
+      const menuKeys = items.map((i) => i.menuKey).filter(Boolean);
+      const access = validateStoreDineInCart(menuKeys, now, closed.has(today));
+      if (!access.ok) {
+        return NextResponse.json(
+          { ok: false, message: access.message },
+          { status: 400 },
+        );
+      }
 
-    if (
-      !pickupTime ||
-      !isAllowedStorePickupSlot(pickupDate, pickupTime, today, new Date(), closed)
-    ) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message: "お受け取り時間を選び直してください。",
-        },
-        { status: 400 },
-      );
+      pickupDate = today;
+      pickupTime = formatStoreDineInOrderTimeLabel(now);
+    } else {
+      const afterCutoff = isAfterStoreOrderNextDayCutoff();
+      if (
+        closed.has(today) &&
+        !isStoreOrderTestMode() &&
+        !afterCutoff &&
+        isStoreOrderSameDayLiveWindow()
+      ) {
+        return NextResponse.json(
+          { ok: false, message: "本日はお休みのためご注文いただけません" },
+          { status: 400 },
+        );
+      }
+
+      const slotsInfo = listStorePickupSlots(now, today, closed);
+      if (slotsInfo.closedToday || !slotsInfo.slots.length) {
+        return NextResponse.json(
+          {
+            ok: false,
+            message:
+              slotsInfo.message ||
+              "現在、ご注文をお受けできる時間帯がありません。",
+          },
+          { status: 400 },
+        );
+      }
+
+      pickupDate = String(
+        body?.pickupDate || body?.date || slotsInfo.pickupDate,
+      ).trim();
+      pickupTime = String(body?.pickupTime || body?.time || "").trim();
+
+      if (closed.has(pickupDate) && !isStoreOrderTestMode()) {
+        return NextResponse.json(
+          {
+            ok: false,
+            message: "お選びいただいた日はお休みのためご注文いただけません",
+          },
+          { status: 400 },
+        );
+      }
+
+      if (
+        !pickupTime ||
+        !isAllowedStorePickupSlot(pickupDate, pickupTime, today, now, closed)
+      ) {
+        return NextResponse.json(
+          {
+            ok: false,
+            message: "お受け取り時間を選び直してください。",
+          },
+          { status: 400 },
+        );
+      }
     }
 
     const reservationNo =
@@ -179,7 +211,6 @@ export async function POST(req: NextRequest) {
     const total = items.reduce((s, i) => s + i.total, 0);
 
     const seatLabel = String(body?.seatLabel || body?.seat || "").trim();
-    const dineIn = isStoreOrderDineInServer();
 
     const noteParts = [
       "店内モバイルオーダー",

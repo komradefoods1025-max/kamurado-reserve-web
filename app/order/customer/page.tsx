@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
-import { formatStoreEarliestReadyWithSeconds } from "../../../lib/storePickupSlots";
 import { STORE_ORDER_BUSY_DISCLAIMER } from "../../../lib/storeOrderCopy";
 import { isStoreOrderDineInClient } from "../../../lib/storeOrderDineIn";
 import {
@@ -10,22 +9,16 @@ import {
   storeCartQuantity,
   writeStoreOrderDraft,
 } from "../../../lib/storeOrderDraft";
+import StoreOrderLastOrderNote from "../StoreOrderLastOrderNote";
 import styles from "../order.module.css";
 
-type SlotsResponse = {
+type StatusResponse = {
   ok?: boolean;
-  pickupDate?: string;
-  pickupTime?: string;
-  slots?: string[];
+  dineIn?: boolean;
+  orderingOpen?: boolean;
   closedToday?: boolean;
   message?: string | null;
 };
-
-function pickTime(slots: string[], preferred: string, fallback: string) {
-  if (preferred && slots.includes(preferred)) return preferred;
-  if (fallback && slots.includes(fallback)) return fallback;
-  return slots[0] || "";
-}
 
 export default function StoreOrderCustomerPage() {
   const router = useRouter();
@@ -37,8 +30,6 @@ export default function StoreOrderCustomerPage() {
   const [loading, setLoading] = useState(true);
   const [closed, setClosed] = useState(false);
   const [closedMessage, setClosedMessage] = useState<string | null>(null);
-  const [readyClock, setReadyClock] = useState("");
-  const [pickupTime, setPickupTime] = useState("");
 
   useEffect(() => {
     const draft = readStoreOrderDraft();
@@ -59,26 +50,23 @@ export default function StoreOrderCustomerPage() {
     let active = true;
     fetch("/api/store-orders/pickup-slots", { cache: "no-store" })
       .then((r) => r.json())
-      .then((data: SlotsResponse) => {
+      .then((data: StatusResponse) => {
         if (!active) return;
-        const slots = Array.isArray(data.slots) ? data.slots.map(String) : [];
-        const date = data.pickupDate || "";
-        const time = pickTime(
-          slots,
-          draft.pickupTime || "",
-          data.pickupTime ? String(data.pickupTime) : "",
-        );
-        const isClosed = Boolean(data.closedToday) || !time;
-        setClosed(isClosed);
-        setClosedMessage(data.message || null);
-        setPickupTime(time);
-        if (time && date) {
-          writeStoreOrderDraft({
-            ...readStoreOrderDraft(),
-            pickupDate: date,
-            pickupTime: time,
-          });
+        if (data.dineIn) {
+          const isClosed = Boolean(data.closedToday) || data.orderingOpen === false;
+          setClosed(isClosed);
+          setClosedMessage(data.message || null);
+          if (!isClosed) {
+            writeStoreOrderDraft({
+              ...readStoreOrderDraft(),
+              pickupDate: "",
+              pickupTime: "",
+            });
+          }
+          return;
         }
+        setClosed(Boolean(data.closedToday));
+        setClosedMessage(data.message || null);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -89,14 +77,6 @@ export default function StoreOrderCustomerPage() {
     };
   }, [router, dineIn]);
 
-  useEffect(() => {
-    if (!dineIn || closed) return;
-    const tick = () => setReadyClock(formatStoreEarliestReadyWithSeconds());
-    tick();
-    const id = window.setInterval(tick, 1000);
-    return () => window.clearInterval(id);
-  }, [dineIn, closed]);
-
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     const trimmedName = name.trim();
@@ -104,14 +84,14 @@ export default function StoreOrderCustomerPage() {
     if (!trimmedName || digits.length < 10) return;
 
     const draft = readStoreOrderDraft();
-    if (!draft.pickupTime) return;
-
     writeStoreOrderDraft({
       ...draft,
       customerName: trimmedName,
       phone: digits,
       seatLabel: seatLabel.trim(),
       note: note.trim(),
+      pickupDate: dineIn ? "" : draft.pickupDate,
+      pickupTime: dineIn ? "" : draft.pickupTime,
     });
     router.push("/order/confirm");
   }
@@ -128,6 +108,8 @@ export default function StoreOrderCustomerPage() {
       </header>
 
       <section className={styles.section}>
+        {dineIn ? <StoreOrderLastOrderNote /> : null}
+
         <div className={styles.panel}>
           {loading ? (
             <p className={styles.stepNote}>読み込み中…</p>
@@ -136,24 +118,14 @@ export default function StoreOrderCustomerPage() {
               {closedMessage ||
                 "現在、ご注文をお受けできない時間帯です。"}
             </p>
-          ) : (
-            <>
-              {dineIn ? (
-                <>
-                  <p className={styles.readyTimeLabel}>お料理の目安</p>
-                  <p
-                    className={`${styles.readyTimeValue} ${styles.readyTimeValueSeconds}`}
-                  >
-                    {readyClock || pickupTime || "—"}
-                  </p>
-                  <p className={styles.stepNote} style={{ marginTop: 8 }}>
-                    キッチンには {pickupTime || "—"} 頃までにお持ちします。
-                  </p>
-                </>
-              ) : null}
-              <p className={styles.stepNote}>{STORE_ORDER_BUSY_DISCLAIMER}</p>
-            </>
-          )}
+          ) : dineIn ? (
+            <p className={styles.stepNote}>
+              ご注文はキッチンへそのまま届きます。お会計はレジにてお願いします。
+            </p>
+          ) : null}
+          {!closed && !loading ? (
+            <p className={styles.stepNote}>{STORE_ORDER_BUSY_DISCLAIMER}</p>
+          ) : null}
         </div>
 
         {!closed && !loading ? (

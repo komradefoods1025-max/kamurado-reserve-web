@@ -731,6 +731,27 @@
   border-bottom: 1px solid #ea580c;
 }
 
+.lastOrderBox {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 184, 64, 0.65);
+  background: rgba(255, 140, 40, 0.12);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.55;
+  color: #ffe8c8;
+  text-align: center;
+}
+
+.lastOrderBox p {
+  margin: 0;
+}
+
+.lastOrderBox p + p {
+  margin-top: 4px;
+}
+
 .disclaimerBox {
   margin-top: 18px;
   padding: 14px 16px;

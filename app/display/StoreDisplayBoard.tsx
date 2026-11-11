@@ -222,7 +222,11 @@ export default function StoreDisplayBoard({
                 <div className={styles.cardHead}>
                   <span className={styles.cardNo}>{order.reservationNo}</span>
                   <span className={styles.statusTag}>{order.status}</span>
-                  <span className={styles.cardTime}>{order.pickupTime}</span>
+                  <span className={styles.cardTime}>
+                    {order.pickupTime
+                      ? `受付 ${order.pickupTime}`
+                      : "店内"}
+                  </span>
                 </div>
                 <h2 className={styles.cardName}>{order.name} 様</h2>
                 {order.seatLabel ? (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import StoreOrderDisclaimer from "../StoreOrderDisclaimer";
+import StoreOrderLastOrderNote from "../StoreOrderLastOrderNote";
 import { isStoreOrderDineInClient } from "../../../lib/storeOrderDineIn";
 import styles from "../order.module.css";
 
@@ -21,14 +22,15 @@ function CompleteBody() {
           受付番号: <strong>{no}</strong>
         </p>
       ) : null}
-      {time ? (
+      {!dineIn && time ? (
         <>
           <p className={styles.readyTimeLabel} style={{ marginTop: 16 }}>
-            {dineIn ? "お料理の目安" : "出来上がり予定時間"}
+            出来上がり予定時間
           </p>
           <p className={styles.readyTimeValue}>{time}</p>
         </>
       ) : null}
+      {dineIn ? <StoreOrderLastOrderNote /> : null}
       <StoreOrderDisclaimer />
       <p className={styles.stepNote}>
         {dineIn

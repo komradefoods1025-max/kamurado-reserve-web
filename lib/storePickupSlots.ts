@@ -227,7 +227,7 @@ export function listStorePickupSlots(
       slots: [],
       closedToday: true,
       message:
-        "店内オーダーは営業時間内（17:30〜21:00頃）にご注文ください。",
+        "店内オーダーは営業時間内にご注文ください（フードLO 22:00／ドリンクLO 22:30）。",
     };
   }
 

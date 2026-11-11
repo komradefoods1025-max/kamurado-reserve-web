@@ -3,7 +3,7 @@ import styles from "./order.module.css";
 
 export const metadata: Metadata = {
   title: "かむらど 店内オーダー",
-  description: "店内メニューのモバイルオーダー（受取・店頭支払い）",
+  description: "店内メニューのモバイルオーダー（店内飲食・レジ精算）",
   robots: { index: false, follow: false },
 };
 

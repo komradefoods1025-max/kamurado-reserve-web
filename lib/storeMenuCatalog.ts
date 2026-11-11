@@ -529,6 +529,16 @@ export function storeMenuItemUnitPrice(
   return item.price;
 }
 
+export function storeMenuCategoryForItemId(
+  id: string,
+): StoreMenuCategory | null {
+  return STORE_MENU_ITEMS.find((m) => m.id === id)?.category ?? null;
+}
+
+export function isStoreMenuItemDrink(category: StoreMenuCategory): boolean {
+  return category.startsWith("drink_");
+}
+
 export function syncStoreCartWithCatalog(items: StoreCartLine[]): StoreCartLine[] {
   return items.map((line) => {
     const catalog = STORE_MENU_ITEMS.find((m) => m.id === line.id);
