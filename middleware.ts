@@ -3,7 +3,10 @@ import type { NextRequest } from "next/server";
 import { isWebReservationMaintenance } from "./lib/reservationMaintenance";
 import { isStoreOrderMaintenance } from "./lib/storeOrderMaintenance";
 import { STORE_ORDER_TABLE_SESSION_KEY } from "./lib/storeOrderTableSession";
-import { normalizeStoreTableId } from "./lib/storeOrderTables";
+import {
+  normalizeStoreTableId,
+  storeTableLabel,
+} from "./lib/storeOrderTables";
 
 const BLOCKED_PATH =
   /^\/(menu|reserve\/(menu|schedule|cart|customer|datetime))(\/|$)/;
@@ -14,6 +17,27 @@ const TABLE_QR_PATH = /^\/order\/t\/([^/]+)\/?$/;
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  if (
+    (pathname === "/order/menu" || pathname === "/order/menu/") &&
+    !isStoreOrderMaintenance()
+  ) {
+    const hasTable = Boolean(
+      request.nextUrl.searchParams.get("table") ||
+        request.nextUrl.searchParams.get("tableId"),
+    );
+    if (!hasTable) {
+      const fromCookie = normalizeStoreTableId(
+        request.cookies.get(STORE_ORDER_TABLE_SESSION_KEY)?.value,
+      );
+      if (fromCookie) {
+        const url = request.nextUrl.clone();
+        url.searchParams.set("table", fromCookie);
+        url.searchParams.set("seat", storeTableLabel(fromCookie));
+        return NextResponse.redirect(url, 307);
+      }
+    }
+  }
 
   const tableQr = pathname.match(TABLE_QR_PATH);
   if (tableQr && !isStoreOrderMaintenance()) {

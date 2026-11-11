@@ -19,9 +19,13 @@ import {
   storeTableLabel,
 } from "../../../lib/storeOrderTables";
 import {
-  clearStoreOrderTableSession,
+  persistStoreOrderTableId,
   readStoreOrderTableSession,
 } from "../../../lib/storeOrderTableSession";
+import {
+  resolveActiveStoreTableId,
+  storeOrderMenuHref,
+} from "../../../lib/storeOrderMenuUrl";
 import styles from "../order.module.css";
 
 type SubmitResponse = {
@@ -38,12 +42,17 @@ export default function StoreOrderConfirmPage() {
   const [error, setError] = useState("");
   const [closed, setClosed] = useState(false);
   const [closedMessage, setClosedMessage] = useState<string | null>(null);
+  const [menuBackHref, setMenuBackHref] = useState("/order/menu");
+
+  useEffect(() => {
+    setMenuBackHref(storeOrderMenuHref(resolveActiveStoreTableId()));
+  }, [draft.tableId, draft.seatLabel]);
 
   useEffect(() => {
     const sync = async () => {
       const current = readStoreOrderDraft();
       if (storeCartQuantity(current.items) <= 0) {
-        router.replace("/order/menu");
+        router.replace(storeOrderMenuHref(resolveActiveStoreTableId()));
         return;
       }
 
@@ -173,12 +182,16 @@ export default function StoreOrderConfirmPage() {
       }
 
       const no = data.reservationNo || "";
+      const tableForNext = tableId;
       clearStoreOrderDraft();
-      clearStoreOrderTableSession();
-      const completeQs = dineIn
-        ? `?no=${encodeURIComponent(no)}`
-        : `?no=${encodeURIComponent(no)}&time=${encodeURIComponent(draft.pickupTime || "")}`;
-      router.replace(`/order/complete${completeQs}`);
+      if (tableForNext) persistStoreOrderTableId(tableForNext);
+      const completeQs = new URLSearchParams();
+      completeQs.set("no", no);
+      if (tableForNext) completeQs.set("table", tableForNext);
+      if (!dineIn && draft.pickupTime) {
+        completeQs.set("time", draft.pickupTime);
+      }
+      router.replace(`/order/complete?${completeQs.toString()}`);
     } catch {
       setError("通信エラーが発生しました");
     } finally {
@@ -260,7 +273,7 @@ export default function StoreOrderConfirmPage() {
           </button>
 
           <Link
-            href="/order/menu"
+            href={menuBackHref}
             className={styles.primaryBtn}
             style={{
               marginTop: 12,

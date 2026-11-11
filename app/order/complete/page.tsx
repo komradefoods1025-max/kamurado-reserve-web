@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import StoreOrderDisclaimer from "../StoreOrderDisclaimer";
 import StoreOrderLastOrderNote from "../StoreOrderLastOrderNote";
 import { isStoreOrderDineInClient } from "../../../lib/storeOrderDineIn";
+import { storeOrderMenuHref } from "../../../lib/storeOrderMenuUrl";
+import { normalizeStoreTableId } from "../../../lib/storeOrderTables";
+import { persistStoreOrderTableId } from "../../../lib/storeOrderTableSession";
 import styles from "../order.module.css";
 
 function CompleteBody() {
@@ -13,6 +16,13 @@ function CompleteBody() {
   const dineIn = isStoreOrderDineInClient();
   const no = params.get("no") || "";
   const time = params.get("time") || "";
+  const tableFromUrl = normalizeStoreTableId(params.get("table"));
+  const [menuHref, setMenuHref] = useState("/order/menu");
+
+  useEffect(() => {
+    if (tableFromUrl) persistStoreOrderTableId(tableFromUrl);
+    setMenuHref(storeOrderMenuHref(tableFromUrl));
+  }, [tableFromUrl]);
 
   return (
     <div className={styles.panel}>
@@ -38,7 +48,7 @@ function CompleteBody() {
           : "店頭でお名前をお伝えいただき、お支払いのうえお受け取りください。"}
       </p>
       <Link
-        href="/order/menu"
+        href={menuHref}
         className={styles.primaryBtn}
         style={{ marginTop: 20 }}
       >

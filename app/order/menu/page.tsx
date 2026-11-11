@@ -22,7 +22,6 @@ import {
   hasVisibleStoreOrderMenuPromo,
 } from "../../../lib/storeOrderMenuPromo";
 import {
-  clearStoreOrderDraft,
   readStoreOrderDraft,
   storeCartQuantity,
   writeStoreOrderDraft,
@@ -40,6 +39,11 @@ import {
   persistStoreOrderTableId,
   readStoreOrderTableSession,
 } from "../../../lib/storeOrderTableSession";
+import {
+  resolveActiveStoreTableId,
+  storeOrderMenuHref,
+  storeOrderTableEntryHref,
+} from "../../../lib/storeOrderMenuUrl";
 import styles from "../order.module.css";
 
 const CATEGORY_ORDER: StoreMenuCategory[] = [
@@ -141,6 +145,16 @@ function StoreOrderMenuPageInner() {
   }, [searchParams]);
 
   useEffect(() => {
+    const fromUrl = normalizeStoreTableId(searchParams.get("table"));
+    const tableId = resolveActiveStoreTableId();
+    if (!tableId || fromUrl) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("table", tableId);
+    params.set("seat", storeTableLabel(tableId));
+    router.replace(`/order/menu?${params.toString()}`, { scroll: false });
+  }, [searchParams, router]);
+
+  useEffect(() => {
     const fromUrl = searchParams.get("category");
     if (isValidCategory(fromUrl) && visibleCategories.includes(fromUrl)) {
       setActiveCategory(fromUrl);
@@ -239,14 +253,29 @@ function StoreOrderMenuPageInner() {
 
   function emptyCart() {
     if (!window.confirm("カートの商品をすべて削除しますか？")) return;
-    clearStoreOrderDraft();
+    const draft = readStoreOrderDraft();
+    const tableId = resolveActiveStoreTableId();
+    writeStoreOrderDraft({
+      ...draft,
+      items: [],
+      totalQuantity: 0,
+      totalAmount: 0,
+      ...(tableId
+        ? { tableId, seatLabel: storeTableLabel(tableId) }
+        : {}),
+    });
     setCart([]);
   }
 
   function selectCategory(category: StoreMenuCategory) {
     setActiveCategory(category);
+    const tableId = resolveActiveStoreTableId();
     const params = new URLSearchParams(searchParams.toString());
     params.set("category", category);
+    if (tableId) {
+      params.set("table", tableId);
+      params.set("seat", storeTableLabel(tableId));
+    }
     router.replace(`/order/menu?${params.toString()}`, { scroll: false });
   }
 
@@ -264,7 +293,12 @@ function StoreOrderMenuPageInner() {
     <main className={`${styles.page} ${styles.menuPage}`}>
       <StoreOrderTestBanner />
       <header className={styles.menuTopBar}>
-        <Link href="/order" className={styles.menuTopBack}>
+        <Link
+          href={
+            dineIn ? storeOrderTableEntryHref() : "/order"
+          }
+          className={styles.menuTopBack}
+        >
           TOP
         </Link>
         <h1 className={styles.menuTopTitle}>

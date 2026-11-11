@@ -4,6 +4,7 @@ import {
   STORE_ORDER_LANDING_SHOW_TEXT_STEPS,
 } from "../../lib/storeOrderLandingContent";
 import StoreOrderLandingSections from "./StoreOrderLandingSections";
+import { isStoreOrderDineInServer } from "../../lib/storeOrderDineIn";
 import styles from "./order.module.css";
 
 const STEPS = [
@@ -26,6 +27,10 @@ const STEPS = [
 ] as const;
 
 export default function StoreOrderLandingPage() {
+  const menuEntry = isStoreOrderDineInServer()
+    ? "/order/seats"
+    : "/order/menu";
+
   return (
     <main className={`${styles.page} ${styles.landingPage}`}>
       <StoreOrderLandingSections sections={STORE_ORDER_LANDING_SECTIONS} />
@@ -59,7 +64,7 @@ export default function StoreOrderLandingPage() {
       ) : null}
 
       <div className={`${styles.footerBar} ${styles.landingFooterBar}`}>
-        <Link href="/order/menu" className={styles.landingMenuBtn}>
+        <Link href={menuEntry} className={styles.landingMenuBtn}>
           商品ページはコチラ
         </Link>
         <Link href="/order/check" className={styles.landingCheckBtn}>
