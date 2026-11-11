@@ -24,3 +24,7 @@ export function isStoreOrderDineInClient(): boolean {
   }
   return true;
 }
+
+/** 店内でお客様入力を出さないときの台帳・キッチン表示用 */
+export const STORE_ORDER_DINE_IN_GUEST_NAME = "店内";
+export const STORE_ORDER_DINE_IN_GUEST_PHONE = "09000000000";

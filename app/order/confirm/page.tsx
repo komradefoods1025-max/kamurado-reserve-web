@@ -27,21 +27,38 @@ export default function StoreOrderConfirmPage() {
   const [draft, setDraft] = useState(readStoreOrderDraft());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [closed, setClosed] = useState(false);
+  const [closedMessage, setClosedMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const sync = async () => {
       const current = readStoreOrderDraft();
-      if (
-        storeCartQuantity(current.items) <= 0 ||
-        !current.customerName ||
-        !current.phone
-      ) {
+      if (storeCartQuantity(current.items) <= 0) {
         router.replace("/order/menu");
         return;
       }
 
       if (dineIn) {
+        try {
+          const res = await fetch("/api/store-orders/pickup-slots", {
+            cache: "no-store",
+          });
+          const data = await res.json();
+          if (data.dineIn) {
+            const isClosed =
+              Boolean(data.closedToday) || data.orderingOpen === false;
+            setClosed(isClosed);
+            setClosedMessage(data.message || null);
+          }
+        } catch {
+          /* 送信時に再チェック */
+        }
         setDraft(current);
+        return;
+      }
+
+      if (!current.customerName || !current.phone) {
+        router.replace("/order/customer");
         return;
       }
 
@@ -112,10 +129,14 @@ export default function StoreOrderConfirmPage() {
           })),
           pickupDate: draft.pickupDate,
           pickupTime: draft.pickupTime,
-          seatLabel: draft.seatLabel,
-          name: draft.customerName,
-          phone: draft.phone,
-          note: draft.note,
+          ...(dineIn
+            ? {}
+            : {
+                seatLabel: draft.seatLabel,
+                name: draft.customerName,
+                phone: draft.phone,
+                note: draft.note,
+              }),
         }),
       });
 
@@ -179,10 +200,18 @@ export default function StoreOrderConfirmPage() {
             </p>
           )}
           <StoreOrderDisclaimer />
-          <p className={styles.label} style={{ marginTop: 8 }}>
-            {draft.customerName} 様 / {draft.phone}
-            {draft.seatLabel ? ` / 席:${draft.seatLabel}` : ""}
-          </p>
+          {!dineIn ? (
+            <p className={styles.label} style={{ marginTop: 8 }}>
+              {draft.customerName} 様 / {draft.phone}
+              {draft.seatLabel ? ` / 席:${draft.seatLabel}` : ""}
+            </p>
+          ) : null}
+          {dineIn && closed ? (
+            <p className={styles.stepNote} style={{ color: "#f5a5a5" }}>
+              {closedMessage ||
+                "現在、ご注文をお受けできない時間帯です。"}
+            </p>
+          ) : null}
 
           <StoreOrderCartSummary items={draft.items} />
 
@@ -196,7 +225,7 @@ export default function StoreOrderConfirmPage() {
             type="button"
             className={styles.primaryBtn}
             style={{ marginTop: 16 }}
-            disabled={submitting}
+            disabled={submitting || (dineIn && closed)}
             onClick={submitOrder}
           >
             {submitting ? "送信中…" : "注文を確定する"}

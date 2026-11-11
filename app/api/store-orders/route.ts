@@ -27,7 +27,11 @@ import {
   STORE_ORDER_MAINTENANCE_LINES,
 } from "../../../lib/storeOrderMaintenance";
 import { isStoreOrderTestMode } from "../../../lib/storeOrderTestMode";
-import { isStoreOrderDineInServer } from "../../../lib/storeOrderDineIn";
+import {
+  isStoreOrderDineInServer,
+  STORE_ORDER_DINE_IN_GUEST_NAME,
+  STORE_ORDER_DINE_IN_GUEST_PHONE,
+} from "../../../lib/storeOrderDineIn";
 import {
   buildStoreDisplayOrderFromPayload,
   enqueueStoreDisplayOrder,
@@ -95,8 +99,13 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    const name = String(body?.name || body?.customerName || "").trim();
-    const phone = normalizePhone(body?.phone);
+    const dineIn = isStoreOrderDineInServer();
+    const name = dineIn
+      ? String(body?.name || body?.customerName || STORE_ORDER_DINE_IN_GUEST_NAME).trim()
+      : String(body?.name || body?.customerName || "").trim();
+    const phone = dineIn
+      ? normalizePhone(body?.phone) || STORE_ORDER_DINE_IN_GUEST_PHONE
+      : normalizePhone(body?.phone);
     const items = normalizeItems(body?.items);
 
     if (!items.length) {
@@ -106,24 +115,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!name) {
-      return NextResponse.json(
-        { ok: false, message: "お名前を入力してください" },
-        { status: 400 },
-      );
-    }
+    if (!dineIn) {
+      if (!name) {
+        return NextResponse.json(
+          { ok: false, message: "お名前を入力してください" },
+          { status: 400 },
+        );
+      }
 
-    if (!phone || phone.length < 10) {
-      return NextResponse.json(
-        { ok: false, message: "電話番号を正しく入力してください" },
-        { status: 400 },
-      );
+      if (!phone || phone.length < 10) {
+        return NextResponse.json(
+          { ok: false, message: "電話番号を正しく入力してください" },
+          { status: 400 },
+        );
+      }
     }
 
     const today = getTodayYmdJst();
     const closed = await fetchSheetClosedDaysSet();
     const now = new Date();
-    const dineIn = isStoreOrderDineInServer();
 
     let pickupDate = "";
     let pickupTime = "";
@@ -210,14 +220,16 @@ export async function POST(req: NextRequest) {
     const totalQty = items.reduce((s, i) => s + i.qty, 0);
     const total = items.reduce((s, i) => s + i.total, 0);
 
-    const seatLabel = String(body?.seatLabel || body?.seat || "").trim();
+    const seatLabel = dineIn
+      ? ""
+      : String(body?.seatLabel || body?.seat || "").trim();
 
     const noteParts = [
       "店内モバイルオーダー",
       dineIn ? "店内飲食" : "持ち帰り",
       dineIn ? "レジ精算" : "店頭支払い",
       seatLabel ? `席:${seatLabel}` : "",
-      body?.note ? String(body.note).trim() : "",
+      !dineIn && body?.note ? String(body.note).trim() : "",
     ].filter(Boolean);
 
     const payload: Record<string, unknown> = {
