@@ -331,10 +331,10 @@ function StoreOrderMenuPageInner() {
   const isTopping = activeCategory === "topping";
   const imageItems = isTopping
     ? []
-    : activeItems.filter((i) => i.image);
+    : activeItems.filter((i) => i.image && !i.menuListFullWidth);
   const textOnlyItems = isTopping
     ? activeItems
-    : activeItems.filter((i) => !i.image);
+    : activeItems.filter((i) => !i.image || i.menuListFullWidth);
   /** ビール・ハイボール: 画像付き商品をすべて大型カード */
   const fullWidthImageMenu =
     activeCategory === "drink_beer" ||
@@ -620,6 +620,7 @@ function TextOnlyMenuSections({
           key={item.id}
           className={`${styles.menuHeroCard} ${styles.menuTextOnlyFull}`}
         >
+          {item.image ? <MenuItemImage item={item} hero /> : null}
           <div className={styles.cardBody}>
             <MenuItemBody {...bodyProps(item)} />
           </div>

@@ -124,6 +124,9 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
   }),
   item("dessert", "honey_toast", "鉄板ハニートースト", 680, {
     menuListFullWidth: true,
+    image: "/store-menu/honey-toast.png?v=20261112",
+    imageWidth: 500,
+    imageHeight: 500,
   }),
   item("dessert", "honey_toast_topping", "ハニートースト トッピング", 50, {
     optionLabel: "種類",
