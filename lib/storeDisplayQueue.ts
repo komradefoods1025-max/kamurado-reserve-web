@@ -1,4 +1,10 @@
 import { getTodayYmdJst } from "./bookingDates";
+import {
+  blobEnqueueStoreDisplayOrder,
+  blobListStoreDisplayOrders,
+  blobUpdateStoreDisplayOrderStatus,
+  isStoreDisplayBlobQueueEnabled,
+} from "./storeDisplayBlobQueue";
 import { isStoreOrderTestMode } from "./storeOrderTestMode";
 
 export type StoreDisplayItem = {
@@ -43,8 +49,14 @@ function redisRestBase(): { url: string; token: string } | null {
   return { url, token };
 }
 
-export function isStoreDisplayQueueEnabled(): boolean {
+/** Upstash / Vercel KV (Redis REST) */
+export function isStoreDisplayRedisQueueEnabled(): boolean {
   return Boolean(redisRestBase());
+}
+
+/** @deprecated use isStoreDisplayRedisQueueEnabled */
+export function isStoreDisplayQueueEnabled(): boolean {
+  return isStoreDisplayRedisQueueEnabled();
 }
 
 function isTruthyEnv(value: string | undefined): boolean {
@@ -54,15 +66,22 @@ function isTruthyEnv(value: string | undefined): boolean {
 
 /** Redis なし時のメモリキュー（dev / テストモード / 明示フラグ） */
 export function isStoreDisplayMemoryQueueActive(): boolean {
-  if (redisRestBase()) return false;
+  if (redisRestBase() || isStoreDisplayBlobQueueEnabled()) return false;
+  if (process.env.VERCEL === "1") return false;
   if (process.env.NODE_ENV === "development") return true;
   if (isStoreOrderTestMode()) return true;
   return isTruthyEnv(process.env.STORE_ORDER_DISPLAY_MEMORY_FALLBACK);
 }
 
 export function isStoreDisplayQueueAvailable(): boolean {
-  return isStoreDisplayQueueEnabled() || isStoreDisplayMemoryQueueActive();
+  return (
+    isStoreDisplayRedisQueueEnabled() ||
+    isStoreDisplayBlobQueueEnabled() ||
+    isStoreDisplayMemoryQueueActive()
+  );
 }
+
+export { isStoreDisplayBlobQueueEnabled };
 
 type MemoryDayStore = Map<string, StoreDisplayOrder[]>;
 
@@ -160,7 +179,7 @@ function memoryUpdateStatus(
 export async function enqueueStoreDisplayOrder(
   order: StoreDisplayOrder,
 ): Promise<boolean> {
-  if (isStoreDisplayQueueEnabled()) {
+  if (isStoreDisplayRedisQueueEnabled()) {
     const key = dayKey(order.pickupDate || getTodayYmdJst());
     const payload = JSON.stringify(order);
     const pushed = await redisCmd<number>(
@@ -169,6 +188,9 @@ export async function enqueueStoreDisplayOrder(
     if (pushed === null) return false;
     await redisCmd<number>(`ltrim/${key}/0/199`);
     return true;
+  }
+  if (isStoreDisplayBlobQueueEnabled()) {
+    return blobEnqueueStoreDisplayOrder(order);
   }
   if (isStoreDisplayMemoryQueueActive()) {
     return memoryEnqueue(order);
@@ -179,7 +201,7 @@ export async function enqueueStoreDisplayOrder(
 export async function listStoreDisplayOrders(
   ymd = getTodayYmdJst(),
 ): Promise<StoreDisplayOrder[]> {
-  if (isStoreDisplayQueueEnabled()) {
+  if (isStoreDisplayRedisQueueEnabled()) {
     const key = dayKey(ymd);
     const rows = await redisCmd<string[]>(`lrange/${key}/0/-1`);
     if (!rows?.length) return [];
@@ -196,6 +218,9 @@ export async function listStoreDisplayOrders(
     }
     return dedupeSort(orders);
   }
+  if (isStoreDisplayBlobQueueEnabled()) {
+    return dedupeSort(await blobListStoreDisplayOrders(ymd));
+  }
   if (isStoreDisplayMemoryQueueActive()) {
     return memoryList(ymd);
   }
@@ -207,7 +232,7 @@ export async function updateStoreDisplayOrderStatus(
   status: StoreDisplayOrder["status"],
   ymd = getTodayYmdJst(),
 ): Promise<boolean> {
-  if (isStoreDisplayQueueEnabled()) {
+  if (isStoreDisplayRedisQueueEnabled()) {
     const key = dayKey(ymd);
     const rows = await redisCmd<string[]>(`lrange/${key}/0/-1`);
     if (!rows?.length) return false;
@@ -239,6 +264,9 @@ export async function updateStoreDisplayOrderStatus(
     await redisCmd<number>(`ltrim/${key}/0/199`);
     return true;
   }
+  if (isStoreDisplayBlobQueueEnabled()) {
+    return blobUpdateStoreDisplayOrderStatus(reservationNo, status, ymd);
+  }
   if (isStoreDisplayMemoryQueueActive()) {
     return memoryUpdateStatus(reservationNo, status, ymd);
   }
@@ -246,14 +274,14 @@ export async function updateStoreDisplayOrderStatus(
 }
 
 export function storeDisplayQueueHintMessage(): string {
-  if (isStoreDisplayQueueEnabled()) return "";
+  if (isStoreDisplayRedisQueueEnabled()) return "";
+  if (isStoreDisplayBlobQueueEnabled()) {
+    return "Vercel Blob に注文を保存しています";
+  }
   if (isStoreDisplayMemoryQueueActive()) {
-    return "開発モード: メモリ上の注文キュー（npm run dev のみ）";
+    return "開発用メモリキュー（npm run dev）";
   }
-  if (isStoreOrderTestMode() || process.env.NODE_ENV === "development") {
-    return "テスト用メモリキュー（同一サーバー内のみ・本番運用は Upstash Redis 推奨）";
-  }
-  return "注文キュー未設定 — Vercel に UPSTASH_REDIS_REST_URL / TOKEN を設定してください";
+  return "注文キュー未設定 — Vercel で Blob または Upstash Redis をプロジェクトに接続してください";
 }
 
 export function buildStoreDisplayOrderFromPayload(

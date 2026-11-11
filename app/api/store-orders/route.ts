@@ -310,7 +310,7 @@ export async function POST(req: NextRequest) {
           {
             ok: false,
             message:
-              "店舗画面用の注文キューが未設定です。Vercel に UPSTASH_REDIS_REST_URL と TOKEN を設定するか、テスト中は STORE_ORDER_TEST_MODE=true を入れてください。",
+              "店舗画面用の注文キューが未設定です。Vercel → Storage で Blob または Upstash Redis をこのプロジェクトに接続し、Redeploy してください。",
           },
           { status: 503 },
         );
