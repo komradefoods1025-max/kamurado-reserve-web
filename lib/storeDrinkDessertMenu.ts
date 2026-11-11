@@ -99,6 +99,7 @@ const DRINK_BEER: StoreMenuItem[] = [
   item("drink_beer", "nama_beer_medium", "生ビール 中ジョッキ", 600),
   item("drink_beer", "nama_beer_small", "生ビール 小ジョッキ", 530),
   item("drink_beer", "bottle_beer", "瓶ビール", 750, {
+    image: "/store-menu/bottle-beer.png?v=20261112",
     optionLabel: "銘柄",
     dressingOptions: BOTTLE_BEER_BRANDS,
   }),
