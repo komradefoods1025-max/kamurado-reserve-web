@@ -21,8 +21,8 @@ const FRUIT_LIQUOR_SPLITS = [...SHOCHU_SPLITS] as const;
 
 const BOTTLE_BEER_BRANDS = [
   "アサヒ マルエフ",
-  "麒麟 晴れ風",
   "サッポロ 赤星",
+  "麒麟 晴れ風",
 ] as const;
 
 const CASSIS_MIX = ["ウーロン", "ソーダ", "オレンジ", "ミルク"] as const;
