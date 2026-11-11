@@ -3,7 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import {
+  type ReactNode,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   STORE_MENU_CATEGORY_LABEL,
   STORE_MENU_CATEGORY_NOTE,
@@ -329,8 +335,6 @@ function StoreOrderMenuPageInner() {
   const textOnlyItems = isTopping
     ? activeItems
     : activeItems.filter((i) => !i.image);
-  const textOnlyFullWidthItems = textOnlyItems.filter((i) => i.menuListFullWidth);
-  const textOnlyGridItems = textOnlyItems.filter((i) => !i.menuListFullWidth);
   /** ビール・ハイボール: 画像付き商品をすべて大型カード */
   const fullWidthImageMenu =
     activeCategory === "drink_beer" ||
@@ -489,60 +493,17 @@ function StoreOrderMenuPageInner() {
             </div>
           ) : null}
 
-          {textOnlyFullWidthItems.map((item) => {
-            const dressing = selectedDressing(item);
-            const secondaryDressing = selectedSecondaryDressing(item);
-            const qty = cartQty(item.id, dressing, secondaryDressing);
-            return (
-              <article
-                key={item.id}
-                className={`${styles.menuHeroCard} ${styles.menuTextOnlyFull}`}
-              >
-                <div className={styles.cardBody}>
-                  <MenuItemBody
-                    item={item}
-                    qty={qty}
-                    dressing={dressing}
-                    secondaryDressing={secondaryDressing}
-                    onDressingChange={setDressingForItem}
-                    onSecondaryDressingChange={setSecondaryDressingForItem}
-                    onSecondaryStepperChange={changeSecondaryQty}
-                    onChange={changeQty}
-                  />
-                </div>
-              </article>
-            );
-          })}
-
-          {textOnlyGridItems.length > 0 ? (
-            <div
-              className={
-                isTopping ? styles.toppingGrid : styles.menuProductGrid
-              }
-            >
-              {textOnlyGridItems.map((item) => {
-                const dressing = selectedDressing(item);
-                const secondaryDressing = selectedSecondaryDressing(item);
-                const qty = cartQty(item.id, dressing, secondaryDressing);
-                return (
-                  <article key={item.id} className={styles.toppingCard}>
-                    <div className={styles.cardBody}>
-                      <MenuItemBody
-                        item={item}
-                        qty={qty}
-                        dressing={dressing}
-                        secondaryDressing={secondaryDressing}
-                        onDressingChange={setDressingForItem}
-                        onSecondaryDressingChange={setSecondaryDressingForItem}
-                        onSecondaryStepperChange={changeSecondaryQty}
-                        onChange={changeQty}
-                      />
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : null}
+          <TextOnlyMenuSections
+            items={textOnlyItems}
+            isTopping={isTopping}
+            selectedDressing={selectedDressing}
+            selectedSecondaryDressing={selectedSecondaryDressing}
+            cartQty={cartQty}
+            onDressingChange={setDressingForItem}
+            onSecondaryDressingChange={setSecondaryDressingForItem}
+            onSecondaryStepperChange={changeSecondaryQty}
+            onChange={changeQty}
+          />
         </div>
       </div>
 
@@ -586,6 +547,91 @@ function StoreOrderMenuPageInner() {
       </div>
     </main>
   );
+}
+
+function TextOnlyMenuSections({
+  items,
+  isTopping,
+  selectedDressing,
+  selectedSecondaryDressing,
+  cartQty,
+  onDressingChange,
+  onSecondaryDressingChange,
+  onSecondaryStepperChange,
+  onChange,
+}: {
+  items: (typeof STORE_MENU_ITEMS)[number][];
+  isTopping: boolean;
+  selectedDressing: (item: (typeof STORE_MENU_ITEMS)[number]) => string | undefined;
+  selectedSecondaryDressing: (item: (typeof STORE_MENU_ITEMS)[number]) => string | undefined;
+  cartQty: (
+    id: string,
+    dressing?: string,
+    secondaryDressing?: string,
+  ) => number;
+  onDressingChange: (itemId: string, dressing: string) => void;
+  onSecondaryDressingChange: (itemId: string, dressing: string) => void;
+  onSecondaryStepperChange: (itemId: string, delta: number) => void;
+  onChange: (id: string, delta: number) => void;
+}) {
+  const nodes: ReactNode[] = [];
+  let gridRun: (typeof STORE_MENU_ITEMS)[number][] = [];
+
+  const bodyProps = (item: (typeof STORE_MENU_ITEMS)[number]) => {
+    const dressing = selectedDressing(item);
+    const secondaryDressing = selectedSecondaryDressing(item);
+    return {
+      item,
+      qty: cartQty(item.id, dressing, secondaryDressing),
+      dressing,
+      secondaryDressing,
+      onDressingChange,
+      onSecondaryDressingChange,
+      onSecondaryStepperChange,
+      onChange,
+    };
+  };
+
+  const flushGrid = () => {
+    if (!gridRun.length) return;
+    const gridKey = gridRun.map((i) => i.id).join(",");
+    nodes.push(
+      <div
+        key={`text-grid-${gridKey}`}
+        className={isTopping ? styles.toppingGrid : styles.menuProductGrid}
+      >
+        {gridRun.map((item) => (
+          <article key={item.id} className={styles.toppingCard}>
+            <div className={styles.cardBody}>
+              <MenuItemBody {...bodyProps(item)} />
+            </div>
+          </article>
+        ))}
+      </div>,
+    );
+    gridRun = [];
+  };
+
+  for (const item of items) {
+    if (item.menuListFullWidth) {
+      flushGrid();
+      nodes.push(
+        <article
+          key={item.id}
+          className={`${styles.menuHeroCard} ${styles.menuTextOnlyFull}`}
+        >
+          <div className={styles.cardBody}>
+            <MenuItemBody {...bodyProps(item)} />
+          </div>
+        </article>,
+      );
+    } else {
+      gridRun.push(item);
+    }
+  }
+  flushGrid();
+
+  return <>{nodes}</>;
 }
 
 function MenuItemImage({

@@ -127,7 +127,6 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
     },
   }),
   item("dessert", "honey_toast", "鉄板ハニートースト", 680),
-  item("dessert", "hotteok", "ホットク", 680),
   item("dessert", "honey_toast_topping", "ハニートースト トッピング", 50, {
     optionLabel: "種類",
     dressingOptions: HONEY_TOAST_TOPPINGS,
@@ -140,6 +139,7 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
       バニラアイス: 150,
     },
   }),
+  item("dessert", "hotteok", "ホットク", 680),
   item("dessert", "hot_coffee", "ホットコーヒー", 300),
   item("dessert", "ice_coffee", "アイスコーヒー", 350),
   item("dessert", "cappuccino", "カプチーノ", 400),
