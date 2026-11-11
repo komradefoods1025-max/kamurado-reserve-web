@@ -288,8 +288,11 @@ function StoreOrderMenuPageInner() {
   const textOnlyItems = isTopping
     ? activeItems
     : activeItems.filter((i) => !i.image);
-  const heroItem = imageItems[0];
-  const gridImageItems = imageItems.slice(1);
+  /** ビールなど: 画像付き商品をすべて大型カード（生ビールと同じ幅） */
+  const fullWidthImageMenu = activeCategory === "drink_beer";
+  const heroItem = fullWidthImageMenu ? null : imageItems[0];
+  const heroItems = fullWidthImageMenu ? imageItems : heroItem ? [heroItem] : [];
+  const gridImageItems = fullWidthImageMenu ? [] : imageItems.slice(1);
 
   return (
     <main className={`${styles.page} ${styles.menuPage}`}>
@@ -353,20 +356,23 @@ function StoreOrderMenuPageInner() {
             <StoreOrderMenuPromo sections={promoSections} />
           ) : null}
 
-          {heroItem ? (
-            <article className={styles.menuHeroCard}>
-              <MenuItemImage item={heroItem} hero />
-              <div className={styles.cardBody}>
-                <MenuItemBody
-                  item={heroItem}
-                  qty={cartQty(heroItem.id, selectedDressing(heroItem))}
-                  dressing={selectedDressing(heroItem)}
-                  onDressingChange={setDressingForItem}
-                  onChange={changeQty}
-                />
-              </div>
-            </article>
-          ) : null}
+          {heroItems.map((item) => {
+            const dressing = selectedDressing(item);
+            return (
+              <article key={item.id} className={styles.menuHeroCard}>
+                <MenuItemImage item={item} hero />
+                <div className={styles.cardBody}>
+                  <MenuItemBody
+                    item={item}
+                    qty={cartQty(item.id, dressing)}
+                    dressing={dressing}
+                    onDressingChange={setDressingForItem}
+                    onChange={changeQty}
+                  />
+                </div>
+              </article>
+            );
+          })}
 
           {gridImageItems.length > 0 ? (
             <div className={styles.menuProductGrid}>
