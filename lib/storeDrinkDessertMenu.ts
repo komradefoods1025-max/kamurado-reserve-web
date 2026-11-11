@@ -96,8 +96,12 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
 ];
 
 const DRINK_BEER: StoreMenuItem[] = [
-  item("drink_beer", "nama_beer_medium", "生ビール 中ジョッキ", 600),
-  item("drink_beer", "nama_beer_small", "生ビール 小ジョッキ", 530),
+  item("drink_beer", "nama_beer_medium", "生ビール 中ジョッキ", 600, {
+    image: "/store-menu/nama-beer-medium.png?v=20261112",
+  }),
+  item("drink_beer", "nama_beer_small", "生ビール 小ジョッキ", 530, {
+    image: "/store-menu/nama-beer-small.png?v=20261112",
+  }),
   item("drink_beer", "bottle_beer", "瓶ビール", 750, {
     image: "/store-menu/bottle-beer.png?v=20261112",
     optionLabel: "銘柄",
