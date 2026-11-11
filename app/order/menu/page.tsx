@@ -527,20 +527,27 @@ function MenuItemBody({
         <div className={styles.dressingPick}>
           <span className={styles.dressingLabel}>{pickLabel}</span>
           <div className={styles.dressingOptions} role="group" aria-label="ドレッシング">
-            {dressings.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                className={
-                  dressing === opt
-                    ? `${styles.dressingBtn} ${styles.dressingBtnActive}`
-                    : styles.dressingBtn
-                }
-                onClick={() => onDressingChange(item.id, opt)}
-              >
-                {opt}
-              </button>
-            ))}
+            {dressings.map((opt) => {
+              const optPrice = item.optionPrices?.[opt];
+              const label =
+                optPrice != null
+                  ? `${opt} ¥${optPrice.toLocaleString("ja-JP")}`
+                  : opt;
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  className={
+                    dressing === opt
+                      ? `${styles.dressingBtn} ${styles.dressingBtnActive}`
+                      : styles.dressingBtn
+                  }
+                  onClick={() => onDressingChange(item.id, opt)}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
       ) : null}
