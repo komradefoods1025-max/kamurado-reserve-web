@@ -4,6 +4,7 @@ type DrinkCategory =
   | "drink_beer"
   | "drink_hoppy"
   | "drink_highball"
+  | "drink_wine"
   | "drink_cocktail"
   | "drink_sour"
   | "drink_shochu_mugi"
@@ -145,11 +146,14 @@ const DRINK_HIGHBALL: StoreMenuItem[] = [
   item("drink_highball", "hakushu_highball_12", "白州ハイボール（12年）", 2200),
 ];
 
+const DRINK_WINE: StoreMenuItem[] = [
+  item("drink_wine", "wine_glass_red", "グラスワイン 赤", 580),
+  item("drink_wine", "wine_glass_white", "グラスワイン 白", 580),
+  item("drink_wine", "wine_decanter_red", "デキャンタ 赤", 2500),
+  item("drink_wine", "wine_decanter_white", "デキャンタ 白", 2500),
+];
+
 const DRINK_COCKTAIL: StoreMenuItem[] = [
-  item("drink_cocktail", "wine_glass_red", "グラスワイン 赤", 580),
-  item("drink_cocktail", "wine_glass_white", "グラスワイン 白", 580),
-  item("drink_cocktail", "wine_decanter_red", "デキャンタ 赤", 2500),
-  item("drink_cocktail", "wine_decanter_white", "デキャンタ 白", 2500),
   cocktail("cocktail_cassis", "カシス", CASSIS_MIX),
   cocktail("cocktail_peach", "ピーチ", PEACH_MIX),
   cocktail("cocktail_campari", "カンパリ", CAMPARI_MIX),
@@ -214,6 +218,7 @@ export const DRINK_MENU_ITEMS: StoreMenuItem[] = [
   ...DRINK_BEER,
   ...DRINK_HOPPY,
   ...DRINK_HIGHBALL,
+  ...DRINK_WINE,
   ...DRINK_COCKTAIL,
   ...DRINK_SOUR,
   ...DRINK_SHOCHU_MUGI,

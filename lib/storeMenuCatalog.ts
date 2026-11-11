@@ -11,6 +11,7 @@ export type StoreMenuCategory =
   | "drink_beer"
   | "drink_hoppy"
   | "drink_highball"
+  | "drink_wine"
   | "drink_cocktail"
   | "drink_sour"
   | "drink_shochu_mugi"
@@ -66,6 +67,7 @@ export const STORE_MENU_CATEGORY_LABEL: Record<StoreMenuCategory, string> = {
   drink_beer: "ビール",
   drink_hoppy: "ホッピー",
   drink_highball: "ハイボール",
+  drink_wine: "ワイン",
   drink_cocktail: "カクテル",
   drink_sour: "サワー",
   drink_shochu_mugi: "焼酎（麦）",
