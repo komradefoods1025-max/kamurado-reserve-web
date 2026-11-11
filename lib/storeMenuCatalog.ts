@@ -38,6 +38,8 @@ export type StoreMenuItem = {
   optionLabel?: string;
   /** 種類ごとに価格が違う場合（例: おにぎり） */
   optionPrices?: Partial<Record<string, number>>;
+  /** 白背景の瓶写真などは contain */
+  imageFit?: "cover" | "contain";
 };
 
 export const GREEN_SALAD_DRESSINGS = ["ゴマ", "シーザー", "ワサビ"] as const;

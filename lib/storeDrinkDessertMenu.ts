@@ -99,19 +99,29 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
 const DRINK_BEER: StoreMenuItem[] = [
   item("drink_beer", "nama_beer_medium", "生ビール 中ジョッキ", 600, {
     image: "/store-menu/nama-beer-medium.png?v=20261112",
+    imageFit: "contain",
   }),
   item("drink_beer", "nama_beer_small", "生ビール 小ジョッキ", 530, {
     image: "/store-menu/nama-beer-small.png?v=20261112",
+    imageFit: "contain",
   }),
   item("drink_beer", "bottle_beer", "瓶ビール", 750, {
     image: "/store-menu/bottle-beer.png?v=20261112",
+    imageFit: "contain",
     optionLabel: "銘柄",
     dressingOptions: BOTTLE_BEER_BRANDS,
   }),
 ];
 
 const DRINK_HOPPY: StoreMenuItem[] = [
-  item("drink_hoppy", "hoppy_white_black", "ホッピー 白／黒", 500),
+  item("drink_hoppy", "hoppy_white", "ホッピー 白", 500, {
+    image: "/store-menu/hoppy-white.png?v=20261112",
+    imageFit: "contain",
+  }),
+  item("drink_hoppy", "hoppy_black", "ホッピー 黒", 500, {
+    image: "/store-menu/hoppy-black.png?v=20261112",
+    imageFit: "contain",
+  }),
   item("drink_hoppy", "hoppy_soto", "ホッピー 外", 300),
   item("drink_hoppy", "hoppy_naka", "ホッピー 中", 250),
 ];

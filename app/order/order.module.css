@@ -178,6 +178,15 @@
   object-fit: cover;
 }
 
+.menuHeroImageContain {
+  object-fit: contain;
+  background: #fff;
+}
+
+.cardMediaProduct {
+  background: #fff;
+}
+
 .menuProductGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -379,6 +388,12 @@
   height: auto;
   aspect-ratio: 1;
   object-fit: cover;
+}
+
+.cardImageContain {
+  object-fit: contain;
+  padding: 6px;
+  box-sizing: border-box;
 }
 
 .cardBody {

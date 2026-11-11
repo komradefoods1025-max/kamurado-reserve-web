@@ -468,8 +468,21 @@ function MenuItemImage({
   item: (typeof STORE_MENU_ITEMS)[number];
   hero?: boolean;
 }) {
+  const contain = item.imageFit === "contain";
+  const imageClass = hero
+    ? contain
+      ? `${styles.menuHeroImage} ${styles.menuHeroImageContain}`
+      : styles.menuHeroImage
+    : contain
+      ? `${styles.cardImage} ${styles.cardImageContain}`
+      : styles.cardImage;
+
   return (
-    <div className={styles.cardMedia}>
+    <div
+      className={
+        contain ? `${styles.cardMedia} ${styles.cardMediaProduct}` : styles.cardMedia
+      }
+    >
       <Image
         src={item.image}
         alt={item.name}
@@ -480,7 +493,7 @@ function MenuItemImage({
             ? "(max-width: 520px) 70vw, 360px"
             : "(max-width: 520px) 40vw, 200px"
         }
-        className={hero ? styles.menuHeroImage : styles.cardImage}
+        className={imageClass}
       />
       {item.badge ? (
         <span className={styles.menuItemBadge}>{item.badge}</span>
