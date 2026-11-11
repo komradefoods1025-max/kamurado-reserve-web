@@ -292,8 +292,9 @@ function StoreOrderMenuPageInner() {
   const textOnlyItems = isTopping
     ? activeItems
     : activeItems.filter((i) => !i.image);
-  /** ビール: 画像付き商品をすべて大型カード */
-  const fullWidthImageMenu = activeCategory === "drink_beer";
+  /** ビール・ハイボール: 画像付き商品をすべて大型カード */
+  const fullWidthImageMenu =
+    activeCategory === "drink_beer" || activeCategory === "drink_highball";
   /** ホッピー白・黒: 2列横並び */
   const hoppyPairLayout = activeCategory === "drink_hoppy";
 
