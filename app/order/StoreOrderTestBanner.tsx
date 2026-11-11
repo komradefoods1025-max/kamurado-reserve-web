@@ -13,11 +13,12 @@ export default function StoreOrderTestBanner() {
     String(process.env.NEXT_PUBLIC_STORE_ORDER_BYPASS_LAST_ORDER || ""),
   );
 
-  if (!testMode && !bypassLo) return null;
+  const dev = process.env.NODE_ENV === "development";
+  if (!dev && !testMode && !bypassLo) return null;
 
   return (
     <div className={styles.testBanner} role="status">
-      {testMode
+      {dev || testMode
         ? "テストモード：休業日・開店前・ラストオーダー（22:00/22:30）を無視します"
         : "テスト中：ラストオーダー（22:00/22:30）を無視しています"}
     </div>

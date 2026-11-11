@@ -30,6 +30,7 @@ import {
 } from "../../../lib/storeOrderDraft";
 import StoreOrderMenuPromo from "../StoreOrderMenuPromo";
 import StoreOrderLastOrderNote from "../StoreOrderLastOrderNote";
+import StoreOrderTestBanner from "../StoreOrderTestBanner";
 import { isStoreOrderDineInClient } from "../../../lib/storeOrderDineIn";
 import styles from "../order.module.css";
 
@@ -229,6 +230,7 @@ function StoreOrderMenuPageInner() {
 
   return (
     <main className={`${styles.page} ${styles.menuPage}`}>
+      <StoreOrderTestBanner />
       <header className={styles.menuTopBar}>
         <Link href="/order" className={styles.menuTopBack}>
           TOP
