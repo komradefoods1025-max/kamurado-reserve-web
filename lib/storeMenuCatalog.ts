@@ -201,6 +201,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 520,
     image: IMG(1),
     category: "otsumami",
+    showCardName: true,
   },
   {
     id: "ume_suisho",
