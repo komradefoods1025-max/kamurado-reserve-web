@@ -30,6 +30,9 @@ const BOTTLE_BEER_BRANDS = [
 
 const NAMA_BEER_SIZES = ["小ジョッキ", "中ジョッキ", "メガ"] as const;
 
+const HIGHBALL_SIZES = ["レギュラー", "メガ"] as const;
+const HIGHBALL_MEGA_SURCHARGE = 150;
+
 const CASSIS_MIX = ["ウーロン", "ソーダ", "オレンジ", "ミルク"] as const;
 const PEACH_MIX = ["ウーロン", "ソーダ", "オレンジ", "コーク", "ミルク"] as const;
 const CAMPARI_MIX = ["ソーダ", "オレンジ", "コーク"] as const;
@@ -80,6 +83,23 @@ function cocktail(
   return item("drink_cocktail", id, name, 600, {
     optionLabel: "割り方",
     dressingOptions: mixers,
+  });
+}
+
+function highball(
+  id: string,
+  name: string,
+  price: number,
+  extra?: Partial<StoreMenuItem>,
+): StoreMenuItem {
+  return item("drink_highball", id, name, price, {
+    optionLabel: "サイズ",
+    dressingOptions: HIGHBALL_SIZES,
+    optionPrices: {
+      レギュラー: price,
+      メガ: price + HIGHBALL_MEGA_SURCHARGE,
+    },
+    ...extra,
   });
 }
 
@@ -136,40 +156,40 @@ const DRINK_HOPPY: StoreMenuItem[] = [
 ];
 
 const DRINK_HIGHBALL: StoreMenuItem[] = [
-  item("drink_highball", "kaku_highball", "角ハイボール", 600, {
+  highball("kaku_highball", "角ハイボール", 600, {
     image: "/store-menu/kaku-highball.png?v=20261112",
     imageFit: "contain",
     imageBanner: true,
     imageWidth: 750,
     imageHeight: 264,
   }),
-  item("drink_highball", "black_nikka_highball", "ブラックニッカハイボール", 520, {
+  highball("black_nikka_highball", "ブラックニッカハイボール", 520, {
     image: "/store-menu/black-nikka-highball.png?v=20261112b",
     imageFit: "contain",
     imageBanner: true,
     imageWidth: 970,
     imageHeight: 408,
   }),
-  item("drink_highball", "ginger_highball", "ジンジャーハイボール", 620),
-  item("drink_highball", "coke_highball", "コークハイボール", 620),
-  item("drink_highball", "riku_highball", "陸ハイボール", 750, {
+  highball("ginger_highball", "ジンジャーハイボール", 620),
+  highball("coke_highball", "コークハイボール", 620),
+  highball("riku_highball", "陸ハイボール", 750, {
     image: "/store-menu/riku-highball.png?v=20261112",
     imageFit: "contain",
     imageBanner: true,
     imageWidth: 738,
     imageHeight: 387,
   }),
-  item("drink_highball", "chita_highball", "知多ハイボール", 800, {
+  highball("chita_highball", "知多ハイボール", 800, {
     image: "/store-menu/chita-highball.png?v=20261112",
     imageFit: "contain",
     imageBanner: true,
     imageWidth: 617,
     imageHeight: 324,
   }),
-  item("drink_highball", "yamazaki_highball_nv", "山崎ハイボール（NV）", 1100),
-  item("drink_highball", "yamazaki_highball_12", "山崎ハイボール（12年）", 2200),
-  item("drink_highball", "hakushu_highball_nv", "白州ハイボール（NV）", 1100),
-  item("drink_highball", "hakushu_highball_12", "白州ハイボール（12年）", 2200),
+  highball("yamazaki_highball_nv", "山崎ハイボール（NV）", 1100),
+  highball("yamazaki_highball_12", "山崎ハイボール（12年）", 2200),
+  highball("hakushu_highball_nv", "白州ハイボール（NV）", 1100),
+  highball("hakushu_highball_12", "白州ハイボール（12年）", 2200),
 ];
 
 const DRINK_WINE: StoreMenuItem[] = [
