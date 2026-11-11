@@ -14,13 +14,30 @@ export function storeTableLabel(tableId: string): string {
   return `${tableId}卓`;
 }
 
+function tableIdFromOrderNote(note: unknown): string | null {
+  const text = String(note ?? "");
+  const m = text.match(/席[:：]\s*(\d+)\s*卓?/);
+  return m ? normalizeStoreTableId(m[1]) : null;
+}
+
+/** 表示用: tableId → seatLabel → 備考欄の「席:N卓」 */
+export function resolveStoreOrderTableId(order: {
+  tableId?: string;
+  seatLabel?: string;
+  note?: string;
+}): string | null {
+  return (
+    normalizeStoreTableId(order.tableId) ??
+    normalizeStoreTableId(order.seatLabel) ??
+    tableIdFromOrderNote(order.note)
+  );
+}
+
 export function orderMatchesStoreTable(
-  order: { seatLabel?: string; tableId?: string },
+  order: { seatLabel?: string; tableId?: string; note?: string },
   tableId: string,
 ): boolean {
   const want = normalizeStoreTableId(tableId);
   if (!want) return false;
-  const fromField = normalizeStoreTableId(order.tableId);
-  if (fromField === want) return true;
-  return normalizeStoreTableId(order.seatLabel) === want;
+  return resolveStoreOrderTableId(order) === want;
 }

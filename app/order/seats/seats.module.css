@@ -1,0 +1,83 @@
+.seatsPage {
+  padding-bottom: 48px;
+}
+
+.originNote {
+  text-align: center;
+  font-size: 12px;
+  color: #c4b8a8;
+  padding: 0 16px 12px;
+}
+
+.originUrl {
+  word-break: break-all;
+}
+
+.qrGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  padding: 0 12px 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.qrCard {
+  border-radius: 16px;
+  border: 2px solid rgba(255, 184, 64, 0.45);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 16px;
+  text-align: center;
+}
+
+.qrTitle {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffd080;
+}
+
+.qrImage {
+  display: block;
+  margin: 0 auto;
+  border-radius: 8px;
+  background: #fff9f0;
+}
+
+.qrUrl {
+  margin: 12px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #c4b8a8;
+  word-break: break-all;
+}
+
+.printHint {
+  text-align: center;
+  font-size: 13px;
+  color: #c4b8a8;
+  padding: 0 16px;
+}
+
+@media print {
+  .seatsPage {
+    background: #fff;
+    color: #000;
+  }
+
+  .qrCard {
+    break-inside: avoid;
+    border-color: #ccc;
+    background: #fff;
+  }
+
+  .qrTitle {
+    color: #000;
+  }
+
+  .qrUrl,
+  .originNote,
+  .printHint {
+    color: #333;
+  }
+}

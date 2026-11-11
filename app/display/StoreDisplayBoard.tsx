@@ -2,16 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StoreDisplayOrder } from "../../lib/storeDisplayQueue";
-import { orderMatchesStoreTable } from "../../lib/storeOrderTables";
+import {
+  orderMatchesStoreTable,
+  STORE_ORDER_TABLE_COUNT,
+  storeTableLabel,
+} from "../../lib/storeOrderTables";
+import StoreDisplayOrderCard from "./StoreDisplayOrderCard";
 import styles from "./display.module.css";
 
 type BoardMode = "kitchen" | "counter";
-
-const KITCHEN_FLOW: StoreDisplayOrder["status"][] = [
-  "受付済み",
-  "調理中",
-  "完成",
-];
 
 const COUNTER_VISIBLE: StoreDisplayOrder["status"][] = [
   "完成",
@@ -20,25 +19,18 @@ const COUNTER_VISIBLE: StoreDisplayOrder["status"][] = [
   "調理中",
 ];
 
-function itemLabel(item: StoreDisplayOrder["items"][number]) {
-  const name = String(item.menuName || item.name || "").trim();
-  const dressing = item.dressing ? `（${item.dressing}）` : "";
-  return `${name}${dressing}`;
-}
-
-function itemQty(item: StoreDisplayOrder["items"][number]) {
-  return Math.max(0, Number(item.qty ?? item.quantity ?? 0));
-}
-
 export default function StoreDisplayBoard({
   mode,
   title,
   tableId = null,
+  groupByTable = false,
 }: {
   mode: BoardMode;
   title: string;
-  /** 1〜4: その卓のみ。null = 全卓 */
+  /** 単一卓フィルタ（groupByTable 時は未使用） */
   tableId?: string | null;
+  /** 1画面で全卓を列表示 */
+  groupByTable?: boolean;
 }) {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [pin, setPin] = useState("");
@@ -80,6 +72,29 @@ export default function StoreDisplayBoard({
     }
   }, [mode]);
 
+  const filterForMode = useCallback(
+    (list: StoreDisplayOrder[]) => {
+      let filtered =
+        mode === "kitchen"
+          ? list.filter((o) => o.status !== "提供済み")
+          : list.filter((o) => COUNTER_VISIBLE.includes(o.status));
+
+      if (!groupByTable && tableId) {
+        filtered = filtered.filter((o) => orderMatchesStoreTable(o, tableId));
+      }
+
+      filtered.sort((a, b) => {
+        if (a.status === "完成" && b.status !== "完成") return -1;
+        if (b.status === "完成" && a.status !== "完成") return 1;
+        return (
+          (Date.parse(b.submittedAt) || 0) - (Date.parse(a.submittedAt) || 0)
+        );
+      });
+      return filtered;
+    },
+    [mode, tableId, groupByTable],
+  );
+
   const refresh = useCallback(async () => {
     const res = await fetch("/api/store-display/feed", { cache: "no-store" });
     if (res.status === 401) {
@@ -98,22 +113,7 @@ export default function StoreDisplayBoard({
       ? (data.orders as StoreDisplayOrder[])
       : [];
 
-    let filtered =
-      mode === "kitchen"
-        ? list.filter((o) => o.status !== "提供済み")
-        : list.filter((o) => COUNTER_VISIBLE.includes(o.status));
-
-    if (tableId) {
-      filtered = filtered.filter((o) => orderMatchesStoreTable(o, tableId));
-    }
-
-    filtered.sort((a, b) => {
-      if (a.status === "完成" && b.status !== "完成") return -1;
-      if (b.status === "完成" && a.status !== "完成") return 1;
-      return (
-        (Date.parse(b.submittedAt) || 0) - (Date.parse(a.submittedAt) || 0)
-      );
-    });
+    const filtered = filterForMode(list);
 
     if (!bootRef.current) {
       for (const o of filtered) {
@@ -132,7 +132,7 @@ export default function StoreDisplayBoard({
     }
 
     setOrders(filtered);
-  }, [mode, playNewOrderSound, tableId]);
+  }, [filterForMode, playNewOrderSound]);
 
   useEffect(() => {
     void refresh();
@@ -200,6 +200,10 @@ export default function StoreDisplayBoard({
     );
   }
 
+  const tableIds = Array.from({ length: STORE_ORDER_TABLE_COUNT }, (_, i) =>
+    String(i + 1),
+  );
+
   return (
     <div className={styles.root}>
       <header className={styles.header}>
@@ -207,6 +211,7 @@ export default function StoreDisplayBoard({
           <div className={styles.headerTitle}>{title}</div>
           <div className={styles.headerMeta}>
             {mode === "kitchen" ? "調理・盛り付け" : "レジ・お席への提供"}
+            {groupByTable ? "（全卓）" : ""}
           </div>
         </div>
         <div className={styles.headerMeta}>{clock}</div>
@@ -214,103 +219,70 @@ export default function StoreDisplayBoard({
 
       {queueWarning ? <p className={styles.warn}>{queueWarning}</p> : null}
 
-      {orders.length === 0 ? (
+      {groupByTable ? (
+        <>
+          <div className={styles.tableGrid}>
+            {tableIds.map((tid) => {
+              const columnOrders = orders.filter((o) =>
+                orderMatchesStoreTable(o, tid),
+              );
+              return (
+                <section key={tid} className={styles.tableColumn}>
+                  <h2 className={styles.tableColumnTitle}>
+                    {storeTableLabel(tid)}
+                  </h2>
+                  {columnOrders.length === 0 ? (
+                    <p className={styles.tableColumnEmpty}>注文なし</p>
+                  ) : (
+                    <div className={styles.tableColumnList}>
+                      {columnOrders.map((order) => (
+                        <StoreDisplayOrderCard
+                          key={order.reservationNo}
+                          order={order}
+                          mode={mode}
+                          onSetStatus={setStatus}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+          {(() => {
+            const unassigned = orders.filter(
+              (o) => !tableIds.some((tid) => orderMatchesStoreTable(o, tid)),
+            );
+            if (!unassigned.length) return null;
+            return (
+              <section className={styles.tableColumnUnassigned}>
+                <h2 className={styles.tableColumnTitle}>卓未設定</h2>
+                <div className={styles.tableColumnList}>
+                  {unassigned.map((order) => (
+                    <StoreDisplayOrderCard
+                      key={order.reservationNo}
+                      order={order}
+                      mode={mode}
+                      onSetStatus={setStatus}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })()}
+        </>
+      ) : orders.length === 0 ? (
         <p className={styles.empty}>新しいご注文はありません</p>
       ) : (
         <div className={styles.list}>
-          {orders.map((order) => {
-            const isNew = order.status === "受付済み";
-            return (
-              <article
-                key={order.reservationNo}
-                className={
-                  isNew ? `${styles.card} ${styles.cardNew}` : styles.card
-                }
-              >
-                <div className={styles.cardHead}>
-                  <span className={styles.cardNo}>{order.reservationNo}</span>
-                  <span className={styles.statusTag}>{order.status}</span>
-                  <span className={styles.cardTime}>
-                    {order.pickupTime
-                      ? `受付 ${order.pickupTime}`
-                      : "店内"}
-                  </span>
-                </div>
-                <h2 className={styles.cardName}>{order.name} 様</h2>
-                {order.seatLabel || order.tableId ? (
-                  <p className={styles.cardSeat}>
-                    席: {order.seatLabel || `${order.tableId}卓`}
-                  </p>
-                ) : null}
-                <div className={styles.itemList}>
-                  {order.items.map((item, idx) => (
-                    <div
-                      key={`${order.reservationNo}-${idx}`}
-                      className={
-                        mode === "kitchen"
-                          ? `${styles.itemRow} ${styles.itemRowKitchen}`
-                          : styles.itemRow
-                      }
-                    >
-                      <span>{itemLabel(item)}</span>
-                      <span className={styles.itemQty}>×{itemQty(item)}</span>
-                    </div>
-                  ))}
-                </div>
-                {mode === "counter" ? (
-                  <p className={styles.headerMeta} style={{ marginTop: 8 }}>
-                    合計 ¥{order.total.toLocaleString("ja-JP")}（{order.totalQty}
-                    点）・レジ精算
-                  </p>
-                ) : null}
-                <div className={styles.actions}>
-                  {mode === "kitchen"
-                    ? KITCHEN_FLOW.map((st) => (
-                        <button
-                          key={st}
-                          type="button"
-                          className={
-                            order.status === st
-                              ? `${styles.actBtn} ${styles.actBtnActive}`
-                              : styles.actBtn
-                          }
-                          onClick={() => setStatus(order.reservationNo, st)}
-                        >
-                          {st}
-                        </button>
-                      ))
-                    : (
-                      <>
-                        <button
-                          type="button"
-                          className={
-                            order.status === "提供済み"
-                              ? `${styles.actBtn} ${styles.actBtnActive}`
-                              : styles.actBtn
-                          }
-                          onClick={() =>
-                            setStatus(order.reservationNo, "提供済み")
-                          }
-                        >
-                          提供済み
-                        </button>
-                        {order.status !== "完成" ? (
-                          <button
-                            type="button"
-                            className={styles.actBtn}
-                            onClick={() =>
-                              setStatus(order.reservationNo, "完成")
-                            }
-                          >
-                            完成に戻す
-                          </button>
-                        ) : null}
-                      </>
-                    )}
-                </div>
-              </article>
-            );
-          })}
+          {orders.map((order) => (
+            <StoreDisplayOrderCard
+              key={order.reservationNo}
+              order={order}
+              mode={mode}
+              onSetStatus={setStatus}
+            />
+          ))}
         </div>
       )}
     </div>
