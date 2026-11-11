@@ -348,7 +348,7 @@ function StoreOrderMenuPageInner() {
           </div>
         ) : null}
         <Link
-          href={totalQty > 0 ? "/order/pickup" : "#"}
+          href={totalQty > 0 ? "/order/customer" : "#"}
           className={styles.primaryBtn}
           aria-disabled={totalQty <= 0}
           onClick={(e) => {

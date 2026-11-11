@@ -23,6 +23,11 @@ import {
   STORE_ORDER_MAINTENANCE_LINES,
 } from "../../../lib/storeOrderMaintenance";
 import { isStoreOrderTestMode } from "../../../lib/storeOrderTestMode";
+import { isStoreOrderDineInServer } from "../../../lib/storeOrderDineIn";
+import {
+  buildStoreDisplayOrderFromPayload,
+  enqueueStoreDisplayOrder,
+} from "../../../lib/storeDisplayQueue";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +40,7 @@ type RawItem = {
   price?: number | string | null;
   quantity?: number | string;
   qty?: number | string;
+  dressing?: string;
 };
 
 function toNumber(value: unknown, fallback = 0) {
@@ -57,6 +63,7 @@ function normalizeItems(items: unknown) {
         ? 0
         : toNumber(rawPrice, 0);
 
+    const dressing = String(item.dressing || "").trim();
     return {
       itemType: "store",
       menuKey: item.menuKey || item.id || "",
@@ -65,6 +72,7 @@ function normalizeItems(items: unknown) {
       qty,
       price,
       total: price * qty,
+      ...(dressing ? { dressing } : {}),
     };
   });
 }
@@ -170,22 +178,28 @@ export async function POST(req: NextRequest) {
     const totalQty = items.reduce((s, i) => s + i.qty, 0);
     const total = items.reduce((s, i) => s + i.total, 0);
 
+    const seatLabel = String(body?.seatLabel || body?.seat || "").trim();
+    const dineIn = isStoreOrderDineInServer();
+
     const noteParts = [
       "店内モバイルオーダー",
-      "店頭支払い",
+      dineIn ? "店内飲食" : "持ち帰り",
+      dineIn ? "レジ精算" : "店頭支払い",
+      seatLabel ? `席:${seatLabel}` : "",
       body?.note ? String(body.note).trim() : "",
     ].filter(Boolean);
 
     const payload: Record<string, unknown> = {
       action: "saveReservation",
       channel: "STORE_MOBILE",
-      source: "store-mobile-order",
+      source: dineIn ? "store-mobile-dine-in" : "store-mobile-order",
       storeName: "かむらど",
       reservationNo,
       date: pickupDate,
       time: pickupTime,
       name,
       phone,
+      seatLabel,
       note: noteParts.join(" / "),
       items,
       itemCount: items.length,
@@ -224,13 +238,23 @@ export async function POST(req: NextRequest) {
     }
 
     const data = gasResult.data as Record<string, unknown> | null;
+    const finalNo =
+      (data?.reservationNo && String(data.reservationNo)) ||
+      (data?.reservation_no && String(data.reservation_no)) ||
+      reservationNo;
+
+    const displayPayload = {
+      ...payload,
+      reservationNo: finalNo,
+      fulfillment: dineIn ? "dine_in" : "pickup",
+    };
+    void enqueueStoreDisplayOrder(
+      buildStoreDisplayOrderFromPayload(displayPayload),
+    ).catch((err) => console.error("[store-orders/display-queue]", err));
 
     return NextResponse.json({
       ok: true,
-      reservationNo:
-        (data?.reservationNo && String(data.reservationNo)) ||
-        (data?.reservation_no && String(data.reservation_no)) ||
-        reservationNo,
+      reservationNo: finalNo,
       data,
     });
   } catch (err) {

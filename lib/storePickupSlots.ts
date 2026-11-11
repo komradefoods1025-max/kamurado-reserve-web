@@ -10,6 +10,7 @@ import {
   STORE_ORDER_SWITCH_TO_NEXT_DAY_AFTER,
   type StoreHoursWindow,
 } from "./storeOrderConfig";
+import { isStoreOrderDineInServer } from "./storeOrderDineIn";
 import { isStoreOrderTestMode } from "./storeOrderTestMode";
 
 function pad2(n: number) {
@@ -213,6 +214,20 @@ export function listStorePickupSlots(
       slots: todaySlots,
       closedToday: false,
       message: null,
+    };
+  }
+
+  if (isStoreOrderDineInServer()) {
+    return {
+      pickupDate: todayYmd,
+      bookingMode: "today",
+      bookableDates: [],
+      earliestReadyTime: null,
+      pickupTime: null,
+      slots: [],
+      closedToday: true,
+      message:
+        "店内オーダーは営業時間内（17:30〜21:00頃）にご注文ください。",
     };
   }
 

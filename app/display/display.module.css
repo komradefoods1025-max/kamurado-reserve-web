@@ -1,0 +1,201 @@
+.root {
+  min-height: 100dvh;
+  background: linear-gradient(165deg, #2a1812 0%, #1a100c 45%, #120a08 100%);
+  color: #faf3e8;
+  font-family: system-ui, -apple-system, "Hiragino Sans", sans-serif;
+}
+
+.pinScreen {
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 48px 20px;
+}
+
+.pinTitle {
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.pinSub {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #c4b8a8;
+  text-align: center;
+}
+
+.pinInput {
+  width: 100%;
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 200, 120, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 20px;
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
+.pinBtn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffb840 0%, #e89000 100%);
+  color: #1a1008;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.pinError {
+  margin-top: 12px;
+  color: #f5a5a5;
+  text-align: center;
+  font-size: 14px;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(40, 26, 20, 0.95);
+  border-bottom: 1px solid rgba(255, 180, 80, 0.2);
+}
+
+.headerTitle {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.headerMeta {
+  font-size: 12px;
+  color: #c4b8a8;
+}
+
+.warn {
+  margin: 12px 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 160, 60, 0.15);
+  border: 1px solid rgba(255, 160, 60, 0.35);
+  font-size: 13px;
+}
+
+.list {
+  padding: 8px 12px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 190, 100, 0.25);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 14px;
+}
+
+.cardNew {
+  border-color: rgba(255, 210, 80, 0.75);
+  box-shadow: 0 0 0 2px rgba(255, 184, 64, 0.25);
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cardNo {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffd080;
+}
+
+.cardTime {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.cardName {
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.cardSeat {
+  font-size: 15px;
+  color: #ffd080;
+}
+
+.itemList {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.itemRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.itemRowKitchen {
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.itemQty {
+  flex-shrink: 0;
+  font-weight: 800;
+  color: #ffb840;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.actBtn {
+  flex: 1;
+  min-width: 88px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.25);
+  color: #faf3e8;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.actBtnActive {
+  border-color: #ffb840;
+  background: rgba(255, 184, 64, 0.22);
+}
+
+.statusTag {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(255, 184, 64, 0.18);
+}
+
+.empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: #c4b8a8;
+}

@@ -16,6 +16,8 @@ export type StoreOrderDraft = {
   items: StoreCartLine[];
   pickupDate?: string;
   pickupTime?: string;
+  /** 店内席番号・テーブル（任意） */
+  seatLabel?: string;
   customerName?: string;
   phone?: string;
   note?: string;
@@ -36,6 +38,7 @@ export function readStoreOrderDraft(): StoreOrderDraft {
       items: Array.isArray(parsed.items) ? parsed.items : [],
       pickupDate: parsed.pickupDate || "",
       pickupTime: parsed.pickupTime || "",
+      seatLabel: parsed.seatLabel || "",
       customerName: parsed.customerName || "",
       phone: parsed.phone || "",
       note: parsed.note || "",

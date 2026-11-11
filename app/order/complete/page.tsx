@@ -4,10 +4,12 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import StoreOrderDisclaimer from "../StoreOrderDisclaimer";
+import { isStoreOrderDineInClient } from "../../../lib/storeOrderDineIn";
 import styles from "../order.module.css";
 
 function CompleteBody() {
   const params = useSearchParams();
+  const dineIn = isStoreOrderDineInClient();
   const no = params.get("no") || "";
   const time = params.get("time") || "";
 
@@ -22,14 +24,16 @@ function CompleteBody() {
       {time ? (
         <>
           <p className={styles.readyTimeLabel} style={{ marginTop: 16 }}>
-            出来上がり予定時間
+            {dineIn ? "お料理の目安" : "出来上がり予定時間"}
           </p>
           <p className={styles.readyTimeValue}>{time}</p>
         </>
       ) : null}
       <StoreOrderDisclaimer />
       <p className={styles.stepNote}>
-        店頭でお名前をお伝えいただき、お支払いのうえお受け取りください。
+        {dineIn
+          ? "お席までお持ちします。お会計はレジにてお願いします。"
+          : "店頭でお名前をお伝えいただき、お支払いのうえお受け取りください。"}
       </p>
       <Link
         href="/order/menu"

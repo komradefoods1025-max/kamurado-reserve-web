@@ -3,12 +3,16 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { isStoreOrderDineInClient } from "../../../lib/storeOrderDineIn";
 import { getTodayYmdJst } from "../../../lib/bookingDates";
 import {
   formatStoreEarliestReadyWithSeconds,
   getStoreSlotsForPickupDate,
 } from "../../../lib/storePickupSlots";
-import { STORE_ORDER_READY_NOTE } from "../../../lib/storeOrderCopy";
+import {
+  STORE_ORDER_READY_NOTE_DINE_IN,
+  STORE_ORDER_READY_NOTE_PICKUP,
+} from "../../../lib/storeOrderCopy";
 import StoreOrderCartSummary from "../StoreOrderCartSummary";
 import StoreOrderDisclaimer from "../StoreOrderDisclaimer";
 import StoreOrderTestBanner from "../StoreOrderTestBanner";
@@ -47,6 +51,7 @@ function pickValidTime(
 
 export default function StoreOrderConfirmReadyPage() {
   const router = useRouter();
+  const dineIn = isStoreOrderDineInClient();
   const [loading, setLoading] = useState(true);
   const [pickupDate, setPickupDate] = useState("");
   const [earliestReadyTime, setEarliestReadyTime] = useState("");
@@ -59,6 +64,10 @@ export default function StoreOrderConfirmReadyPage() {
   const [bookableDates, setBookableDates] = useState<BookableDate[]>([]);
 
   useEffect(() => {
+    if (dineIn) {
+      router.replace("/order/customer");
+      return;
+    }
     const draft = readStoreOrderDraft();
     if (storeCartQuantity(draft.items) <= 0) {
       router.replace("/order/menu");
@@ -134,7 +143,7 @@ export default function StoreOrderConfirmReadyPage() {
       window.clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  }, [router, dineIn]);
 
   useEffect(() => {
     if (closed || bookingMode !== "today") return;
@@ -185,7 +194,9 @@ export default function StoreOrderConfirmReadyPage() {
       <StoreOrderTestBanner />
       <header className={styles.header}>
         <h1 className={styles.title}>注文確認</h1>
-        <p className={styles.sub}>{STORE_ORDER_READY_NOTE}</p>
+        <p className={styles.sub}>
+          {dineIn ? STORE_ORDER_READY_NOTE_DINE_IN : STORE_ORDER_READY_NOTE_PICKUP}
+        </p>
       </header>
 
       <section className={styles.section}>

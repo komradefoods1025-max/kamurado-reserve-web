@@ -11,6 +11,7 @@ import {
   readStoreOrderDraft,
   storeCartQuantity,
 } from "../../../lib/storeOrderDraft";
+import { isStoreOrderDineInClient } from "../../../lib/storeOrderDineIn";
 import styles from "../order.module.css";
 
 type SubmitResponse = {
@@ -21,6 +22,7 @@ type SubmitResponse = {
 
 export default function StoreOrderConfirmPage() {
   const router = useRouter();
+  const dineIn = isStoreOrderDineInClient();
   const [draft, setDraft] = useState(readStoreOrderDraft());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -100,9 +102,11 @@ export default function StoreOrderConfirmPage() {
             menuName: item.name,
             price: item.price ?? 0,
             quantity: item.quantity,
+            dressing: item.dressing || "",
           })),
           pickupDate: draft.pickupDate,
           pickupTime: draft.pickupTime,
+          seatLabel: draft.seatLabel,
           name: draft.customerName,
           phone: draft.phone,
           note: draft.note,
@@ -140,9 +144,9 @@ export default function StoreOrderConfirmPage() {
       <section className={styles.section}>
         <div className={styles.panel}>
           <p className={styles.readyTimeLabel} style={{ marginTop: 4 }}>
-            お受け取り日時
+            {dineIn ? "お料理の目安" : "お受け取り日時"}
           </p>
-          {pickupDateLabel ? (
+          {!dineIn && pickupDateLabel ? (
             <p
               className={styles.readyTimeValue}
               style={{ fontSize: 26, marginTop: 4 }}
@@ -152,13 +156,14 @@ export default function StoreOrderConfirmPage() {
           ) : null}
           <p
             className={styles.readyTimeValue}
-            style={pickupDateLabel ? { fontSize: 34, marginTop: 6 } : undefined}
+            style={pickupDateLabel && !dineIn ? { fontSize: 34, marginTop: 6 } : undefined}
           >
             {draft.pickupTime || "—"}
           </p>
           <StoreOrderDisclaimer />
           <p className={styles.label} style={{ marginTop: 8 }}>
             {draft.customerName} 様 / {draft.phone}
+            {draft.seatLabel ? ` / 席:${draft.seatLabel}` : ""}
           </p>
 
           <StoreOrderCartSummary items={draft.items} />
