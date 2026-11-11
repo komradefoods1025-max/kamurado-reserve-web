@@ -143,8 +143,16 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
   item("dessert", "hotteok", "ホットク", 680),
   item("dessert", "hot_coffee", "ホットコーヒー", 300),
   item("dessert", "ice_coffee", "アイスコーヒー", 350),
-  item("dessert", "cappuccino", "カプチーノ", 400),
-  item("dessert", "espresso", "エスプレッソ", 200),
+  item("dessert", "cappuccino", "カプチーノ", 400, {
+    image: "/store-menu/cappuccino.png?v=20261112",
+    imageWidth: 500,
+    imageHeight: 500,
+  }),
+  item("dessert", "espresso", "エスプレッソ", 200, {
+    image: "/store-menu/espresso.png?v=20261112",
+    imageWidth: 500,
+    imageHeight: 500,
+  }),
   item("dessert", "latte_macchiato", "ラテマキアート", 500),
 ];
 
