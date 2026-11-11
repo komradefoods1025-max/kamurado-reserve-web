@@ -20,6 +20,7 @@ import {
 } from "../../../lib/storeOrderTables";
 import {
   clearStoreOrderTableSession,
+  readStoreOrderTableCookie,
   readStoreOrderTableSession,
 } from "../../../lib/storeOrderTableSession";
 import styles from "../order.module.css";
@@ -126,7 +127,8 @@ export default function StoreOrderConfirmPage() {
       const live = readStoreOrderDraft();
       const tableId =
         normalizeStoreTableId(live.tableId || live.seatLabel) ||
-        readStoreOrderTableSession();
+        readStoreOrderTableSession() ||
+        readStoreOrderTableCookie();
       const seatLabel = tableId ? storeTableLabel(tableId) : live.seatLabel;
 
       const res = await fetch("/api/store-orders", {

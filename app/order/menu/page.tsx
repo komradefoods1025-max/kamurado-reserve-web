@@ -38,6 +38,7 @@ import {
 } from "../../../lib/storeOrderTables";
 import {
   persistStoreOrderTableId,
+  readStoreOrderTableCookie,
   readStoreOrderTableSession,
 } from "../../../lib/storeOrderTableSession";
 import styles from "../order.module.css";
@@ -113,7 +114,8 @@ function StoreOrderMenuPageInner() {
 
   useEffect(() => {
     const draft = readStoreOrderDraft();
-    const sessionTable = readStoreOrderTableSession();
+    const sessionTable =
+      readStoreOrderTableSession() || readStoreOrderTableCookie();
     let next = draft;
     if (sessionTable && !normalizeStoreTableId(draft.tableId)) {
       next = {
@@ -202,7 +204,8 @@ function StoreOrderMenuPageInner() {
     const synced = syncStoreCartWithCatalog(next);
     const { amount } = computeStoreCartMoney(synced);
     const draft = readStoreOrderDraft();
-    const sessionTable = readStoreOrderTableSession();
+    const sessionTable =
+      readStoreOrderTableSession() || readStoreOrderTableCookie();
     const tableId =
       normalizeStoreTableId(draft.tableId || draft.seatLabel) || sessionTable;
     writeStoreOrderDraft({
