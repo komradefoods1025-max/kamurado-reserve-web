@@ -10,6 +10,8 @@ import {
   STORE_MENU_ITEMS,
   formatStoreItemPrice,
   storeMenuItemUnitPrice,
+  storeMenuParseSecondaryStepperValue,
+  storeMenuSecondaryStepperLabel,
   formatStoreOrderCartTotal,
   formatStoreOrderLineTotal,
   syncStoreCartWithCatalog,
@@ -187,6 +189,18 @@ function StoreOrderMenuPageInner() {
   }
 
   function selectedSecondaryDressing(item: (typeof STORE_MENU_ITEMS)[number]) {
+    if (item.secondaryOptionStepper) {
+      const stepper = item.secondaryOptionStepper;
+      const fallback =
+        stepper.default ??
+        Math.max(stepper.min, Math.min(stepper.max, stepper.min));
+      const picked = secondaryDressingPick[item.id];
+      const n =
+        storeMenuParseSecondaryStepperValue(picked) ??
+        fallback;
+      const clamped = Math.max(stepper.min, Math.min(stepper.max, n));
+      return storeMenuSecondaryStepperLabel(stepper, clamped);
+    }
     if (!item.secondaryDressingOptions?.length) return undefined;
     return secondaryDressingPick[item.id] ?? item.secondaryDressingOptions[0];
   }
@@ -267,7 +281,9 @@ function StoreOrderMenuPageInner() {
       quantity: nextQty,
       image: item.image,
       ...(dressing ? { dressing } : {}),
-      ...(secondaryDressing ? { secondaryDressing } : {}),
+      ...(secondaryDressing || item.secondaryOptionStepper
+        ? { secondaryDressing }
+        : {}),
     };
 
     const others = cart.filter((c) => !matchesLine(c));
@@ -280,6 +296,24 @@ function StoreOrderMenuPageInner() {
 
   function setSecondaryDressingForItem(itemId: string, dressing: string) {
     setSecondaryDressingPick((prev) => ({ ...prev, [itemId]: dressing }));
+  }
+
+  function changeSecondaryQty(itemId: string, delta: number) {
+    const item = STORE_MENU_ITEMS.find((m) => m.id === itemId);
+    const stepper = item?.secondaryOptionStepper;
+    if (!stepper) return;
+    const current =
+      storeMenuParseSecondaryStepperValue(selectedSecondaryDressing(item!)) ??
+      stepper.default ??
+      stepper.min;
+    const next = Math.max(
+      stepper.min,
+      Math.min(stepper.max, current + delta),
+    );
+    setSecondaryDressingForItem(
+      itemId,
+      storeMenuSecondaryStepperLabel(stepper, next),
+    );
   }
 
   function emptyCart() {
@@ -414,6 +448,7 @@ function StoreOrderMenuPageInner() {
                     secondaryDressing={secondaryDressing}
                     onDressingChange={setDressingForItem}
                     onSecondaryDressingChange={setSecondaryDressingForItem}
+                    onSecondaryStepperChange={changeSecondaryQty}
                     onChange={changeQty}
                   />
                 </div>
@@ -437,6 +472,7 @@ function StoreOrderMenuPageInner() {
                         secondaryDressing={secondaryDressing}
                         onDressingChange={setDressingForItem}
                         onSecondaryDressingChange={setSecondaryDressingForItem}
+                        onSecondaryStepperChange={changeSecondaryQty}
                         onChange={changeQty}
                       />
                     </div>
@@ -463,6 +499,7 @@ function StoreOrderMenuPageInner() {
                         secondaryDressing={secondaryDressing}
                         onDressingChange={setDressingForItem}
                         onSecondaryDressingChange={setSecondaryDressingForItem}
+                        onSecondaryStepperChange={changeSecondaryQty}
                         onChange={changeQty}
                       />
                     </div>
@@ -492,6 +529,7 @@ function StoreOrderMenuPageInner() {
                         secondaryDressing={secondaryDressing}
                         onDressingChange={setDressingForItem}
                         onSecondaryDressingChange={setSecondaryDressingForItem}
+                        onSecondaryStepperChange={changeSecondaryQty}
                         onChange={changeQty}
                       />
                     </div>
@@ -645,6 +683,7 @@ function MenuItemBody({
   secondaryDressing,
   onDressingChange,
   onSecondaryDressingChange,
+  onSecondaryStepperChange,
   onChange,
 }: {
   item: (typeof STORE_MENU_ITEMS)[number];
@@ -653,6 +692,7 @@ function MenuItemBody({
   secondaryDressing?: string;
   onDressingChange: (itemId: string, dressing: string) => void;
   onSecondaryDressingChange: (itemId: string, dressing: string) => void;
+  onSecondaryStepperChange: (itemId: string, delta: number) => void;
   onChange: (id: string, delta: number) => void;
 }) {
   const unitPrice = storeMenuItemUnitPrice(item, dressing);
@@ -660,7 +700,12 @@ function MenuItemBody({
   const dressings = item.dressingOptions;
   const pickLabel = item.optionLabel ?? "ドレッシング";
   const secondaryOptions = item.secondaryDressingOptions;
+  const secondaryStepper = item.secondaryOptionStepper;
   const secondaryLabel = item.secondaryOptionLabel ?? "オプション";
+  const glassCount =
+    secondaryStepper && secondaryDressing
+      ? (storeMenuParseSecondaryStepperValue(secondaryDressing) ?? 0)
+      : 0;
 
   return (
     <>
@@ -674,6 +719,32 @@ function MenuItemBody({
           ariaLabel={pickLabel}
           onPick={(opt) => onDressingChange(item.id, opt)}
         />
+      ) : null}
+      {secondaryStepper ? (
+        <div className={styles.dressingPick}>
+          <span className={styles.dressingLabel}>{secondaryLabel}</span>
+          <div className={styles.qtyControl}>
+            <button
+              type="button"
+              className={styles.qtyBtn}
+              disabled={glassCount <= secondaryStepper.min}
+              onClick={() => onSecondaryStepperChange(item.id, -1)}
+              aria-label={`${secondaryLabel}を減らす`}
+            >
+              −
+            </button>
+            <span>{glassCount}</span>
+            <button
+              type="button"
+              className={styles.qtyBtn}
+              disabled={glassCount >= secondaryStepper.max}
+              onClick={() => onSecondaryStepperChange(item.id, 1)}
+              aria-label={`${secondaryLabel}を増やす`}
+            >
+              ＋
+            </button>
+          </div>
+        </div>
       ) : null}
       {secondaryOptions?.length ? (
         <OptionPickGroup

@@ -25,6 +25,31 @@ import {
   DRINK_MENU_ITEMS,
 } from "./storeDrinkDessertMenu";
 
+export type StoreMenuSecondaryStepper = {
+  min: number;
+  max: number;
+  default?: number;
+  unit?: string;
+};
+
+export function storeMenuSecondaryStepperLabel(
+  stepper: StoreMenuSecondaryStepper,
+  count: number,
+): string {
+  const unit = stepper.unit ?? "個";
+  return `${count}${unit}`;
+}
+
+export function storeMenuParseSecondaryStepperValue(
+  value: string | undefined,
+): number | null {
+  if (!value) return null;
+  const m = /^(\d+)/.exec(value.trim());
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) ? n : null;
+}
+
 export type StoreMenuItem = {
   id: string;
   name: string;
@@ -40,6 +65,8 @@ export type StoreMenuItem = {
   optionLabel?: string;
   secondaryDressingOptions?: readonly string[];
   secondaryOptionLabel?: string;
+  /** 2つ目の選択を ± で数える（例: グラス数） */
+  secondaryOptionStepper?: StoreMenuSecondaryStepper;
   /** 種類ごとに価格が違う場合（例: おにぎり） */
   optionPrices?: Partial<Record<string, number>>;
   /** 白背景の瓶写真などは contain */
@@ -539,7 +566,10 @@ function storeCartDisplayName(
     const label = catalog.optionLabel ?? "ドレッシング";
     parts.push(`${label}:${dressing}`);
   }
-  if (catalog.secondaryDressingOptions?.length && secondaryDressing) {
+  if (
+    secondaryDressing &&
+    (catalog.secondaryDressingOptions?.length || catalog.secondaryOptionStepper)
+  ) {
     const label = catalog.secondaryOptionLabel ?? "オプション";
     parts.push(`${label}:${secondaryDressing}`);
   }
