@@ -122,7 +122,9 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
     optionLabel: "種類",
     dressingOptions: ICE_CREAM_FLAVORS,
   }),
-  item("dessert", "honey_toast", "鉄板ハニートースト", 680),
+  item("dessert", "honey_toast", "鉄板ハニートースト", 680, {
+    menuListFullWidth: true,
+  }),
   item("dessert", "honey_toast_topping", "ハニートースト トッピング", 50, {
     optionLabel: "種類",
     dressingOptions: HONEY_TOAST_TOPPINGS,
