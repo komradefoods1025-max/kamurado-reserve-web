@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTodayYmdJst } from "../../../../lib/bookingDates";
 import {
-  isStoreDisplayQueueEnabled,
+  isStoreDisplayQueueAvailable,
   listStoreDisplayOrders,
+  storeDisplayQueueHintMessage,
 } from "../../../../lib/storeDisplayQueue";
 import { isStoreDisplayRequestAuthorized } from "../../../../lib/storeDisplaySession";
 
@@ -14,23 +15,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, message: "認証が必要です" }, { status: 401 });
   }
 
-  if (!isStoreDisplayQueueEnabled()) {
-    return NextResponse.json({
-      ok: true,
-      configured: false,
-      orders: [],
-      message:
-        "注文キュー未設定（UPSTASH_REDIS_REST_URL / TOKEN）— GAS保存のみ動作中",
-    });
-  }
-
   const ymd = req.nextUrl.searchParams.get("date")?.trim() || getTodayYmdJst();
   const orders = await listStoreDisplayOrders(ymd);
+  const available = isStoreDisplayQueueAvailable();
+  const hint = storeDisplayQueueHintMessage();
 
   return NextResponse.json({
     ok: true,
-    configured: true,
+    configured: available,
     date: ymd,
     orders,
+    message: available ? hint || null : hint,
   });
 }

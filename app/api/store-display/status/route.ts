@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  isStoreDisplayQueueEnabled,
+  isStoreDisplayQueueAvailable,
   updateStoreDisplayOrderStatus,
   type StoreDisplayOrder,
 } from "../../../../lib/storeDisplayQueue";
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, message: "認証が必要です" }, { status: 401 });
   }
 
-  if (!isStoreDisplayQueueEnabled()) {
+  if (!isStoreDisplayQueueAvailable()) {
     return NextResponse.json(
       { ok: false, message: "注文キューが未設定です" },
       { status: 503 },

@@ -35,7 +35,13 @@ import {
 import {
   buildStoreDisplayOrderFromPayload,
   enqueueStoreDisplayOrder,
+  isStoreDisplayQueueAvailable,
 } from "../../../lib/storeDisplayQueue";
+import {
+  resolveStoreOrderSaveMode,
+  shouldSaveStoreOrderToDisplay,
+  shouldSaveStoreOrderToGas,
+} from "../../../lib/storeOrderSaveMode";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -213,6 +219,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const saveMode = resolveStoreOrderSaveMode(dineIn);
     const reservationNo =
       String(body?.reservationNo || "").trim() ||
       createStoreOrderReservationNo();
@@ -232,6 +239,8 @@ export async function POST(req: NextRequest) {
       !dineIn && body?.note ? String(body.note).trim() : "",
     ].filter(Boolean);
 
+    const submittedAt = new Date().toISOString();
+
     const payload: Record<string, unknown> = {
       action: "saveReservation",
       channel: "STORE_MOBILE",
@@ -248,57 +257,86 @@ export async function POST(req: NextRequest) {
       itemCount: items.length,
       totalQty,
       total,
-      submittedAt: new Date().toISOString(),
-      notifyMail: true,
+      submittedAt,
+      notifyMail: shouldSaveStoreOrderToGas(saveMode),
       status: "受付済み",
     };
 
-    const saveUrlCandidates = getReservationSaveUrlCandidates();
-    if (!saveUrlCandidates.length) {
-      return NextResponse.json(
-        { ok: false, message: missingReservationSaveUrlMessage() },
-        { status: 500 },
-      );
+    let finalNo = reservationNo;
+    let gasResponse: Record<string, unknown> | null = null;
+
+    if (shouldSaveStoreOrderToGas(saveMode)) {
+      const saveUrlCandidates = getReservationSaveUrlCandidates();
+      if (!saveUrlCandidates.length) {
+        return NextResponse.json(
+          { ok: false, message: missingReservationSaveUrlMessage() },
+          { status: 500 },
+        );
+      }
+
+      let gasResult = await saveReservationToGas(saveUrlCandidates[0], payload);
+      for (
+        let i = 1;
+        i < saveUrlCandidates.length && !gasSaveSucceeded(gasResult);
+        i++
+      ) {
+        gasResult = await saveReservationToGas(saveUrlCandidates[i], payload);
+      }
+
+      if (!gasSaveSucceeded(gasResult)) {
+        const data = gasResult.data as Record<string, unknown> | null;
+        const gasError = sanitizeGasErrorForUser(
+          (data?.error && String(data.error)) ||
+            (data?.message && String(data.message)) ||
+            gasResult.rawText ||
+            "注文の送信に失敗しました",
+        );
+        return NextResponse.json(
+          { ok: false, message: gasError, detail: data ?? null },
+          { status: 500 },
+        );
+      }
+
+      gasResponse = gasResult.data as Record<string, unknown> | null;
+      const gasNo = String(
+        gasResponse?.reservationNo ?? gasResponse?.reservation_no ?? "",
+      ).trim();
+      finalNo = gasNo || reservationNo;
     }
 
-    let gasResult = await saveReservationToGas(saveUrlCandidates[0], payload);
-    for (let i = 1; i < saveUrlCandidates.length && !gasSaveSucceeded(gasResult); i++) {
-      gasResult = await saveReservationToGas(saveUrlCandidates[i], payload);
-    }
+    if (shouldSaveStoreOrderToDisplay(saveMode)) {
+      if (!isStoreDisplayQueueAvailable()) {
+        return NextResponse.json(
+          {
+            ok: false,
+            message:
+              "店舗画面用の注文キューが未設定です。Vercel に UPSTASH_REDIS_REST_URL と TOKEN を設定してください。",
+          },
+          { status: 503 },
+        );
+      }
 
-    if (!gasSaveSucceeded(gasResult)) {
-      const data = gasResult.data as Record<string, unknown> | null;
-      const gasError = sanitizeGasErrorForUser(
-        (data?.error && String(data.error)) ||
-          (data?.message && String(data.message)) ||
-          gasResult.rawText ||
-          "注文の送信に失敗しました",
+      const displayPayload = {
+        ...payload,
+        reservationNo: finalNo,
+        fulfillment: dineIn ? "dine_in" : "pickup",
+      };
+      const queued = await enqueueStoreDisplayOrder(
+        buildStoreDisplayOrderFromPayload(displayPayload),
       );
-      return NextResponse.json(
-        { ok: false, message: gasError, detail: data ?? null },
-        { status: 500 },
-      );
+      if (!queued) {
+        return NextResponse.json(
+          { ok: false, message: "店舗画面への送信に失敗しました" },
+          { status: 500 },
+        );
+      }
     }
-
-    const data = gasResult.data as Record<string, unknown> | null;
-    const finalNo =
-      (data?.reservationNo && String(data.reservationNo)) ||
-      (data?.reservation_no && String(data.reservation_no)) ||
-      reservationNo;
-
-    const displayPayload = {
-      ...payload,
-      reservationNo: finalNo,
-      fulfillment: dineIn ? "dine_in" : "pickup",
-    };
-    void enqueueStoreDisplayOrder(
-      buildStoreDisplayOrderFromPayload(displayPayload),
-    ).catch((err) => console.error("[store-orders/display-queue]", err));
 
     return NextResponse.json({
       ok: true,
       reservationNo: finalNo,
-      data,
+      saveMode,
+      data: gasResponse,
     });
   } catch (err) {
     console.error("[store-orders/create]", err);
