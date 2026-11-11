@@ -9,18 +9,19 @@ export default function StoreOrderTestBanner() {
   const testMode = isClientTruthy(
     String(process.env.NEXT_PUBLIC_STORE_ORDER_TEST_MODE || ""),
   );
-  const bypassLo = isClientTruthy(
-    String(process.env.NEXT_PUBLIC_STORE_ORDER_BYPASS_LAST_ORDER || ""),
+  const enforceLo = isClientTruthy(
+    String(process.env.NEXT_PUBLIC_STORE_ORDER_ENFORCE_LAST_ORDER || ""),
   );
 
   const dev = process.env.NODE_ENV === "development";
-  if (!dev && !testMode && !bypassLo) return null;
+  if (enforceLo) return null;
+  if (!dev && !testMode) return null;
 
   return (
     <div className={styles.testBanner} role="status">
       {dev || testMode
-        ? "テストモード：休業日・開店前・ラストオーダー（22:00/22:30）を無視します"
-        : "テスト中：ラストオーダー（22:00/22:30）を無視しています"}
+        ? "テストモード：休業日・開店前を無視します（LO は既定で無効）"
+        : "ラストオーダー（22:00/22:30）は現在、受付制限に使っていません"}
     </div>
   );
 }
