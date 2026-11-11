@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StoreDisplayOrder } from "../../lib/storeDisplayQueue";
 import {
   orderMatchesStoreTable,
@@ -23,7 +23,7 @@ const COUNTER_VISIBLE: StoreDisplayOrder["status"][] = [
 const KITCHEN_COMPLETE_VISIBLE_MS = 5000;
 
 /** 店舗表示 UI 世代（キャッシュ確認用・ヘッダーに表示） */
-const DISPLAY_UI_REV = "quad-2x2";
+const DISPLAY_UI_REV = "quad-2x2-h5";
 
 export default function StoreDisplayBoard({
   mode,
@@ -40,7 +40,7 @@ export default function StoreDisplayBoard({
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
-  const [orders, setOrders] = useState<StoreDisplayOrder[]>([]);
+  const [feedOrders, setFeedOrders] = useState<StoreDisplayOrder[]>([]);
   const [queueWarning, setQueueWarning] = useState<string | null>(null);
   const [clock, setClock] = useState("");
   const seenRef = useRef<Set<string>>(new Set());
@@ -77,12 +77,15 @@ export default function StoreDisplayBoard({
     }
   }, [touchCompleteHideTimer]);
 
-  const kitchenCompleteStillVisible = useCallback((order: StoreDisplayOrder) => {
-    if (order.status !== "完成") return true;
-    const until = completeVisibleUntilRef.current.get(order.reservationNo);
-    if (!until) return true;
-    return Date.now() < until;
-  }, [hideTick]);
+  const kitchenCompleteStillVisible = useCallback(
+    (order: StoreDisplayOrder) => {
+      if (order.status !== "完成") return true;
+      const until = completeVisibleUntilRef.current.get(order.reservationNo);
+      if (!until) return false;
+      return Date.now() < until;
+    },
+    [hideTick],
+  );
 
   useEffect(() => {
     const tick = () => {
@@ -141,6 +144,22 @@ export default function StoreDisplayBoard({
     [mode, tableId, showTableQuad, kitchenCompleteStillVisible],
   );
 
+  const orders = useMemo(
+    () => filterForMode(feedOrders),
+    [feedOrders, filterForMode, hideTick],
+  );
+
+  useEffect(() => {
+    if (mode !== "kitchen") return;
+    const id = window.setInterval(() => {
+      const pending = [...completeVisibleUntilRef.current.values()].some(
+        (until) => Date.now() < until,
+      );
+      if (pending) setHideTick((n) => n + 1);
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [mode]);
+
   const refresh = useCallback(async () => {
     const res = await fetch("/api/store-display/feed", { cache: "no-store" });
     if (res.status === 401) {
@@ -161,10 +180,8 @@ export default function StoreDisplayBoard({
 
     if (mode === "kitchen") syncCompleteHideTimers(list);
 
-    const filtered = filterForMode(list);
-
     if (!bootRef.current) {
-      for (const o of filtered) {
+      for (const o of list) {
         if (
           o.status === "受付済み" &&
           !seenRef.current.has(o.reservationNo)
@@ -175,12 +192,12 @@ export default function StoreDisplayBoard({
         }
       }
     } else {
-      filtered.forEach((o) => seenRef.current.add(o.reservationNo));
+      list.forEach((o) => seenRef.current.add(o.reservationNo));
       bootRef.current = false;
     }
 
-    setOrders(filtered);
-  }, [filterForMode, mode, playNewOrderSound, syncCompleteHideTimers]);
+    setFeedOrders(list);
+  }, [mode, playNewOrderSound, syncCompleteHideTimers]);
 
   useEffect(() => {
     void refresh();
