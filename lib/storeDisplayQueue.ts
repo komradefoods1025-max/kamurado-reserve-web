@@ -67,8 +67,9 @@ function isTruthyEnv(value: string | undefined): boolean {
 /** Redis なし時のメモリキュー（dev / テストモード / 明示フラグ） */
 export function isStoreDisplayMemoryQueueActive(): boolean {
   if (redisRestBase() || isStoreDisplayBlobQueueEnabled()) return false;
-  if (process.env.VERCEL === "1") return false;
   if (process.env.NODE_ENV === "development") return true;
+  /** Blob/Redis 未設定の Vercel 本番は暫定メモリ（小規模店向け・要 Storage 接続推奨） */
+  if (process.env.VERCEL === "1") return true;
   if (isStoreOrderTestMode()) return true;
   return isTruthyEnv(process.env.STORE_ORDER_DISPLAY_MEMORY_FALLBACK);
 }
@@ -279,6 +280,9 @@ export function storeDisplayQueueHintMessage(): string {
     return "Vercel Blob に注文を保存しています";
   }
   if (isStoreDisplayMemoryQueueActive()) {
+    if (process.env.VERCEL === "1") {
+      return "暫定: サーバーメモリで表示中です。Vercel → Storage で Blob 接続を推奨（安定稼働）";
+    }
     return "開発用メモリキュー（npm run dev）";
   }
   return "注文キュー未設定 — Vercel で Blob または Upstash Redis をプロジェクトに接続してください";
