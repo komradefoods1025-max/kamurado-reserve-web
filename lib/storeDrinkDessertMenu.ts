@@ -19,6 +19,12 @@ const SHOCHU_SPLITS = [
 
 const FRUIT_LIQUOR_SPLITS = [...SHOCHU_SPLITS] as const;
 
+const BOTTLE_BEER_BRANDS = [
+  "アサヒ マルエフ",
+  "麒麟 晴れ風",
+  "サッポロ 赤星",
+] as const;
+
 const CASSIS_MIX = ["ウーロン", "ソーダ", "オレンジ", "ミルク"] as const;
 const PEACH_MIX = ["ウーロン", "ソーダ", "オレンジ", "コーク", "ミルク"] as const;
 const CAMPARI_MIX = ["ソーダ", "オレンジ", "コーク"] as const;
@@ -92,7 +98,10 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
 const DRINK_BEER: StoreMenuItem[] = [
   item("drink_beer", "nama_beer_medium", "生ビール 中ジョッキ", 600),
   item("drink_beer", "nama_beer_small", "生ビール 小ジョッキ", 530),
-  item("drink_beer", "bottle_beer", "瓶ビール", 750),
+  item("drink_beer", "bottle_beer", "瓶ビール", 750, {
+    optionLabel: "銘柄",
+    dressingOptions: BOTTLE_BEER_BRANDS,
+  }),
   item("drink_beer", "hoppy_white_black", "ホッピー 白／黒", 500),
   item("drink_beer", "hoppy_soto", "ホッピー 外", 300),
   item("drink_beer", "hoppy_naka", "ホッピー 中", 250),
