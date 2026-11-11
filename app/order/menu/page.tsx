@@ -355,7 +355,8 @@ function StoreOrderMenuPageInner() {
   const fullWidthImageMenu =
     activeCategory === "drink_beer" ||
     activeCategory === "drink_highball" ||
-    activeCategory === "drink_wine";
+    activeCategory === "drink_wine" ||
+    activeCategory === "drink_cocktail";
   /** ホッピー白・黒: 2列横並び */
   const hoppyPairLayout = activeCategory === "drink_hoppy";
 

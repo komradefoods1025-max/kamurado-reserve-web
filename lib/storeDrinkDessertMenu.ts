@@ -81,10 +81,12 @@ function cocktail(
   id: string,
   name: string,
   mixers: readonly string[],
+  extra?: Partial<StoreMenuItem>,
 ): StoreMenuItem {
   return item("drink_cocktail", id, name, 600, {
     optionLabel: "割り方",
     dressingOptions: mixers,
+    ...extra,
   });
 }
 
@@ -211,11 +213,36 @@ const DRINK_WINE: StoreMenuItem[] = [
 ];
 
 const DRINK_COCKTAIL: StoreMenuItem[] = [
-  cocktail("cocktail_cassis", "カシス", CASSIS_MIX),
-  cocktail("cocktail_peach", "ピーチ", PEACH_MIX),
-  cocktail("cocktail_campari", "カンパリ", CAMPARI_MIX),
-  cocktail("cocktail_malibu", "マリブ", MALIBU_MIX),
-  cocktail("cocktail_kahlua", "カルーア", KAHLUA_MIX),
+  cocktail("cocktail_cassis", "カシス", CASSIS_MIX, {
+    image: "/store-menu/cocktail-cassis.jpg?v=20261112",
+    imageFit: "contain",
+    imageWidth: 1024,
+    imageHeight: 1024,
+  }),
+  cocktail("cocktail_peach", "ピーチ", PEACH_MIX, {
+    image: "/store-menu/cocktail-peach.png?v=20261112",
+    imageFit: "contain",
+    imageWidth: 500,
+    imageHeight: 405,
+  }),
+  cocktail("cocktail_campari", "カンパリ", CAMPARI_MIX, {
+    image: "/store-menu/cocktail-campari.png?v=20261112",
+    imageFit: "contain",
+    imageWidth: 239,
+    imageHeight: 1000,
+  }),
+  cocktail("cocktail_malibu", "マリブ", MALIBU_MIX, {
+    image: "/store-menu/cocktail-malibu.png?v=20261112",
+    imageFit: "contain",
+    imageWidth: 610,
+    imageHeight: 920,
+  }),
+  cocktail("cocktail_kahlua", "カルーア", KAHLUA_MIX, {
+    image: "/store-menu/cocktail-kahlua.png?v=20261112",
+    imageFit: "contain",
+    imageWidth: 500,
+    imageHeight: 500,
+  }),
 ];
 
 const DRINK_SOUR: StoreMenuItem[] = [
