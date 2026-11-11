@@ -1,4 +1,5 @@
 import { getTodayYmdJst } from "./bookingDates";
+import { isStoreOrderTestMode } from "./storeOrderTestMode";
 
 export type StoreDisplayItem = {
   menuKey?: string;
@@ -46,9 +47,17 @@ export function isStoreDisplayQueueEnabled(): boolean {
   return Boolean(redisRestBase());
 }
 
-/** 開発時のみ: Redis なしで単一プロセス内にキューを保持 */
+function isTruthyEnv(value: string | undefined): boolean {
+  const v = String(value ?? "").trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
+/** Redis なし時のメモリキュー（dev / テストモード / 明示フラグ） */
 export function isStoreDisplayMemoryQueueActive(): boolean {
-  return process.env.NODE_ENV === "development" && !redisRestBase();
+  if (redisRestBase()) return false;
+  if (process.env.NODE_ENV === "development") return true;
+  if (isStoreOrderTestMode()) return true;
+  return isTruthyEnv(process.env.STORE_ORDER_DISPLAY_MEMORY_FALLBACK);
 }
 
 export function isStoreDisplayQueueAvailable(): boolean {
@@ -241,7 +250,10 @@ export function storeDisplayQueueHintMessage(): string {
   if (isStoreDisplayMemoryQueueActive()) {
     return "開発モード: メモリ上の注文キュー（npm run dev のみ）";
   }
-  return "注文キュー未設定（UPSTASH_REDIS_REST_URL / TOKEN）— 注文を店舗画面に出すには Redis が必要です";
+  if (isStoreOrderTestMode() || process.env.NODE_ENV === "development") {
+    return "テスト用メモリキュー（同一サーバー内のみ・本番運用は Upstash Redis 推奨）";
+  }
+  return "注文キュー未設定 — Vercel に UPSTASH_REDIS_REST_URL / TOKEN を設定してください";
 }
 
 export function buildStoreDisplayOrderFromPayload(
