@@ -2,6 +2,7 @@ import type { StoreMenuItem } from "./storeMenuCatalog";
 
 type DrinkCategory =
   | "drink_beer"
+  | "drink_hoppy"
   | "drink_cocktail"
   | "drink_sour"
   | "drink_shochu_mugi"
@@ -107,9 +108,12 @@ const DRINK_BEER: StoreMenuItem[] = [
     optionLabel: "銘柄",
     dressingOptions: BOTTLE_BEER_BRANDS,
   }),
-  item("drink_beer", "hoppy_white_black", "ホッピー 白／黒", 500),
-  item("drink_beer", "hoppy_soto", "ホッピー 外", 300),
-  item("drink_beer", "hoppy_naka", "ホッピー 中", 250),
+];
+
+const DRINK_HOPPY: StoreMenuItem[] = [
+  item("drink_hoppy", "hoppy_white_black", "ホッピー 白／黒", 500),
+  item("drink_hoppy", "hoppy_soto", "ホッピー 外", 300),
+  item("drink_hoppy", "hoppy_naka", "ホッピー 中", 250),
 ];
 
 const DRINK_COCKTAIL: StoreMenuItem[] = [
@@ -189,6 +193,7 @@ const DRINK_FRUIT: StoreMenuItem[] = [
 
 export const DRINK_MENU_ITEMS: StoreMenuItem[] = [
   ...DRINK_BEER,
+  ...DRINK_HOPPY,
   ...DRINK_COCKTAIL,
   ...DRINK_SOUR,
   ...DRINK_SHOCHU_MUGI,
