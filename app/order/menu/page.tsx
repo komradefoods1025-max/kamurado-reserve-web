@@ -23,6 +23,7 @@ import {
   syncStoreCartWithCatalog,
   computeStoreCartMoney,
   GREEN_SALAD_DRESSINGS,
+  storeMenuShouldHideCardName,
   type StoreMenuCategory,
 } from "../../../lib/storeMenuCatalog";
 import {
@@ -777,7 +778,7 @@ function MenuItemBody({
 
   return (
     <>
-      {item.hideCardName ? null : (
+      {storeMenuShouldHideCardName(item) ? null : (
         <div className={styles.cardName}>{item.name}</div>
       )}
       {dressings?.length ? (

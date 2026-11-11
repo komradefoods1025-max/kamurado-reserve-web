@@ -509,6 +509,22 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
   ...DRINK_MENU_ITEMS,
 ];
 
+const STORE_MENU_NAMED_PHOTO_FOOD_CATEGORIES = new Set<StoreMenuCategory>([
+  "otsumami",
+  "salad",
+  "okonomiyaki",
+  "teppanyaki",
+  "fried",
+  "rice",
+]);
+
+/** 写真に商品名が入っている想定（おつまみ〜ご飯など） */
+export function storeMenuShouldHideCardName(item: StoreMenuItem): boolean {
+  if (item.hideCardName) return true;
+  if (!item.image.trim()) return false;
+  return STORE_MENU_NAMED_PHOTO_FOOD_CATEGORIES.has(item.category);
+}
+
 export function formatStoreItemPrice(price: number | null): string {
   if (price === null || !Number.isFinite(price) || price <= 0) {
     return "";
