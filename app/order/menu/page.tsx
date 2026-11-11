@@ -41,7 +41,13 @@ const CATEGORY_ORDER: StoreMenuCategory[] = [
   "rice",
   "noodle",
   "dessert",
-  "drink",
+  "drink_beer",
+  "drink_cocktail",
+  "drink_sour",
+  "drink_shochu_mugi",
+  "drink_shochu_imo",
+  "drink_mixer",
+  "drink_fruit",
 ];
 
 const CATEGORY_SHORT: Partial<Record<StoreMenuCategory, string>> = {
@@ -54,7 +60,13 @@ const CATEGORY_SHORT: Partial<Record<StoreMenuCategory, string>> = {
   rice: "ご飯",
   noodle: "麺",
   dessert: "デザ\nート",
-  drink: "ドリンク",
+  drink_beer: "ビール",
+  drink_cocktail: "カク\nテル",
+  drink_sour: "サワー",
+  drink_shochu_mugi: "麦\n焼酎",
+  drink_shochu_imo: "芋\n焼酎",
+  drink_mixer: "割り\nもの",
+  drink_fruit: "果実\n酒",
 };
 
 function isValidCategory(v: string | null): v is StoreMenuCategory {
