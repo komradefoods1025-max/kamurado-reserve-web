@@ -147,11 +147,13 @@ export const DESSERT_MENU_ITEMS: StoreMenuItem[] = [
     image: "/store-menu/cappuccino.png?v=20261112",
     imageWidth: 500,
     imageHeight: 500,
+    menuCatalogInline: true,
   }),
   item("dessert", "espresso", "エスプレッソ", 200, {
     image: "/store-menu/espresso.png?v=20261112",
     imageWidth: 500,
     imageHeight: 500,
+    menuCatalogInline: true,
   }),
   item("dessert", "latte_macchiato", "ラテマキアート", 500),
 ];
