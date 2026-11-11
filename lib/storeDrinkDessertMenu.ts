@@ -186,10 +186,10 @@ const DRINK_HIGHBALL: StoreMenuItem[] = [
     imageWidth: 617,
     imageHeight: 324,
   }),
-  highball("yamazaki_highball_nv", "山崎ハイボール（NV）", 1100),
-  highball("yamazaki_highball_12", "山崎ハイボール（12年）", 2200),
-  highball("hakushu_highball_nv", "白州ハイボール（NV）", 1100),
-  highball("hakushu_highball_12", "白州ハイボール（12年）", 2200),
+  item("drink_highball", "yamazaki_highball_nv", "山崎ハイボール（NV）", 1100),
+  item("drink_highball", "yamazaki_highball_12", "山崎ハイボール（12年）", 2200),
+  item("drink_highball", "hakushu_highball_nv", "白州ハイボール（NV）", 1100),
+  item("drink_highball", "hakushu_highball_12", "白州ハイボール（12年）", 2200),
 ];
 
 const DRINK_WINE: StoreMenuItem[] = [
