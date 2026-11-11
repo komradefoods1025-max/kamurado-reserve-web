@@ -194,6 +194,27 @@
   padding: 0 0 16px;
 }
 
+.menuHoppyRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.menuHoppyCard {
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--o-card);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.32);
+}
+
+.menuHoppyRow .cardImage,
+.menuHoppyRow .cardImageContain {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  height: auto;
+}
+
 .menuProductGrid.toppingGrid,
 .menuMain .toppingGrid {
   padding-left: 0;

@@ -288,11 +288,25 @@ function StoreOrderMenuPageInner() {
   const textOnlyItems = isTopping
     ? activeItems
     : activeItems.filter((i) => !i.image);
-  /** ビールなど: 画像付き商品をすべて大型カード（生ビールと同じ幅） */
+  /** ビール: 画像付き商品をすべて大型カード */
   const fullWidthImageMenu = activeCategory === "drink_beer";
-  const heroItem = fullWidthImageMenu ? null : imageItems[0];
-  const heroItems = fullWidthImageMenu ? imageItems : heroItem ? [heroItem] : [];
-  const gridImageItems = fullWidthImageMenu ? [] : imageItems.slice(1);
+  /** ホッピー白・黒: 2列横並び */
+  const hoppyPairLayout = activeCategory === "drink_hoppy";
+
+  let heroItems = imageItems;
+  let hoppyRowItems: typeof imageItems = [];
+  let gridImageItems: typeof imageItems = [];
+
+  if (fullWidthImageMenu) {
+    /* heroItems = imageItems */
+  } else if (hoppyPairLayout) {
+    heroItems = [];
+    hoppyRowItems = imageItems;
+  } else {
+    const first = imageItems[0];
+    heroItems = first ? [first] : [];
+    gridImageItems = imageItems.slice(1);
+  }
 
   return (
     <main className={`${styles.page} ${styles.menuPage}`}>
@@ -373,6 +387,28 @@ function StoreOrderMenuPageInner() {
               </article>
             );
           })}
+
+          {hoppyRowItems.length > 0 ? (
+            <div className={styles.menuHoppyRow}>
+              {hoppyRowItems.map((item) => {
+                const dressing = selectedDressing(item);
+                return (
+                  <article key={item.id} className={styles.menuHoppyCard}>
+                    <MenuItemImage item={item} />
+                    <div className={styles.cardBody}>
+                      <MenuItemBody
+                        item={item}
+                        qty={cartQty(item.id, dressing)}
+                        dressing={dressing}
+                        onDressingChange={setDressingForItem}
+                        onChange={changeQty}
+                      />
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : null}
 
           {gridImageItems.length > 0 ? (
             <div className={styles.menuProductGrid}>

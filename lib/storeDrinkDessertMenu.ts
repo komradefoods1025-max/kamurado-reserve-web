@@ -120,11 +120,11 @@ const DRINK_BEER: StoreMenuItem[] = [
 
 const DRINK_HOPPY: StoreMenuItem[] = [
   item("drink_hoppy", "hoppy_white", "ホッピー 白", 500, {
-    image: "/store-menu/hoppy-white.png?v=20261112",
+    image: "/store-menu/hoppy-black.png?v=20261112swap",
     imageFit: "contain",
   }),
   item("drink_hoppy", "hoppy_black", "ホッピー 黒", 500, {
-    image: "/store-menu/hoppy-black.png?v=20261112",
+    image: "/store-menu/hoppy-white.png?v=20261112swap",
     imageFit: "contain",
   }),
   item("drink_hoppy", "hoppy_soto", "ホッピー 外", 300),
