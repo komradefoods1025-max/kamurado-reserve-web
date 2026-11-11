@@ -42,6 +42,10 @@ import {
   shouldSaveStoreOrderToDisplay,
   shouldSaveStoreOrderToGas,
 } from "../../../lib/storeOrderSaveMode";
+import {
+  normalizeStoreTableId,
+  storeTableLabel,
+} from "../../../lib/storeOrderTables";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -227,8 +231,15 @@ export async function POST(req: NextRequest) {
     const totalQty = items.reduce((s, i) => s + i.qty, 0);
     const total = items.reduce((s, i) => s + i.total, 0);
 
+    const tableId = dineIn
+      ? normalizeStoreTableId(
+          body?.tableId ?? body?.table ?? body?.seatLabel ?? body?.seat,
+        )
+      : null;
     const seatLabel = dineIn
-      ? ""
+      ? tableId
+        ? storeTableLabel(tableId)
+        : ""
       : String(body?.seatLabel || body?.seat || "").trim();
 
     const noteParts = [
@@ -252,6 +263,7 @@ export async function POST(req: NextRequest) {
       name,
       phone,
       seatLabel,
+      tableId: tableId || "",
       note: noteParts.join(" / "),
       items,
       itemCount: items.length,

@@ -131,7 +131,10 @@ export default function StoreOrderConfirmPage() {
           pickupDate: draft.pickupDate,
           pickupTime: draft.pickupTime,
           ...(dineIn
-            ? {}
+            ? {
+                tableId: draft.tableId || draft.seatLabel,
+                seatLabel: draft.seatLabel,
+              }
             : {
                 seatLabel: draft.seatLabel,
                 name: draft.customerName,

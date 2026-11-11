@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StoreDisplayOrder } from "../../lib/storeDisplayQueue";
+import { orderMatchesStoreTable } from "../../lib/storeOrderTables";
 import styles from "./display.module.css";
 
 type BoardMode = "kitchen" | "counter";
@@ -32,9 +33,12 @@ function itemQty(item: StoreDisplayOrder["items"][number]) {
 export default function StoreDisplayBoard({
   mode,
   title,
+  tableId = null,
 }: {
   mode: BoardMode;
   title: string;
+  /** 1〜4: その卓のみ。null = 全卓 */
+  tableId?: string | null;
 }) {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [pin, setPin] = useState("");
@@ -94,10 +98,14 @@ export default function StoreDisplayBoard({
       ? (data.orders as StoreDisplayOrder[])
       : [];
 
-    const filtered =
+    let filtered =
       mode === "kitchen"
         ? list.filter((o) => o.status !== "提供済み")
         : list.filter((o) => COUNTER_VISIBLE.includes(o.status));
+
+    if (tableId) {
+      filtered = filtered.filter((o) => orderMatchesStoreTable(o, tableId));
+    }
 
     filtered.sort((a, b) => {
       if (a.status === "完成" && b.status !== "完成") return -1;
@@ -124,7 +132,7 @@ export default function StoreDisplayBoard({
     }
 
     setOrders(filtered);
-  }, [mode, playNewOrderSound]);
+  }, [mode, playNewOrderSound, tableId]);
 
   useEffect(() => {
     void refresh();
@@ -229,8 +237,10 @@ export default function StoreDisplayBoard({
                   </span>
                 </div>
                 <h2 className={styles.cardName}>{order.name} 様</h2>
-                {order.seatLabel ? (
-                  <p className={styles.cardSeat}>席: {order.seatLabel}</p>
+                {order.seatLabel || order.tableId ? (
+                  <p className={styles.cardSeat}>
+                    席: {order.seatLabel || `${order.tableId}卓`}
+                  </p>
                 ) : null}
                 <div className={styles.itemList}>
                   {order.items.map((item, idx) => (

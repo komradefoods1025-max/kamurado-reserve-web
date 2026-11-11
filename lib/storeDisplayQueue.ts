@@ -23,6 +23,7 @@ export type StoreDisplayOrder = {
   name: string;
   phone: string;
   seatLabel?: string;
+  tableId?: string;
   pickupDate: string;
   pickupTime: string;
   items: StoreDisplayItem[];
@@ -297,6 +298,7 @@ export function buildStoreDisplayOrderFromPayload(
     name: String(payload.name || ""),
     phone: String(payload.phone || ""),
     seatLabel: payload.seatLabel ? String(payload.seatLabel) : undefined,
+    tableId: payload.tableId ? String(payload.tableId) : undefined,
     pickupDate: String(payload.date || payload.pickupDate || ""),
     pickupTime: String(payload.time || payload.pickupTime || ""),
     items,

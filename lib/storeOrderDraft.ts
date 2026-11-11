@@ -18,6 +18,8 @@ export type StoreOrderDraft = {
   pickupTime?: string;
   /** 店内席番号・テーブル（任意） */
   seatLabel?: string;
+  /** 1〜4 など（QR / ?table= 用） */
+  tableId?: string;
   customerName?: string;
   phone?: string;
   note?: string;
@@ -39,6 +41,7 @@ export function readStoreOrderDraft(): StoreOrderDraft {
       pickupDate: parsed.pickupDate || "",
       pickupTime: parsed.pickupTime || "",
       seatLabel: parsed.seatLabel || "",
+      tableId: parsed.tableId || "",
       customerName: parsed.customerName || "",
       phone: parsed.phone || "",
       note: parsed.note || "",

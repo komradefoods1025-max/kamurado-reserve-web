@@ -32,6 +32,10 @@ import StoreOrderMenuPromo from "../StoreOrderMenuPromo";
 import StoreOrderLastOrderNote from "../StoreOrderLastOrderNote";
 import StoreOrderTestBanner from "../StoreOrderTestBanner";
 import { isStoreOrderDineInClient } from "../../../lib/storeOrderDineIn";
+import {
+  normalizeStoreTableId,
+  storeTableLabel,
+} from "../../../lib/storeOrderTables";
 import styles from "../order.module.css";
 
 const CATEGORY_ORDER: StoreMenuCategory[] = [
@@ -93,6 +97,7 @@ function StoreOrderMenuPageInner() {
     "otsumami",
   );
   const [dressingPick, setDressingPick] = useState<Record<string, string>>({});
+  const [seatBanner, setSeatBanner] = useState("");
 
   const visibleCategories = useMemo(
     () =>
@@ -108,7 +113,26 @@ function StoreOrderMenuPageInner() {
       draft.items.length ? draft.items : [],
     );
     setCart(synced);
+    const id = draft.tableId;
+    if (id) setSeatBanner(draft.seatLabel || `${id}卓`);
   }, []);
+
+  useEffect(() => {
+    const tableRaw =
+      searchParams.get("table") ??
+      searchParams.get("tableId") ??
+      searchParams.get("seat");
+    const tableId = normalizeStoreTableId(tableRaw);
+    if (!tableId) return;
+    const draft = readStoreOrderDraft();
+    const label = storeTableLabel(tableId);
+    writeStoreOrderDraft({
+      ...draft,
+      tableId,
+      seatLabel: label,
+    });
+    setSeatBanner(label);
+  }, [searchParams]);
 
   useEffect(() => {
     const fromUrl = searchParams.get("category");
@@ -235,7 +259,9 @@ function StoreOrderMenuPageInner() {
         <Link href="/order" className={styles.menuTopBack}>
           TOP
         </Link>
-        <h1 className={styles.menuTopTitle}>メニュー</h1>
+        <h1 className={styles.menuTopTitle}>
+          メニュー{seatBanner ? `（${seatBanner}）` : ""}
+        </h1>
       </header>
 
       {dineIn ? (
