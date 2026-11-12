@@ -343,7 +343,7 @@ const DRINK_SHOCHU_MUGI: StoreMenuItem[] = [
     ...SHOCHU_BOTTLE_PHOTO,
   }),
   shochu("drink_shochu_mugi", "shochu_nakanaka", "中々", 780, {
-    image: "/store-menu/shochu-nakanaka.png?v=20261113b",
+    image: "/store-menu/shochu-nakanaka.png?v=20261113c",
     showCardName: true,
     ...SHOCHU_BOTTLE_PHOTO,
   }),
@@ -356,7 +356,7 @@ const DRINK_SHOCHU_IMO: StoreMenuItem[] = [
     ...SHOCHU_BOTTLE_PHOTO,
   }),
   shochu("drink_shochu_imo", "shochu_tominohozan", "富乃宝山", 650, {
-    image: "/store-menu/shochu-tominohozan.png?v=20261113",
+    image: "/store-menu/shochu-tominohozan.png?v=20261113c",
     showCardName: true,
     ...SHOCHU_BOTTLE_PHOTO,
   }),
