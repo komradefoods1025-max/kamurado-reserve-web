@@ -60,6 +60,7 @@ const CATEGORY_ORDER: StoreMenuCategory[] = [
   "otsumami",
   "salad",
   "okonomiyaki",
+  "monjayaki",
   "topping",
   "teppanyaki",
   "fried",

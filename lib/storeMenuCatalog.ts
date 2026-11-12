@@ -2,6 +2,7 @@ export type StoreMenuCategory =
   | "otsumami"
   | "salad"
   | "okonomiyaki"
+  | "monjayaki"
   | "topping"
   | "teppanyaki"
   | "fried"
@@ -92,7 +93,7 @@ export const GREEN_SALAD_DRESSINGS = ["ゴマ", "シーザー", "ワサビ"] as 
 export const ONIGIRI_KINDS = ["焼き", "梅干し", "明太"] as const;
 
 /** public/store-menu を差し替えたら rev を上げる（ブラウザ・Next 画像キャッシュ対策） */
-const STORE_MENU_IMAGE_REV = "20261109-10";
+const STORE_MENU_IMAGE_REV = "20261112-monja";
 
 const IMG = (n: number) =>
   `/store-menu/${String(n).padStart(2, "0")}.jpg?v=${STORE_MENU_IMAGE_REV}`;
@@ -101,6 +102,7 @@ export const STORE_MENU_CATEGORY_LABEL: Record<StoreMenuCategory, string> = {
   otsumami: "おつまみ",
   salad: "サラダ",
   okonomiyaki: "お好み焼き",
+  monjayaki: "もんじゃ焼き",
   topping: "トッピング",
   teppanyaki: "鉄板焼き",
   fried: "揚げ物",
@@ -124,6 +126,7 @@ export const STORE_MENU_CATEGORY_NOTE: Partial<
   Record<StoreMenuCategory, string>
 > = {
   okonomiyaki: "※焼いた状態でご提供となります",
+  monjayaki: "※焼いた状態でご提供となります",
   topping: "お好み焼きに追加できます",
   dessert:
     "※鉄板ハニートーストのトッピングは「ハニートースト トッピング」から選択。食後のコーヒー類もこちらです",
@@ -362,6 +365,56 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     image: IMG(24),
     category: "okonomiyaki",
   },
+  {
+    id: "monja_buta_tama",
+    name: "豚玉",
+    price: 1100,
+    image: IMG(47),
+    category: "monjayaki",
+    showCardName: true,
+  },
+  {
+    id: "monja_mix",
+    name: "ミックス",
+    price: 1550,
+    image: IMG(48),
+    category: "monjayaki",
+  },
+  {
+    id: "monja_baby_star",
+    name: "ベビースター",
+    price: 980,
+    image: IMG(49),
+    category: "monjayaki",
+  },
+  {
+    id: "monja_gyusuji",
+    name: "牛すじ",
+    price: 1400,
+    image: IMG(50),
+    category: "monjayaki",
+  },
+  {
+    id: "monja_mentai_mochi_cheese",
+    name: "明太もちチーズ",
+    price: 1480,
+    image: IMG(51),
+    category: "monjayaki",
+  },
+  {
+    id: "monja_negi_shio_buta",
+    name: "ねぎ塩豚",
+    price: 1280,
+    image: IMG(52),
+    category: "monjayaki",
+  },
+  {
+    id: "monja_curry_cheese",
+    name: "カレーチーズ",
+    price: 1180,
+    image: IMG(53),
+    category: "monjayaki",
+  },
   ...OKONOMIYAKI_TOPPING_MENU_ITEMS,
   ...TEPPANYAKI_MENU_ITEMS,
   {
@@ -521,6 +574,7 @@ const STORE_MENU_NAMED_PHOTO_FOOD_CATEGORIES = new Set<StoreMenuCategory>([
   "otsumami",
   "salad",
   "okonomiyaki",
+  "monjayaki",
   "teppanyaki",
   "fried",
   "rice",
