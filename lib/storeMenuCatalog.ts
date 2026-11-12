@@ -440,20 +440,13 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 530,
     image: IMG(14),
     category: "fried",
-  },
-  {
-    id: "fries_chili_garlic",
-    name: "フライドポテト チリガーリックスパイス",
-    price: 580,
-    image: IMG(15),
-    category: "fried",
-  },
-  {
-    id: "fries_ika_shiokara_butter",
-    name: "フライドポテト イカの塩辛バター",
-    price: 680,
-    image: IMG(14),
-    category: "fried",
+    optionLabel: "味",
+    dressingOptions: ["塩", "塩辛バター", "チリガーリック"],
+    optionPrices: {
+      塩: 530,
+      塩辛バター: 680,
+      チリガーリック: 580,
+    },
   },
   {
     id: "satoimo_karaage",
