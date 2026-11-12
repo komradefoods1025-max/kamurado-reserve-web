@@ -320,15 +320,14 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     image: IMG(44),
     category: "salad",
     ...MENU_PHOTO_CAPTION_CARD,
-    dressingOptions: GREEN_SALAD_DRESSINGS,
-  },
-  {
-    id: "green_salad_half",
-    name: "グリーンサラダ（ハーフ）",
-    price: 430,
-    image: "",
-    category: "salad",
-    dressingOptions: GREEN_SALAD_DRESSINGS,
+    optionLabel: "サイズ",
+    dressingOptions: ["レギュラー", "ハーフ"],
+    optionPrices: {
+      レギュラー: 830,
+      ハーフ: 430,
+    },
+    secondaryOptionLabel: "ドレッシング",
+    secondaryDressingOptions: GREEN_SALAD_DRESSINGS,
   },
   {
     id: "choregi_salad",
@@ -337,13 +336,12 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     image: IMG(12),
     category: "salad",
     ...MENU_PHOTO_CAPTION_CARD,
-  },
-  {
-    id: "choregi_salad_half",
-    name: "チョレギサラダ（ハーフ）",
-    price: 430,
-    image: "",
-    category: "salad",
+    optionLabel: "サイズ",
+    dressingOptions: ["レギュラー", "ハーフ"],
+    optionPrices: {
+      レギュラー: 830,
+      ハーフ: 430,
+    },
   },
   {
     id: "potato_salad",
