@@ -338,12 +338,12 @@ const DRINK_SHOCHU_MUGI: StoreMenuItem[] = [
     ...SHOCHU_BOTTLE_PHOTO,
   }),
   shochu("drink_shochu_mugi", "shochu_nikaido", "二階堂", 650, {
-    image: "/store-menu/shochu-nikaido.png?v=20261112",
+    image: "/store-menu/shochu-nikaido.png?v=20261113",
     showCardName: true,
     ...SHOCHU_BOTTLE_PHOTO,
   }),
   shochu("drink_shochu_mugi", "shochu_nakanaka", "中々", 780, {
-    image: "/store-menu/shochu-nakanaka.png?v=20261112",
+    image: "/store-menu/shochu-nakanaka.png?v=20261113",
     showCardName: true,
     ...SHOCHU_BOTTLE_PHOTO,
   }),
