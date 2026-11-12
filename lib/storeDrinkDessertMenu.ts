@@ -387,10 +387,7 @@ const DRINK_MIXER: StoreMenuItem[] = [
     image: "/store-menu/mixer-ice.png?v=20261113",
     ...MIXER_ITEM_PHOTO,
   }),
-  item("drink_mixer", "bottle_water", "ミネラルウォーター", 150, {
-    image: "/store-menu/mixer-water.png?v=20261113",
-    ...MIXER_ITEM_PHOTO,
-  }),
+  item("drink_mixer", "bottle_water", "ミネラルウォーター", 150),
   item("drink_mixer", "soda_pitcher", "炭酸ピッチャー", 500),
   item("drink_mixer", "oolong_pitcher", "ウーロンピッチャー", 500),
   item("drink_mixer", "jasmine_pitcher", "ジャスミンピッチャー", 550),
