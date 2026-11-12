@@ -519,6 +519,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 200,
     image: "",
     category: "rice",
+    menuListFullWidth: true,
     optionLabel: "サイズ",
     dressingOptions: ["大", "中", "小"],
     optionPrices: {
