@@ -427,6 +427,12 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     image: IMG(13),
     category: "fried",
     showCardName: true,
+    optionLabel: "サイズ",
+    dressingOptions: ["レギュラー", "ハーフ2個"],
+    optionPrices: {
+      レギュラー: 790,
+      ハーフ2個: 510,
+    },
   },
   {
     id: "french_fries",
@@ -450,24 +456,10 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     category: "fried",
   },
   {
-    id: "kamurado_karaage_half",
-    name: "かむらどの特製からあげ（ハーフ2個）",
-    price: 510,
-    image: "",
-    category: "fried",
-  },
-  {
     id: "satoimo_karaage",
     name: "里芋のから揚げ",
     price: 610,
     image: IMG(16),
-    category: "fried",
-  },
-  {
-    id: "chicken_nanban_half",
-    name: "チキン南蛮（ハーフ）",
-    price: 550,
-    image: "",
     category: "fried",
   },
   {
@@ -476,6 +468,12 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 950,
     image: IMG(43),
     category: "fried",
+    optionLabel: "サイズ",
+    dressingOptions: ["レギュラー", "ハーフ"],
+    optionPrices: {
+      レギュラー: 950,
+      ハーフ: 550,
+    },
   },
   {
     id: "takana_chahan",
