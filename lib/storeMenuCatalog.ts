@@ -209,6 +209,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     image: IMG(1),
     category: "otsumami",
     showCardName: true,
+    imageCropBottomCaption: true,
   },
   {
     id: "ume_suisho",
@@ -216,6 +217,8 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 580,
     image: IMG(2),
     category: "otsumami",
+    showCardName: true,
+    imageCropBottomCaption: true,
   },
   {
     id: "kyuri_ipponzuke",
@@ -223,6 +226,8 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 480,
     image: IMG(3),
     category: "otsumami",
+    showCardName: true,
+    imageCropBottomCaption: true,
   },
   {
     id: "jikasei_chicken_ham",
@@ -230,6 +235,8 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 580,
     image: IMG(4),
     category: "otsumami",
+    showCardName: true,
+    imageCropBottomCaption: true,
   },
   {
     id: "jikasei_chicken_ham_half",
@@ -244,6 +251,8 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 380,
     image: IMG(5),
     category: "otsumami",
+    showCardName: true,
+    imageCropBottomCaption: true,
   },
   {
     id: "quail_umezu",
@@ -251,6 +260,8 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 480,
     image: IMG(6),
     category: "otsumami",
+    showCardName: true,
+    imageCropBottomCaption: true,
   },
   {
     id: "quail_umezu_half",
@@ -265,6 +276,8 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 480,
     image: IMG(7),
     category: "otsumami",
+    showCardName: true,
+    imageCropBottomCaption: true,
   },
   {
     id: "karikari_cheese",
@@ -272,6 +285,8 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 420,
     image: IMG(8),
     category: "otsumami",
+    showCardName: true,
+    imageCropBottomCaption: true,
   },
   {
     id: "tori_ume_kyuri",
@@ -279,6 +294,8 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 530,
     image: IMG(10),
     category: "otsumami",
+    showCardName: true,
+    imageCropBottomCaption: true,
   },
   {
     id: "nama_spring_roll",
@@ -286,6 +303,8 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 680,
     image: IMG(9),
     category: "otsumami",
+    showCardName: true,
+    imageCropBottomCaption: true,
   },
   {
     id: "green_salad",
