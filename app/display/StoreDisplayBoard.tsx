@@ -35,7 +35,7 @@ const COUNTER_VISIBLE: StoreDisplayOrder["status"][] = [
 const KITCHEN_COMPLETE_VISIBLE_MS = 5000;
 
 /** 店舗表示 UI 世代（キャッシュ確認用・ヘッダーに表示） */
-const DISPLAY_UI_REV = "sound-v2";
+const DISPLAY_UI_REV = "sound-v3";
 
 export default function StoreDisplayBoard({
   mode,
@@ -66,6 +66,7 @@ export default function StoreDisplayBoard({
   const completeVisibleUntilRef = useRef(new Map<string, number>());
   const [hideTick, setHideTick] = useState(0);
   const [audioReady, setAudioReady] = useState(false);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const touchCompleteHideTimer = useCallback((reservationNo: string) => {
     completeVisibleUntilRef.current.set(
@@ -130,14 +131,31 @@ export default function StoreDisplayBoard({
     });
   }, [audioReady, mode]);
 
+  const requestDisplayWakeLock = useCallback(async () => {
+    if (typeof navigator === "undefined" || !("wakeLock" in navigator)) {
+      return;
+    }
+    try {
+      if (wakeLockRef.current) return;
+      wakeLockRef.current = await navigator.wakeLock.request("screen");
+      wakeLockRef.current.addEventListener("release", () => {
+        wakeLockRef.current = null;
+      });
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const enableDisplayAudio = useCallback(async () => {
     try {
       await unlockPremiumAudio();
-      setAudioReady(isPremiumAudioUnlocked());
+      const ready = isPremiumAudioUnlocked();
+      setAudioReady(ready);
+      if (ready) await requestDisplayWakeLock();
     } catch {
       setAudioReady(false);
     }
-  }, []);
+  }, [requestDisplayWakeLock]);
 
   const filterForMode = useCallback(
     (list: StoreDisplayOrder[]) => {
@@ -252,9 +270,27 @@ export default function StoreDisplayBoard({
 
   useEffect(() => {
     void refresh();
-    const id = window.setInterval(() => void refresh(), 4000);
+    const ms = audioReady ? 2000 : 4000;
+    const id = window.setInterval(() => void refresh(), ms);
     return () => window.clearInterval(id);
-  }, [refresh]);
+  }, [refresh, audioReady]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      void refresh();
+      if (audioReady) void requestDisplayWakeLock();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [audioReady, refresh, requestDisplayWakeLock]);
+
+  useEffect(() => {
+    return () => {
+      void wakeLockRef.current?.release();
+      wakeLockRef.current = null;
+    };
+  }, []);
 
   async function submitPin(e: React.FormEvent) {
     e.preventDefault();
@@ -392,7 +428,7 @@ export default function StoreDisplayBoard({
         <div className={styles.soundEnableBar}>
           <p className={styles.soundEnableText}>
             新規注文の通知音を鳴らすには、下のボタンを押してください（Chrome
-            では1回必要です）
+            では1回必要です）。ブラウザのタブは閉じずに開いたままにしてください（他アプリへ切り替えは可）。
           </p>
           <button
             type="button"

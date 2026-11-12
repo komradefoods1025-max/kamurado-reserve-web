@@ -19,7 +19,7 @@ export type PremiumSoundTrigger =
 export const SOUND_ASSET_VERSION = 3;
 export const CART_THANKS_SOUND_VERSION = 6;
 export const GO_TO_DATETIME_SOUND_VERSION = 7;
-export const ORDER_RECEIVED_SOUND_VERSION = 1;
+export const ORDER_RECEIVED_SOUND_VERSION = 2;
 
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
 export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
@@ -86,12 +86,11 @@ export const PREMIUM_SOUNDS: Record<
   },
   orderReceived: {
     src: versionedSoundSrc(
-      "/sounds/order-received.mp3",
+      "/sounds/store-order-decide.mp3",
       ORDER_RECEIVED_SOUND_VERSION,
     ),
-    volume: 0.75,
+    volume: 0.85,
     startOffset: 0,
-    playDuration: 1.2,
   },
   reservationThanks: {
     src: versionedSoundSrc("/sounds/reservation-thanks.mp3"),
