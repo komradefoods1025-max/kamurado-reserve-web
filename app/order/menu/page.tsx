@@ -342,14 +342,17 @@ function StoreOrderMenuPageInner() {
     : activeItems.filter(
         (i) => !i.image || i.menuListFullWidth || i.menuCatalogInline,
       );
-  /** ビール・ハイボール・揚げ物・ご飯・サラダ: 画像付き商品を1行ずつ全幅表示 */
+  /** 画像付き商品を1行ずつ全幅表示（ビール系・揚げ物・ご飯・サラダ・お好み焼き・もんじゃ・麺） */
   const fullWidthImageMenu =
     activeCategory === "drink_beer" ||
     activeCategory === "drink_highball" ||
     activeCategory === "drink_wine" ||
     activeCategory === "fried" ||
     activeCategory === "rice" ||
-    activeCategory === "salad";
+    activeCategory === "salad" ||
+    activeCategory === "okonomiyaki" ||
+    activeCategory === "monjayaki" ||
+    activeCategory === "noodle";
   /** ホッピー白・黒: 2列横並び */
   const hoppyPairLayout = activeCategory === "drink_hoppy";
   /** カクテル等: 画像付きを2列グリッド */
