@@ -108,6 +108,23 @@ function highball(
   });
 }
 
+function sour(
+  id: string,
+  name: string,
+  price: number,
+  extra?: Partial<StoreMenuItem>,
+): StoreMenuItem {
+  return item("drink_sour", id, name, price, {
+    optionLabel: "サイズ",
+    dressingOptions: HIGHBALL_SIZES,
+    optionPrices: {
+      レギュラー: price,
+      メガ: price + HIGHBALL_MEGA_SURCHARGE,
+    },
+    ...extra,
+  });
+}
+
 const ICE_CREAM_FLAVORS = ["バニラ", "抹茶"] as const;
 
 const HONEY_TOAST_TOPPINGS = [
@@ -288,21 +305,21 @@ const DRINK_COCKTAIL: StoreMenuItem[] = [
 ];
 
 const DRINK_SOUR: StoreMenuItem[] = [
-  item("drink_sour", "fresh_lemon_sour", "生レモンサワー", 600),
-  item("drink_sour", "fresh_grapefruit_sour", "生グレープフルーツサワー", 650),
-  item("drink_sour", "oolong_hai", "ウーロンハイ", 500),
-  item("drink_sour", "green_tea_hai", "緑茶ハイ", 500),
-  item("drink_sour", "jasmine_hai", "ジャスミンハイ", 520),
-  item("drink_sour", "sugar_free_hai", "無糖ハイ", 520),
-  item("drink_sour", "sour_plain_chuhai", "プレーン酎ハイ", 500),
-  item("drink_sour", "sour_ginon_lemon", "無糖レモンサワー ジノン", 520),
-  item("drink_sour", "sour_lemon", "レモンサワー", 520),
-  item("drink_sour", "sour_umeboshi", "梅干しサワー", 520),
-  item("drink_sour", "sour_citric", "クエン酸サワー", 520),
-  item("drink_sour", "sour_kyoho", "巨峰サワー", 520),
-  item("drink_sour", "sour_mango", "マンゴーサワー", 580),
-  item("drink_sour", "sour_otokoume", "男梅サワー", 520),
-  item("drink_sour", "sour_tomato", "トマトハイ", 550),
+  sour("fresh_lemon_sour", "生レモンサワー", 600),
+  sour("fresh_grapefruit_sour", "生グレープフルーツサワー", 650),
+  sour("oolong_hai", "ウーロンハイ", 500),
+  sour("green_tea_hai", "緑茶ハイ", 500),
+  sour("jasmine_hai", "ジャスミンハイ", 520),
+  sour("sugar_free_hai", "無糖ハイ", 520),
+  sour("sour_plain_chuhai", "プレーン酎ハイ", 500),
+  sour("sour_ginon_lemon", "無糖レモンサワー ジノン", 520),
+  sour("sour_lemon", "レモンサワー", 520),
+  sour("sour_umeboshi", "梅干しサワー", 520),
+  sour("sour_citric", "クエン酸サワー", 520),
+  sour("sour_kyoho", "巨峰サワー", 520),
+  sour("sour_mango", "マンゴーサワー", 580),
+  sour("sour_otokoume", "男梅サワー", 520),
+  sour("sour_tomato", "トマトハイ", 550),
 ];
 
 const DRINK_SHOCHU_MUGI: StoreMenuItem[] = [

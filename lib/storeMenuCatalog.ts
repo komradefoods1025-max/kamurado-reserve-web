@@ -145,7 +145,7 @@ export const STORE_MENU_CATEGORY_NOTE: Partial<
     "※鉄板ハニートーストのトッピングは「ハニートースト トッピング」から選択。食後のコーヒー類もこちらです",
   drink_highball: "※メガサイズは各商品＋150円",
   drink_cocktail: "※カクテルは割り方を選択してください",
-  drink_sour: "※サワー・お茶ハイ等。メガサイズはスタッフへお声がけください",
+  drink_sour: "※メガサイズは各商品＋150円",
   drink_shochu_mugi: "※割り方を選択してください",
   drink_shochu_imo: "※割り方を選択してください",
   drink_fruit: "※果実酒は割り方を選択してください",
