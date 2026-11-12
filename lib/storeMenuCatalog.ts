@@ -237,13 +237,12 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     category: "otsumami",
     showCardName: true,
     imageCropBottomCaption: true,
-  },
-  {
-    id: "jikasei_chicken_ham_half",
-    name: "自家製鶏ハム（ハーフ）",
-    price: 380,
-    image: "",
-    category: "otsumami",
+    optionLabel: "サイズ",
+    dressingOptions: ["レギュラー", "ハーフ"],
+    optionPrices: {
+      レギュラー: 580,
+      ハーフ: 380,
+    },
   },
   {
     id: "edamame",
@@ -262,13 +261,12 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     category: "otsumami",
     showCardName: true,
     imageCropBottomCaption: true,
-  },
-  {
-    id: "quail_umezu_half",
-    name: "ひと口うずらの旨酢漬け（ハーフ）",
-    price: 380,
-    image: "",
-    category: "otsumami",
+    optionLabel: "サイズ",
+    dressingOptions: ["レギュラー", "ハーフ"],
+    optionPrices: {
+      レギュラー: 480,
+      ハーフ: 380,
+    },
   },
   {
     id: "sunagimo_chanja",
