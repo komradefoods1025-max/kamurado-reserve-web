@@ -5,7 +5,7 @@ import {
   isStoreDisplayMemoryQueueActive,
   isStoreDisplayRedisQueueEnabled,
 } from "./storeDisplayQueue";
-import type { StoreDisplayOrder } from "./storeDisplayQueue";
+import type { StoreDisplayItem, StoreDisplayOrder } from "./storeDisplayQueue";
 import {
   normalizeStoreTableId,
   resolveStoreOrderTableId,
@@ -201,6 +201,84 @@ function orderCountsForTableTotal(order: StoreDisplayOrder): boolean {
   return Boolean(resolveStoreOrderTableId(order));
 }
 
+/** 清算後を除き、卓合計に含まれる店内注文か */
+export function isStoreOrderInUnsettledTableTotal(
+  order: StoreDisplayOrder,
+  tableId: string,
+  settlements: Record<string, string>,
+): boolean {
+  const want = normalizeStoreTableId(tableId);
+  if (!want) return false;
+  if (!orderCountsForTableTotal(order)) return false;
+  const tid = resolveStoreOrderTableId(order);
+  if (tid !== want) return false;
+
+  const settledAt = settlements[want];
+  const submitted = Date.parse(order.submittedAt || "");
+  if (
+    settledAt &&
+    Number.isFinite(submitted) &&
+    submitted <= Date.parse(settledAt)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+export type StoreTableOrderSummaryLine = {
+  label: string;
+  qty: number;
+  subtotal: number;
+};
+
+function displayItemLabel(item: StoreDisplayItem): string {
+  const name = String(item.menuName || item.name || "").trim();
+  if (!name) return "";
+  const dressing = item.dressing ? `（${item.dressing}）` : "";
+  return `${name}${dressing}`;
+}
+
+function itemLineSubtotal(item: StoreDisplayItem): number {
+  const qty = Math.max(0, Number(item.qty ?? item.quantity ?? 0));
+  const lineTotal = Number(item.total);
+  if (Number.isFinite(lineTotal) && lineTotal > 0) return lineTotal;
+  const price = Number(item.price);
+  if (Number.isFinite(price) && qty > 0) return price * qty;
+  return 0;
+}
+
+/** 未清算の卓注文を商品名でまとめた一覧 */
+export function buildUnsettledTableOrderSummary(
+  orders: StoreDisplayOrder[],
+  tableId: string,
+  settlements: Record<string, string>,
+): StoreTableOrderSummaryLine[] {
+  const map = new Map<string, StoreTableOrderSummaryLine>();
+
+  for (const order of orders) {
+    if (!isStoreOrderInUnsettledTableTotal(order, tableId, settlements)) {
+      continue;
+    }
+    for (const item of order.items) {
+      const label = displayItemLabel(item);
+      if (!label) continue;
+      const qty = Math.max(0, Number(item.qty ?? item.quantity ?? 0));
+      const subtotal = itemLineSubtotal(item);
+      const prev = map.get(label);
+      if (prev) {
+        prev.qty += qty;
+        prev.subtotal += subtotal;
+      } else {
+        map.set(label, { label, qty, subtotal });
+      }
+    }
+  }
+
+  return [...map.values()].sort((a, b) =>
+    a.label.localeCompare(b.label, "ja"),
+  );
+}
+
 export function computeStoreTableRunningTotals(
   orders: StoreDisplayOrder[],
   settlements: Record<string, string>,
@@ -211,17 +289,9 @@ export function computeStoreTableRunningTotals(
   }
 
   for (const order of orders) {
-    if (!orderCountsForTableTotal(order)) continue;
     const tid = resolveStoreOrderTableId(order);
     if (!tid || !out[tid]) continue;
-
-    const settledAt = settlements[tid];
-    const submitted = Date.parse(order.submittedAt || "");
-    const settled = settledAt ? Date.parse(settledAt) : 0;
-    if (settledAt && Number.isFinite(submitted) && submitted <= settled) {
-      continue;
-    }
-
+    if (!isStoreOrderInUnsettledTableTotal(order, tid, settlements)) continue;
     out[tid].total += Number(order.total) || 0;
     out[tid].orderCount += 1;
   }

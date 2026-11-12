@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StoreDisplayOrder } from "../../lib/storeDisplayQueue";
-import type { StoreTableRunningTotals } from "../../lib/storeTableSettlement";
+import {
+  buildUnsettledTableOrderSummary,
+  type StoreTableRunningTotals,
+} from "../../lib/storeTableSettlement";
 import {
   orderMatchesStoreTable,
   STORE_ORDER_TABLE_COUNT,
@@ -24,7 +27,7 @@ const COUNTER_VISIBLE: StoreDisplayOrder["status"][] = [
 const KITCHEN_COMPLETE_VISIBLE_MS = 5000;
 
 /** 店舗表示 UI 世代（キャッシュ確認用・ヘッダーに表示） */
-const DISPLAY_UI_REV = "quad-settle-v1";
+const DISPLAY_UI_REV = "quad-settle-v2";
 
 export default function StoreDisplayBoard({
   mode,
@@ -43,7 +46,9 @@ export default function StoreDisplayBoard({
   const [pinError, setPinError] = useState("");
   const [feedOrders, setFeedOrders] = useState<StoreDisplayOrder[]>([]);
   const [tableTotals, setTableTotals] = useState<StoreTableRunningTotals>({});
+  const [settlements, setSettlements] = useState<Record<string, string>>({});
   const [settlingTable, setSettlingTable] = useState<string | null>(null);
+  const [reviewTableId, setReviewTableId] = useState<string | null>(null);
   const [queueWarning, setQueueWarning] = useState<string | null>(null);
   const [clock, setClock] = useState("");
   const seenRef = useRef<Set<string>>(new Set());
@@ -152,6 +157,20 @@ export default function StoreDisplayBoard({
     [feedOrders, filterForMode, hideTick],
   );
 
+  const reviewSummary = useMemo(() => {
+    if (!reviewTableId) return [];
+    return buildUnsettledTableOrderSummary(
+      feedOrders,
+      reviewTableId,
+      settlements,
+    );
+  }, [reviewTableId, feedOrders, settlements]);
+
+  const reviewTotal = useMemo(
+    () => reviewSummary.reduce((sum, line) => sum + line.subtotal, 0),
+    [reviewSummary],
+  );
+
   useEffect(() => {
     if (mode !== "kitchen") return;
     const id = window.setInterval(() => {
@@ -202,6 +221,10 @@ export default function StoreDisplayBoard({
     const totals = data.tableTotals;
     if (totals && typeof totals === "object") {
       setTableTotals(totals as StoreTableRunningTotals);
+    }
+    const settled = data.settlements;
+    if (settled && typeof settled === "object") {
+      setSettlements(settled as Record<string, string>);
     }
 
     setFeedOrders(list);
@@ -365,6 +388,13 @@ export default function StoreDisplayBoard({
                         >
                           {settlingTable === tid ? "処理中…" : "清算"}
                         </button>
+                        <button
+                          type="button"
+                          className={styles.tableReviewBtn}
+                          onClick={() => setReviewTableId(tid)}
+                        >
+                          注文確認
+                        </button>
                       </>
                     ) : null}
                   </div>
@@ -422,6 +452,58 @@ export default function StoreDisplayBoard({
           ))}
         </div>
       )}
+
+      {reviewTableId && mode === "kitchen" ? (
+        <div
+          className={styles.reviewOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="table-order-review-title"
+          onClick={() => setReviewTableId(null)}
+        >
+          <div
+            className={styles.reviewPanel}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="table-order-review-title" className={styles.reviewTitle}>
+              {storeTableLabel(reviewTableId)}　注文確認
+            </h3>
+            <div className={styles.reviewBody}>
+              {reviewSummary.length === 0 ? (
+                <p className={styles.reviewEmpty}>
+                  未清算の注文はありません
+                </p>
+              ) : (
+                <ul className={styles.reviewList}>
+                  {reviewSummary.map((line) => (
+                    <li key={line.label} className={styles.reviewRow}>
+                      <span className={styles.reviewRowName}>{line.label}</span>
+                      <span className={styles.reviewRowQty}>×{line.qty}</span>
+                      <span className={styles.reviewRowSub}>
+                        ¥{line.subtotal.toLocaleString("ja-JP")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className={styles.reviewFooter}>
+              {reviewSummary.length > 0 ? (
+                <p className={styles.reviewFooterTotal}>
+                  合計 ¥{reviewTotal.toLocaleString("ja-JP")}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                className={styles.reviewCloseBtn}
+                onClick={() => setReviewTableId(null)}
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
