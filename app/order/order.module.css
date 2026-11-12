@@ -293,6 +293,7 @@
   line-height: 1.55;
   color: #ffe8cc;
   text-align: center;
+  white-space: pre-line;
 }
 
 .categoryHeadingInner {
