@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StoreDisplayOrder } from "../../lib/storeDisplayQueue";
+import type { StoreTableRunningTotals } from "../../lib/storeTableSettlement";
 import {
   orderMatchesStoreTable,
   STORE_ORDER_TABLE_COUNT,
@@ -23,7 +24,7 @@ const COUNTER_VISIBLE: StoreDisplayOrder["status"][] = [
 const KITCHEN_COMPLETE_VISIBLE_MS = 5000;
 
 /** 店舗表示 UI 世代（キャッシュ確認用・ヘッダーに表示） */
-const DISPLAY_UI_REV = "quad-2x2-h5";
+const DISPLAY_UI_REV = "quad-settle-v1";
 
 export default function StoreDisplayBoard({
   mode,
@@ -41,6 +42,8 @@ export default function StoreDisplayBoard({
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [feedOrders, setFeedOrders] = useState<StoreDisplayOrder[]>([]);
+  const [tableTotals, setTableTotals] = useState<StoreTableRunningTotals>({});
+  const [settlingTable, setSettlingTable] = useState<string | null>(null);
   const [queueWarning, setQueueWarning] = useState<string | null>(null);
   const [clock, setClock] = useState("");
   const seenRef = useRef<Set<string>>(new Set());
@@ -196,6 +199,11 @@ export default function StoreDisplayBoard({
       bootRef.current = false;
     }
 
+    const totals = data.tableTotals;
+    if (totals && typeof totals === "object") {
+      setTableTotals(totals as StoreTableRunningTotals);
+    }
+
     setFeedOrders(list);
   }, [mode, playNewOrderSound, syncCompleteHideTimers]);
 
@@ -220,6 +228,37 @@ export default function StoreDisplayBoard({
     }
     setAuthed(true);
     void refresh();
+  }
+
+  async function settleTable(tableId: string) {
+    const label = storeTableLabel(tableId);
+    const row = tableTotals[tableId];
+    const amount = row?.total ?? 0;
+    const msg =
+      amount > 0
+        ? `${label}を清算しますか？\n未清算の合計 ¥${amount.toLocaleString("ja-JP")} をリセットします。`
+        : `${label}を清算済みにしますか？\nこのあとの注文から合計を加算します。`;
+    if (!window.confirm(msg)) return;
+
+    setSettlingTable(tableId);
+    try {
+      const res = await fetch("/api/store-display/settle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tableId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        window.alert(data.message || "清算に失敗しました");
+        return;
+      }
+      if (data.tableTotals) {
+        setTableTotals(data.tableTotals as StoreTableRunningTotals);
+      }
+      void refresh();
+    } finally {
+      setSettlingTable(null);
+    }
   }
 
   async function setStatus(
@@ -299,11 +338,36 @@ export default function StoreDisplayBoard({
               const columnOrders = orders.filter((o) =>
                 orderMatchesStoreTable(o, tid),
               );
+              const running = tableTotals[tid];
+              const runningTotal = running?.total ?? 0;
+              const runningCount = running?.orderCount ?? 0;
               return (
                 <section key={tid} className={styles.tableColumn}>
-                  <h2 className={styles.tableColumnTitle}>
-                    {storeTableLabel(tid)}
-                  </h2>
+                  <div className={styles.tableColumnHead}>
+                    <h2 className={styles.tableColumnTitle}>
+                      {storeTableLabel(tid)}
+                    </h2>
+                    {mode === "kitchen" ? (
+                      <>
+                        <p className={styles.tableColumnTotal}>
+                          合計 ¥{runningTotal.toLocaleString("ja-JP")}
+                          {runningCount > 0 ? (
+                            <span className={styles.tableColumnTotalMeta}>
+                              （{runningCount}件）
+                            </span>
+                          ) : null}
+                        </p>
+                        <button
+                          type="button"
+                          className={styles.tableSettleBtn}
+                          disabled={settlingTable === tid}
+                          onClick={() => void settleTable(tid)}
+                        >
+                          {settlingTable === tid ? "処理中…" : "清算"}
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                   {columnOrders.length === 0 ? (
                     <p className={styles.tableColumnEmpty}>注文なし</p>
                   ) : (

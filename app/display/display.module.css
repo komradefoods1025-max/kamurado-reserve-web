@@ -248,14 +248,54 @@
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
+.tableColumnHead {
+  flex-shrink: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .tableColumnTitle {
   margin: 0;
-  padding: 8px 6px 10px;
+  padding: 8px 6px 4px;
   font-size: 20px;
   font-weight: 800;
   text-align: center;
   color: #ffd080;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tableColumnTotal {
+  margin: 0;
+  padding: 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+  color: #fff5e0;
+  letter-spacing: 0.02em;
+}
+
+.tableColumnTotalMeta {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c4b8a8;
+  margin-left: 4px;
+}
+
+.tableSettleBtn {
+  display: block;
+  width: calc(100% - 12px);
+  margin: 8px auto 0;
+  padding: 10px 8px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #6bc96a 0%, #3d9e3c 100%);
+  color: #0a1a08;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.tableSettleBtn:disabled {
+  opacity: 0.55;
 }
 
 .tableColumnEmpty {
