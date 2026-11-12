@@ -838,22 +838,22 @@
   color: #ffe8c8;
 }
 
-.lastOrderTelop {
-  overflow: hidden;
-  width: 100%;
-  padding: 2px 0 6px;
-  font-size: clamp(11px, 3.2vw, 14px);
-  font-weight: 800;
-  line-height: 1.45;
-}
-
 .lastOrderBox {
-  padding: 10px 12px;
+  overflow: hidden;
+  padding: 10px 8px;
   border-radius: 14px;
   border: 2px solid rgba(255, 184, 64, 0.65);
   background: rgba(255, 140, 40, 0.12);
   font-weight: 800;
   line-height: 1.35;
+}
+
+.lastOrderTelop {
+  overflow: hidden;
+  width: 100%;
+  font-size: clamp(11px, 3.2vw, 14px);
+  font-weight: 800;
+  line-height: 1.45;
 }
 
 .lastOrderTelopTrack {
@@ -864,7 +864,7 @@
 }
 
 .lastOrderFixedLine {
-  margin: 0;
+  margin: 8px 4px 0;
   font-size: clamp(10px, 2.9vw, 13px);
   font-weight: 800;
   line-height: 1.4;

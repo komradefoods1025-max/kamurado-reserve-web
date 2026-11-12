@@ -13,17 +13,17 @@ export default function StoreOrderLastOrderNote() {
       role="note"
       aria-label={`${telop} ${lastOrder}`}
     >
-      <div className={styles.lastOrderTelop}>
-        <div className={styles.lastOrderTelopTrack}>
-          <span className={styles.lastOrderTelopText}>{telop}</span>
-          <span className={styles.lastOrderTelopText} aria-hidden="true">
-            {telop}
-          </span>
+      <div className={styles.lastOrderBox}>
+        <div className={styles.lastOrderTelop}>
+          <div className={styles.lastOrderTelopTrack}>
+            <span className={styles.lastOrderTelopText}>{telop}</span>
+            <span className={styles.lastOrderTelopText} aria-hidden="true">
+              {telop}
+            </span>
+          </div>
         </div>
       </div>
-      <div className={styles.lastOrderBox}>
-        <p className={styles.lastOrderFixedLine}>{lastOrder}</p>
-      </div>
+      <p className={styles.lastOrderFixedLine}>{lastOrder}</p>
     </div>
   );
 }
