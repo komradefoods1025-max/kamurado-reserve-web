@@ -62,10 +62,10 @@ export async function blobListStoreDisplayOrders(
   }
 }
 
-export async function blobUpdateStoreDisplayOrderStatus(
+export async function blobApplyStoreDisplayOrderUpdate(
   reservationNo: string,
-  status: StoreDisplayOrder["status"],
   ymd: string,
+  apply: (order: StoreDisplayOrder) => boolean,
 ): Promise<boolean> {
   const token = blobToken();
   if (!token) return false;
@@ -75,8 +75,12 @@ export async function blobUpdateStoreDisplayOrderStatus(
     const res = await fetch(meta.url, { cache: "no-store" });
     if (!res.ok) return false;
     const order = (await res.json()) as StoreDisplayOrder;
-    order.status = status;
-    await put(pathname, JSON.stringify(order), {
+    const clone: StoreDisplayOrder = {
+      ...order,
+      items: order.items.map((item) => ({ ...item })),
+    };
+    if (!apply(clone)) return false;
+    await put(pathname, JSON.stringify(clone), {
       access: "public",
       addRandomSuffix: false,
       token,
@@ -87,4 +91,15 @@ export async function blobUpdateStoreDisplayOrderStatus(
     console.error("[storeDisplayBlobQueue] update", err);
     return false;
   }
+}
+
+export async function blobUpdateStoreDisplayOrderStatus(
+  reservationNo: string,
+  status: StoreDisplayOrder["status"],
+  ymd: string,
+): Promise<boolean> {
+  return blobApplyStoreDisplayOrderUpdate(reservationNo, ymd, (order) => {
+    order.status = status;
+    return true;
+  });
 }

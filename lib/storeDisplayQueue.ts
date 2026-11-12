@@ -4,6 +4,7 @@ import {
   storeTableLabel,
 } from "./storeOrderTables";
 import {
+  blobApplyStoreDisplayOrderUpdate,
   blobEnqueueStoreDisplayOrder,
   blobListStoreDisplayOrders,
   blobUpdateStoreDisplayOrderStatus,
@@ -20,7 +21,23 @@ export type StoreDisplayItem = {
   price?: number;
   total?: number;
   dressing?: string;
+  /** キッチンで商品単位を完成にした時刻（ISO） */
+  kitchenDoneAt?: string;
 };
+
+/** キッチン商品行: 表示からこの時間で遅延表示 */
+export const STORE_KITCHEN_ITEM_OVERDUE_MS = 10 * 60 * 1000;
+
+export function isStoreKitchenItemOverdue(
+  order: StoreDisplayOrder,
+  item: StoreDisplayItem,
+  nowMs: number,
+): boolean {
+  if (item.kitchenDoneAt) return false;
+  const at = Date.parse(order.submittedAt || "");
+  if (!Number.isFinite(at)) return false;
+  return nowMs - at >= STORE_KITCHEN_ITEM_OVERDUE_MS;
+}
 
 export type StoreDisplayOrder = {
   reservationNo: string;
@@ -161,25 +178,36 @@ function memoryList(ymd: string): StoreDisplayOrder[] {
   return dedupeSort(memoryStore().get(dayKey(ymd)) ?? []);
 }
 
-function memoryUpdateStatus(
+function memoryApplyOrderUpdate(
   reservationNo: string,
-  status: StoreDisplayOrder["status"],
   ymd: string,
+  apply: (order: StoreDisplayOrder) => boolean,
 ): boolean {
   const key = dayKey(ymd);
   const list = memoryStore().get(key);
   if (!list?.length) return false;
   let updated = false;
   const next = list.map((o) => {
-    if (String(o.reservationNo) === reservationNo) {
-      updated = true;
-      return { ...o, status };
-    }
-    return o;
+    if (String(o.reservationNo) !== reservationNo) return o;
+    const clone = { ...o, items: o.items.map((item) => ({ ...item })) };
+    if (!apply(clone)) return o;
+    updated = true;
+    return clone;
   });
   if (!updated) return false;
   memoryStore().set(key, next);
   return true;
+}
+
+function memoryUpdateStatus(
+  reservationNo: string,
+  status: StoreDisplayOrder["status"],
+  ymd: string,
+): boolean {
+  return memoryApplyOrderUpdate(reservationNo, ymd, (order) => {
+    order.status = status;
+    return true;
+  });
 }
 
 export async function enqueueStoreDisplayOrder(
@@ -236,10 +264,10 @@ export async function listStoreDisplayOrders(
   return [];
 }
 
-export async function updateStoreDisplayOrderStatus(
+async function applyStoreDisplayOrderUpdate(
   reservationNo: string,
-  status: StoreDisplayOrder["status"],
-  ymd = getTodayYmdJst(),
+  ymd: string,
+  apply: (order: StoreDisplayOrder) => boolean,
 ): Promise<boolean> {
   if (isStoreDisplayRedisQueueEnabled()) {
     const key = dayKey(ymd);
@@ -253,8 +281,15 @@ export async function updateStoreDisplayOrderStatus(
       try {
         const parsed = JSON.parse(decodeRedisValue(raw)) as StoreDisplayOrder;
         if (String(parsed.reservationNo) === reservationNo) {
-          parsed.status = status;
-          nextRows.push(encodeRedisValue(JSON.stringify(parsed)));
+          const clone: StoreDisplayOrder = {
+            ...parsed,
+            items: parsed.items.map((item) => ({ ...item })),
+          };
+          if (!apply(clone)) {
+            nextRows.push(raw);
+            continue;
+          }
+          nextRows.push(encodeRedisValue(JSON.stringify(clone)));
           updated = true;
         } else {
           nextRows.push(raw);
@@ -274,12 +309,43 @@ export async function updateStoreDisplayOrderStatus(
     return true;
   }
   if (isStoreDisplayBlobQueueEnabled()) {
-    return blobUpdateStoreDisplayOrderStatus(reservationNo, status, ymd);
+    return blobApplyStoreDisplayOrderUpdate(reservationNo, ymd, apply);
   }
   if (isStoreDisplayMemoryQueueActive()) {
-    return memoryUpdateStatus(reservationNo, status, ymd);
+    return memoryApplyOrderUpdate(reservationNo, ymd, apply);
   }
   return false;
+}
+
+export async function updateStoreDisplayOrderStatus(
+  reservationNo: string,
+  status: StoreDisplayOrder["status"],
+  ymd = getTodayYmdJst(),
+): Promise<boolean> {
+  return applyStoreDisplayOrderUpdate(reservationNo, ymd, (order) => {
+    order.status = status;
+    return true;
+  });
+}
+
+export async function markStoreDisplayItemKitchenDone(
+  reservationNo: string,
+  itemIndex: number,
+  done: boolean,
+  ymd = getTodayYmdJst(),
+): Promise<boolean> {
+  if (!Number.isInteger(itemIndex) || itemIndex < 0) return false;
+
+  return applyStoreDisplayOrderUpdate(reservationNo, ymd, (order) => {
+    const item = order.items[itemIndex];
+    if (!item) return false;
+    if (done) {
+      item.kitchenDoneAt = new Date().toISOString();
+    } else {
+      delete item.kitchenDoneAt;
+    }
+    return true;
+  });
 }
 
 export function storeDisplayQueueHintMessage(): string {

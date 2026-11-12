@@ -1,6 +1,9 @@
 "use client";
 
-import type { StoreDisplayOrder } from "../../lib/storeDisplayQueue";
+import {
+  isStoreKitchenItemOverdue,
+  type StoreDisplayOrder,
+} from "../../lib/storeDisplayQueue";
 import {
   resolveStoreOrderTableId,
   storeTableLabel,
@@ -26,13 +29,21 @@ function itemQty(item: StoreDisplayOrder["items"][number]) {
 export default function StoreDisplayOrderCard({
   order,
   mode,
+  nowMs,
   onSetStatus,
+  onSetItemDone,
 }: {
   order: StoreDisplayOrder;
   mode: "kitchen" | "counter";
+  nowMs?: number;
   onSetStatus: (
     reservationNo: string,
     status: StoreDisplayOrder["status"],
+  ) => void;
+  onSetItemDone?: (
+    reservationNo: string,
+    itemIndex: number,
+    done: boolean,
   ) => void;
 }) {
   const isNew = order.status === "受付済み";
@@ -57,19 +68,64 @@ export default function StoreDisplayOrderCard({
       </div>
       <h2 className={styles.cardName}>{order.name} 様</h2>
       <div className={styles.itemList}>
-        {order.items.map((item, idx) => (
-          <div
-            key={`${order.reservationNo}-${idx}`}
-            className={
-              mode === "kitchen"
-                ? `${styles.itemRow} ${styles.itemRowKitchen}`
-                : styles.itemRow
-            }
-          >
-            <span>{itemLabel(item)}</span>
-            <span className={styles.itemQty}>×{itemQty(item)}</span>
-          </div>
-        ))}
+        {order.items.map((item, idx) => {
+          const done = Boolean(item.kitchenDoneAt);
+          const overdue =
+            mode === "kitchen" &&
+            nowMs != null &&
+            isStoreKitchenItemOverdue(order, item, nowMs);
+          const rowClass =
+            mode === "kitchen"
+              ? [
+                  styles.itemRowKitchenWrap,
+                  done ? styles.itemRowKitchenDone : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")
+              : styles.itemRow;
+
+          if (mode !== "kitchen") {
+            return (
+              <div key={`${order.reservationNo}-${idx}`} className={rowClass}>
+                <span>{itemLabel(item)}</span>
+                <span className={styles.itemQty}>×{itemQty(item)}</span>
+              </div>
+            );
+          }
+
+          return (
+            <div key={`${order.reservationNo}-${idx}`} className={rowClass}>
+              <div
+                className={`${styles.itemRow} ${styles.itemRowKitchen} ${styles.itemRowKitchenMain}`}
+              >
+                <span
+                  className={overdue ? styles.itemNameOverdue : undefined}
+                >
+                  {itemLabel(item)}
+                  {overdue ? (
+                    <span className={styles.itemOverdueNote}>
+                      （10分経過しました）
+                    </span>
+                  ) : null}
+                </span>
+                <span className={styles.itemQty}>×{itemQty(item)}</span>
+              </div>
+              {done ? (
+                <span className={styles.itemDoneTag}>完成済み</span>
+              ) : onSetItemDone ? (
+                <button
+                  type="button"
+                  className={styles.itemDoneBtn}
+                  onClick={() =>
+                    onSetItemDone(order.reservationNo, idx, true)
+                  }
+                >
+                  完成
+                </button>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
       {mode === "counter" ? (
         <p className={styles.headerMeta} style={{ marginTop: 8 }}>

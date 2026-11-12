@@ -27,7 +27,7 @@ const COUNTER_VISIBLE: StoreDisplayOrder["status"][] = [
 const KITCHEN_COMPLETE_VISIBLE_MS = 5000;
 
 /** 店舗表示 UI 世代（キャッシュ確認用・ヘッダーに表示） */
-const DISPLAY_UI_REV = "quad-settle-v2";
+const DISPLAY_UI_REV = "item-done-v1";
 
 export default function StoreDisplayBoard({
   mode,
@@ -51,6 +51,7 @@ export default function StoreDisplayBoard({
   const [reviewTableId, setReviewTableId] = useState<string | null>(null);
   const [queueWarning, setQueueWarning] = useState<string | null>(null);
   const [clock, setClock] = useState("");
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const seenRef = useRef<Set<string>>(new Set());
   const bootRef = useRef(true);
   /** 完成カードを表示し続ける期限（reservationNo → epoch ms） */
@@ -98,6 +99,7 @@ export default function StoreDisplayBoard({
   useEffect(() => {
     const tick = () => {
       const now = new Date();
+      setNowMs(now.getTime());
       setClock(
         now.toLocaleTimeString("ja-JP", {
           timeZone: "Asia/Tokyo",
@@ -284,6 +286,19 @@ export default function StoreDisplayBoard({
     }
   }
 
+  async function setItemKitchenDone(
+    reservationNo: string,
+    itemIndex: number,
+    done: boolean,
+  ) {
+    await fetch("/api/store-display/item-done", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reservationNo, itemIndex, done }),
+    });
+    void refresh();
+  }
+
   async function setStatus(
     reservationNo: string,
     status: StoreDisplayOrder["status"],
@@ -407,7 +422,11 @@ export default function StoreDisplayBoard({
                           key={order.reservationNo}
                           order={order}
                           mode={mode}
+                          nowMs={mode === "kitchen" ? nowMs : undefined}
                           onSetStatus={setStatus}
+                          onSetItemDone={
+                            mode === "kitchen" ? setItemKitchenDone : undefined
+                          }
                         />
                       ))}
                     </div>
@@ -430,7 +449,11 @@ export default function StoreDisplayBoard({
                       key={order.reservationNo}
                       order={order}
                       mode={mode}
+                      nowMs={mode === "kitchen" ? nowMs : undefined}
                       onSetStatus={setStatus}
+                      onSetItemDone={
+                        mode === "kitchen" ? setItemKitchenDone : undefined
+                      }
                     />
                   ))}
                 </div>
@@ -447,7 +470,11 @@ export default function StoreDisplayBoard({
               key={order.reservationNo}
               order={order}
               mode={mode}
+              nowMs={mode === "kitchen" ? nowMs : undefined}
               onSetStatus={setStatus}
+              onSetItemDone={
+                mode === "kitchen" ? setItemKitchenDone : undefined
+              }
             />
           ))}
         </div>
