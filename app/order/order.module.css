@@ -399,17 +399,23 @@
   position: relative;
 }
 
-/* 写真下部の商品名オーバーレイ帯を非表示にする（もんじゃ焼きなど） */
-.cardMediaCropCaption {
-  overflow: hidden;
-}
-
-.cardMediaCropCaption .cardImage,
-.cardMediaCropCaption .menuHeroImage {
-  object-fit: cover;
-  object-position: center top;
-  transform: scale(1.2);
-  transform-origin: center top;
+/* 写真下部の商品名オーバーレイ帯をマスク（画像全体は見切らない） */
+.cardMediaCropCaption::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  height: 15%;
+  min-height: 32px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(42, 30, 24, 0.55) 45%,
+    var(--o-card) 100%
+  );
 }
 
 .menuItemBadge {
