@@ -454,6 +454,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 610,
     image: IMG(16),
     category: "fried",
+    showCardName: true,
   },
   {
     id: "chicken_nanban",
@@ -461,6 +462,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 950,
     image: IMG(43),
     category: "fried",
+    showCardName: true,
     optionLabel: "サイズ",
     dressingOptions: ["レギュラー", "ハーフ"],
     optionPrices: {
