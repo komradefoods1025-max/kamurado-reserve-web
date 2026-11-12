@@ -835,23 +835,72 @@
 
 .lastOrderBox {
   margin-top: 12px;
-  padding: 12px 14px;
+  padding: 10px 0;
   border-radius: 14px;
   border: 2px solid rgba(255, 184, 64, 0.65);
   background: rgba(255, 140, 40, 0.12);
   font-size: 15px;
   font-weight: 800;
-  line-height: 1.55;
+  line-height: 1.2;
   color: #ffe8c8;
-  text-align: center;
 }
 
-.lastOrderBox p {
-  margin: 0;
+.lastOrderTelop {
+  overflow: hidden;
+  width: 100%;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 8%,
+    #000 92%,
+    transparent 100%
+  );
 }
 
-.lastOrderBox p + p {
-  margin-top: 4px;
+.lastOrderTelopTrack {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  width: max-content;
+  animation: lastOrderTelopScroll 22s linear infinite;
+}
+
+.lastOrderTelopText {
+  flex-shrink: 0;
+  padding-right: 4rem;
+  white-space: nowrap;
+}
+
+@keyframes lastOrderTelopScroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lastOrderTelopTrack {
+    animation: none;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .lastOrderTelopText[aria-hidden="true"] {
+    display: none;
+  }
+
+  .lastOrderTelopText {
+    padding-right: 0;
+    white-space: normal;
+    text-align: center;
+    width: 100%;
+  }
+
+  .lastOrderTelop {
+    mask-image: none;
+    padding: 0 14px;
+  }
 }
 
 .disclaimerBox {

@@ -14,6 +14,10 @@ export const STORE_ORDER_LAST_ORDER_LINES = [
   `ドリンク　ラストオーダー ${STORE_ORDER_DINE_IN_DRINK_LAST_ORDER}`,
 ] as const;
 
+/** 店内テロップ用（1行・右から左へ流す） */
+export const STORE_ORDER_LAST_ORDER_TELOP =
+  STORE_ORDER_LAST_ORDER_LINES.join("　　");
+
 export const STORE_ORDER_READY_NOTE_DINE_IN =
   "お席でお召し上がりのご注文です。お料理は出来次第、お席へお持ちします。";
 
