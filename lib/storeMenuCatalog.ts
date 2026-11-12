@@ -484,6 +484,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1200,
     image: IMG(17),
     category: "rice",
+    showCardName: true,
   },
   {
     id: "garlic_rice",
@@ -491,6 +492,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1080,
     image: IMG(46),
     category: "rice",
+    showCardName: true,
   },
   {
     id: "mentai_butter_rice",
@@ -498,6 +500,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1130,
     image: IMG(18),
     category: "rice",
+    showCardName: true,
   },
   {
     id: "onigiri_various",
@@ -505,6 +508,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 430,
     image: IMG(20),
     category: "rice",
+    showCardName: true,
     optionLabel: "種類",
     dressingOptions: ONIGIRI_KINDS,
     optionPrices: {
