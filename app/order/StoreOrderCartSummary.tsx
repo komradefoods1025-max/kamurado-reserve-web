@@ -6,6 +6,7 @@ import {
   formatStoreOrderUnitPrice,
 } from "../../lib/storeMenuCatalog";
 import { storeCartLineKey, type StoreCartLine } from "../../lib/storeOrderDraft";
+import StoreMenuItemName from "./StoreMenuItemName";
 import styles from "./order.module.css";
 
 function enrichCartLines(items: StoreCartLine[]): StoreCartLine[] {
@@ -49,7 +50,9 @@ export default function StoreOrderCartSummary({
               ) : null}
             </div>
             <div className={styles.cartSummaryBody}>
-              <p className={styles.cartSummaryName}>{item.name}</p>
+              <p className={styles.cartSummaryName}>
+                <StoreMenuItemName name={item.name} />
+              </p>
               <p className={styles.cartSummaryMeta}>
                 単価 {formatStoreOrderUnitPrice(item.price)} × {item.quantity}
               </p>

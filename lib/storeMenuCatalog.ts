@@ -138,7 +138,7 @@ export const STORE_MENU_CATEGORY_NOTE: Partial<
 
 const OKONOMIYAKI_TOPPING_MENU_ITEMS: StoreMenuItem[] = (
   [
-    ["top_egg_medama", "卵(生・目玉焼き)", 150],
+    ["top_egg_medama", "卵（生・目玉焼き）", 150],
     ["top_onsen_tamago", "温玉", 150],
     ["top_tenkasu", "天かす", 150],
     ["top_baby_star", "ベビースター", 150],
@@ -534,6 +534,23 @@ export function storeMenuShouldHideCardName(item: StoreMenuItem): boolean {
   return STORE_MENU_NAMED_PHOTO_FOOD_CATEGORIES.has(item.category);
 }
 
+export type StoreMenuNameSegment = { text: string; keepTogether: boolean };
+
+/** 表示用に半角括弧を全角へそろえる */
+export function normalizeStoreMenuDisplayName(name: string): string {
+  return name.replace(/\(/g, "（").replace(/\)/g, "）");
+}
+
+/** 「（12年）」など括弧内で不自然に改行しないよう分割 */
+export function storeMenuNameSegments(name: string): StoreMenuNameSegment[] {
+  const normalized = normalizeStoreMenuDisplayName(name);
+  const parts = normalized.split(/(（[^）]+）)/).filter((p) => p.length > 0);
+  return parts.map((text) => ({
+    text,
+    keepTogether: /^（[^）]+）$/.test(text),
+  }));
+}
+
 export function formatStoreItemPrice(price: number | null): string {
   if (price === null || !Number.isFinite(price) || price <= 0) {
     return "";
@@ -606,8 +623,12 @@ function storeCartDisplayName(
     const label = catalog.secondaryOptionLabel ?? "オプション";
     parts.push(`${label}:${secondaryDressing}`);
   }
-  if (parts.length) return `${catalog.name}（${parts.join("・")}）`;
-  return catalog.name;
+  if (parts.length) {
+    return normalizeStoreMenuDisplayName(
+      `${catalog.name}（${parts.join("・")}）`,
+    );
+  }
+  return normalizeStoreMenuDisplayName(catalog.name);
 }
 
 export function storeMenuItemUnitPrice(

@@ -53,6 +53,7 @@ import {
   storeOrderMenuHref,
   storeOrderTableEntryHref,
 } from "../../../lib/storeOrderMenuUrl";
+import StoreMenuItemName from "../StoreMenuItemName";
 import styles from "../order.module.css";
 
 const CATEGORY_ORDER: StoreMenuCategory[] = [
@@ -779,7 +780,9 @@ function MenuItemBody({
   return (
     <>
       {storeMenuShouldHideCardName(item) ? null : (
-        <div className={styles.cardName}>{item.name}</div>
+        <div className={styles.cardName}>
+          <StoreMenuItemName name={item.name} />
+        </div>
       )}
       {dressings?.length ? (
         <OptionPickGroup
