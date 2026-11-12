@@ -356,7 +356,7 @@ const DRINK_SHOCHU_IMO: StoreMenuItem[] = [
     ...SHOCHU_BOTTLE_PHOTO,
   }),
   shochu("drink_shochu_imo", "shochu_tominohozan", "富乃宝山", 650, {
-    image: "/store-menu/shochu-tominohozan.png?v=20261113c",
+    image: "/store-menu/shochu-tominohozan.png?v=20261113d",
     showCardName: true,
     ...SHOCHU_BOTTLE_PHOTO,
   }),
