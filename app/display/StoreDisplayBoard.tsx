@@ -14,6 +14,7 @@ import {
   STORE_ORDER_TABLE_COUNT,
   storeTableLabel,
 } from "../../lib/storeOrderTables";
+import { PREMIUM_SOUNDS } from "../../lib/premiumSounds";
 import StoreDisplayOrderCard from "./StoreDisplayOrderCard";
 import styles from "./display.module.css";
 
@@ -121,8 +122,8 @@ export default function StoreDisplayBoard({
     try {
       const audio = new Audio(
         mode === "kitchen"
-          ? "/sounds/go-to-datetime.wav?v=3"
-          : "/sounds/cart-thanks.wav?v=3",
+          ? PREMIUM_SOUNDS.goToDatetime.src
+          : PREMIUM_SOUNDS.cartThanks.src,
       );
       audio.volume = 0.85;
       void audio.play();
