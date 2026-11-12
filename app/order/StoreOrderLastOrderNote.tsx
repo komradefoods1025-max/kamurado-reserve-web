@@ -1,22 +1,27 @@
-import { STORE_ORDER_DINE_IN_TELOP } from "../../lib/storeOrderCopy";
+import {
+  STORE_ORDER_DINE_IN_TELOP,
+  STORE_ORDER_LAST_ORDER_ONE_LINE,
+} from "../../lib/storeOrderCopy";
 import styles from "./order.module.css";
 
 export default function StoreOrderLastOrderNote() {
-  const text = STORE_ORDER_DINE_IN_TELOP;
+  const telop = STORE_ORDER_DINE_IN_TELOP;
+  const lastOrder = STORE_ORDER_LAST_ORDER_ONE_LINE;
   return (
     <div
       className={styles.lastOrderBox}
       role="note"
-      aria-label={text}
+      aria-label={`${telop} ${lastOrder}`}
     >
       <div className={styles.lastOrderTelop}>
         <div className={styles.lastOrderTelopTrack}>
-          <span className={styles.lastOrderTelopText}>{text}</span>
+          <span className={styles.lastOrderTelopText}>{telop}</span>
           <span className={styles.lastOrderTelopText} aria-hidden="true">
-            {text}
+            {telop}
           </span>
         </div>
       </div>
+      <p className={styles.lastOrderFixedLine}>{lastOrder}</p>
     </div>
   );
 }

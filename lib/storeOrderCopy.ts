@@ -14,18 +14,16 @@ export const STORE_ORDER_LAST_ORDER_LINES = [
   `ドリンク　ラストオーダー ${STORE_ORDER_DINE_IN_DRINK_LAST_ORDER}`,
 ] as const;
 
-/** 店内テロップ — 宴会プロモ */
+/** 店内テロップ — 宴会プロモ（右から左へ流す） */
 export const STORE_ORDER_BANQUET_TELOP =
-  "宴会予約受付中‼️ 今なら無料飲み放題も付いております😆✨詳しくは『かむらど　戸田』で検索🔍‼️この機会にお得に飲んじゃおー🍻✨";
+  "宴会予約受付中‼️ 今なら無料飲み放題も付いております😆✨詳しくは『かむらど　戸田』で検索🔍かお近くのスタッフまで‼️この機会にお得に飲んじゃおー🍻✨";
 
-/** 店内テロップ用（1行・右から左へ流す） */
-export const STORE_ORDER_DINE_IN_TELOP = [
-  ...STORE_ORDER_LAST_ORDER_LINES,
-  STORE_ORDER_BANQUET_TELOP,
-].join("　　");
+/** テロップ本体（宴会案内のみ） */
+export const STORE_ORDER_DINE_IN_TELOP = STORE_ORDER_BANQUET_TELOP;
 
-/** @deprecated use STORE_ORDER_DINE_IN_TELOP */
-export const STORE_ORDER_LAST_ORDER_TELOP = STORE_ORDER_DINE_IN_TELOP;
+/** テロップ下に固定表示するラストオーダー（1行） */
+export const STORE_ORDER_LAST_ORDER_ONE_LINE =
+  STORE_ORDER_LAST_ORDER_LINES.join("　　");
 
 export const STORE_ORDER_READY_NOTE_DINE_IN =
   "お席でお召し上がりのご注文です。お料理は出来次第、お席へお持ちします。";
