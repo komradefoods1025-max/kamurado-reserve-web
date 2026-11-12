@@ -2,6 +2,7 @@
 
 import {
   isStoreKitchenItemOverdue,
+  isStoreKitchenItemVisibleOnDisplay,
   type StoreDisplayOrder,
 } from "../../lib/storeDisplayQueue";
 import {
@@ -69,6 +70,13 @@ export default function StoreDisplayOrderCard({
       <h2 className={styles.cardName}>{order.name} 様</h2>
       <div className={styles.itemList}>
         {order.items.map((item, idx) => {
+          if (
+            mode === "kitchen" &&
+            nowMs != null &&
+            !isStoreKitchenItemVisibleOnDisplay(item, nowMs)
+          ) {
+            return null;
+          }
           const done = Boolean(item.kitchenDoneAt);
           const overdue =
             mode === "kitchen" &&

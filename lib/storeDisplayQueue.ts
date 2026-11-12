@@ -28,6 +28,28 @@ export type StoreDisplayItem = {
 /** キッチン商品行: 表示からこの時間で遅延表示 */
 export const STORE_KITCHEN_ITEM_OVERDUE_MS = 10 * 60 * 1000;
 
+/** 商品単位の完成後、キッチンに残す秒数（注文の「完成」と同じ） */
+export const STORE_KITCHEN_ITEM_DONE_VISIBLE_MS = 5000;
+
+export function isStoreKitchenItemVisibleOnDisplay(
+  item: StoreDisplayItem,
+  nowMs: number,
+): boolean {
+  if (!item.kitchenDoneAt) return true;
+  const doneAt = Date.parse(item.kitchenDoneAt);
+  if (!Number.isFinite(doneAt)) return true;
+  return nowMs - doneAt < STORE_KITCHEN_ITEM_DONE_VISIBLE_MS;
+}
+
+export function orderHasVisibleKitchenItems(
+  order: StoreDisplayOrder,
+  nowMs: number,
+): boolean {
+  return order.items.some((item) =>
+    isStoreKitchenItemVisibleOnDisplay(item, nowMs),
+  );
+}
+
 export function isStoreKitchenItemOverdue(
   order: StoreDisplayOrder,
   item: StoreDisplayItem,

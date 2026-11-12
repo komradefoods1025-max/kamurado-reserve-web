@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { StoreDisplayOrder } from "../../lib/storeDisplayQueue";
+import {
+  orderHasVisibleKitchenItems,
+  type StoreDisplayOrder,
+} from "../../lib/storeDisplayQueue";
 import {
   buildUnsettledTableOrderSummary,
   type StoreTableRunningTotals,
@@ -27,7 +30,7 @@ const COUNTER_VISIBLE: StoreDisplayOrder["status"][] = [
 const KITCHEN_COMPLETE_VISIBLE_MS = 5000;
 
 /** 店舗表示 UI 世代（キャッシュ確認用・ヘッダーに表示） */
-const DISPLAY_UI_REV = "item-done-v1";
+const DISPLAY_UI_REV = "item-done-v2";
 
 export default function StoreDisplayBoard({
   mode,
@@ -134,7 +137,9 @@ export default function StoreDisplayBoard({
         mode === "kitchen"
           ? list.filter(
               (o) =>
-                o.status !== "提供済み" && kitchenCompleteStillVisible(o),
+                o.status !== "提供済み" &&
+                kitchenCompleteStillVisible(o) &&
+                orderHasVisibleKitchenItems(o, nowMs),
             )
           : list.filter((o) => COUNTER_VISIBLE.includes(o.status));
 
@@ -151,12 +156,12 @@ export default function StoreDisplayBoard({
       });
       return filtered;
     },
-    [mode, tableId, showTableQuad, kitchenCompleteStillVisible],
+    [mode, tableId, showTableQuad, kitchenCompleteStillVisible, nowMs],
   );
 
   const orders = useMemo(
     () => filterForMode(feedOrders),
-    [feedOrders, filterForMode, hideTick],
+    [feedOrders, filterForMode, hideTick, nowMs],
   );
 
   const reviewSummary = useMemo(() => {
