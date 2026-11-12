@@ -343,16 +343,28 @@ const DRINK_SHOCHU_MUGI: StoreMenuItem[] = [
     ...SHOCHU_BOTTLE_PHOTO,
   }),
   shochu("drink_shochu_mugi", "shochu_nakanaka", "中々", 780, {
-    image: "/store-menu/shochu-nakanaka.png?v=20261113",
+    image: "/store-menu/shochu-nakanaka.png?v=20261113b",
     showCardName: true,
     ...SHOCHU_BOTTLE_PHOTO,
   }),
 ];
 
 const DRINK_SHOCHU_IMO: StoreMenuItem[] = [
-  shochu("drink_shochu_imo", "shochu_kurokirishima", "黒霧島", 650),
-  shochu("drink_shochu_imo", "shochu_tominohozan", "富乃宝山", 650),
-  shochu("drink_shochu_imo", "shochu_akato", "赤兎馬", 780),
+  shochu("drink_shochu_imo", "shochu_kurokirishima", "黒霧島", 650, {
+    image: "/store-menu/shochu-kurokirishima.png?v=20261113",
+    showCardName: true,
+    ...SHOCHU_BOTTLE_PHOTO,
+  }),
+  shochu("drink_shochu_imo", "shochu_tominohozan", "富乃宝山", 650, {
+    image: "/store-menu/shochu-tominohozan.png?v=20261113",
+    showCardName: true,
+    ...SHOCHU_BOTTLE_PHOTO,
+  }),
+  shochu("drink_shochu_imo", "shochu_akato", "赤兎馬", 780, {
+    image: "/store-menu/shochu-akato.png?v=20261113",
+    showCardName: true,
+    ...SHOCHU_BOTTLE_PHOTO,
+  }),
 ];
 
 const DRINK_MIXER: StoreMenuItem[] = [
