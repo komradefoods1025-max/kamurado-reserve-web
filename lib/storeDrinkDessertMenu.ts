@@ -86,10 +86,30 @@ function shochu(
   });
 }
 
-function fruitLiquor(id: string, name: string, price: number): StoreMenuItem {
+const FRUIT_LIQUOR_PHOTO = {
+  imageFit: "contain" as const,
+  imageWidth: 800,
+  imageHeight: 520,
+  showCardName: true,
+};
+
+const FRUIT_ONI_BOTTLE_PHOTO = {
+  ...FRUIT_LIQUOR_PHOTO,
+  imageBanner: true,
+  imageWidth: 640,
+  imageHeight: 640,
+};
+
+function fruitLiquor(
+  id: string,
+  name: string,
+  price: number,
+  extra?: Partial<StoreMenuItem>,
+): StoreMenuItem {
   return item("drink_fruit", id, name, price, {
     optionLabel: "割り方",
     dressingOptions: FRUIT_LIQUOR_SPLITS,
+    ...extra,
   });
 }
 
@@ -396,14 +416,38 @@ const DRINK_MIXER: StoreMenuItem[] = [
 ];
 
 const DRINK_FRUIT: StoreMenuItem[] = [
-  fruitLiquor("fruit_ume", "梅酒", 630),
-  fruitLiquor("fruit_apricot", "あんず酒", 630),
-  fruitLiquor("fruit_lychee", "ライチ酒", 630),
-  fruitLiquor("fruit_shikuwasa", "シークワーサー酒", 630),
-  fruitLiquor("fruit_oni_kiwi", "鬼おろしキウイ", 680),
-  fruitLiquor("fruit_oni_pine", "鬼おろしパイン", 680),
-  fruitLiquor("fruit_oni_peach", "鬼おろしもも", 680),
-  fruitLiquor("fruit_oni_mikan", "鬼おろしみかん", 680),
+  fruitLiquor("fruit_ume", "梅酒", 630, {
+    image: "/store-menu/fruit-ume.png?v=20261113",
+    ...FRUIT_LIQUOR_PHOTO,
+  }),
+  fruitLiquor("fruit_apricot", "あんず酒", 630, {
+    image: "/store-menu/fruit-apricot.png?v=20261113",
+    ...FRUIT_LIQUOR_PHOTO,
+  }),
+  fruitLiquor("fruit_lychee", "ライチ酒", 630, {
+    image: "/store-menu/fruit-lychee.png?v=20261113",
+    ...FRUIT_LIQUOR_PHOTO,
+  }),
+  fruitLiquor("fruit_shikuwasa", "シークワーサー酒", 630, {
+    image: "/store-menu/fruit-shikuwasa.png?v=20261113",
+    ...FRUIT_LIQUOR_PHOTO,
+  }),
+  fruitLiquor("fruit_oni_kiwi", "鬼おろしキウイ", 680, {
+    image: "/store-menu/fruit-oni-kiwi.png?v=20261113",
+    ...FRUIT_ONI_BOTTLE_PHOTO,
+  }),
+  fruitLiquor("fruit_oni_pine", "鬼おろしパイン", 680, {
+    image: "/store-menu/fruit-oni-pine.png?v=20261113",
+    ...FRUIT_ONI_BOTTLE_PHOTO,
+  }),
+  fruitLiquor("fruit_oni_peach", "鬼おろしもも", 680, {
+    image: "/store-menu/fruit-oni-peach.png?v=20261113",
+    ...FRUIT_ONI_BOTTLE_PHOTO,
+  }),
+  fruitLiquor("fruit_oni_mikan", "鬼おろしみかん", 680, {
+    image: "/store-menu/fruit-oni-mikan.png?v=20261113",
+    ...FRUIT_ONI_BOTTLE_PHOTO,
+  }),
 ];
 
 export const DRINK_MENU_ITEMS: StoreMenuItem[] = [

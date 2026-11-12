@@ -350,6 +350,7 @@ function StoreOrderMenuPageInner() {
     activeCategory === "drink_shochu_mugi" ||
     activeCategory === "drink_shochu_imo" ||
     activeCategory === "drink_mixer" ||
+    activeCategory === "drink_fruit" ||
     activeCategory === "fried" ||
     activeCategory === "rice" ||
     activeCategory === "salad" ||
