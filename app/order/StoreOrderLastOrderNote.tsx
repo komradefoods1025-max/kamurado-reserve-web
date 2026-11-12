@@ -1,8 +1,8 @@
-import { STORE_ORDER_LAST_ORDER_TELOP } from "../../lib/storeOrderCopy";
+import { STORE_ORDER_DINE_IN_TELOP } from "../../lib/storeOrderCopy";
 import styles from "./order.module.css";
 
 export default function StoreOrderLastOrderNote() {
-  const text = STORE_ORDER_LAST_ORDER_TELOP;
+  const text = STORE_ORDER_DINE_IN_TELOP;
   return (
     <div
       className={styles.lastOrderBox}

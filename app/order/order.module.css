@@ -861,7 +861,7 @@
   display: inline-flex;
   flex-wrap: nowrap;
   width: max-content;
-  animation: lastOrderTelopScroll 22s linear infinite;
+  animation: lastOrderTelopScroll 36s linear infinite;
 }
 
 .lastOrderTelopText {
