@@ -65,6 +65,13 @@ const SHOCHU_BOTTLE_PHOTO = {
   imageHeight: 640,
 };
 
+const MIXER_ITEM_PHOTO = {
+  imageFit: "contain" as const,
+  imageWidth: 800,
+  imageHeight: 520,
+  showCardName: true,
+};
+
 function shochu(
   category: "drink_shochu_mugi" | "drink_shochu_imo",
   id: string,
@@ -368,10 +375,22 @@ const DRINK_SHOCHU_IMO: StoreMenuItem[] = [
 ];
 
 const DRINK_MIXER: StoreMenuItem[] = [
-  item("drink_mixer", "bottle_umeboshi", "梅干し（1個）", 110),
-  item("drink_mixer", "bottle_lemon", "カットレモン（1個）", 300),
-  item("drink_mixer", "bottle_ice", "氷", 150),
-  item("drink_mixer", "bottle_water", "ミネラルウォーター", 150),
+  item("drink_mixer", "bottle_umeboshi", "梅干し（1個）", 110, {
+    image: "/store-menu/mixer-umeboshi.png?v=20261113",
+    ...MIXER_ITEM_PHOTO,
+  }),
+  item("drink_mixer", "bottle_lemon", "カットレモン（1個）", 300, {
+    image: "/store-menu/mixer-lemon.png?v=20261113",
+    ...MIXER_ITEM_PHOTO,
+  }),
+  item("drink_mixer", "bottle_ice", "氷", 150, {
+    image: "/store-menu/mixer-ice.png?v=20261113",
+    ...MIXER_ITEM_PHOTO,
+  }),
+  item("drink_mixer", "bottle_water", "ミネラルウォーター", 150, {
+    image: "/store-menu/mixer-water.png?v=20261113",
+    ...MIXER_ITEM_PHOTO,
+  }),
   item("drink_mixer", "soda_pitcher", "炭酸ピッチャー", 500),
   item("drink_mixer", "oolong_pitcher", "ウーロンピッチャー", 500),
   item("drink_mixer", "jasmine_pitcher", "ジャスミンピッチャー", 550),
