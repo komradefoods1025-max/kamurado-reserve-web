@@ -9,7 +9,7 @@ export default function StoreOrderLastOrderNote() {
   const lastOrder = STORE_ORDER_LAST_ORDER_ONE_LINE;
   return (
     <div
-      className={styles.lastOrderBox}
+      className={styles.lastOrderWrap}
       role="note"
       aria-label={`${telop} ${lastOrder}`}
     >
@@ -21,7 +21,9 @@ export default function StoreOrderLastOrderNote() {
           </span>
         </div>
       </div>
-      <p className={styles.lastOrderFixedLine}>{lastOrder}</p>
+      <div className={styles.lastOrderBox}>
+        <p className={styles.lastOrderFixedLine}>{lastOrder}</p>
+      </div>
     </div>
   );
 }
