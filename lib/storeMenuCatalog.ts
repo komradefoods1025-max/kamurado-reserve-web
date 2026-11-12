@@ -125,8 +125,10 @@ export const STORE_MENU_CATEGORY_LABEL: Record<StoreMenuCategory, string> = {
 export const STORE_MENU_CATEGORY_NOTE: Partial<
   Record<StoreMenuCategory, string>
 > = {
-  okonomiyaki: "※焼いた状態でご提供となります",
-  monjayaki: "※焼いた状態でご提供となります",
+  okonomiyaki:
+    "※当店スタッフがお作りする事も出来ますので、お気軽にお申し付けください",
+  monjayaki:
+    "※当店スタッフがお作りする事も出来ますので、お気軽にお申し付けください",
   topping: "お好み焼きに追加できます",
   dessert:
     "※鉄板ハニートーストのトッピングは「ハニートースト トッピング」から選択。食後のコーヒー類もこちらです",
