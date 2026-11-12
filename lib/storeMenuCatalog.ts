@@ -86,6 +86,8 @@ export type StoreMenuItem = {
   hideCardName?: boolean;
   /** カテゴリ先頭など、写真上に名前がなく見出しを表示する */
   showCardName?: boolean;
+  /** 写真下部の商品名帯を切り抜き、カード見出しで名称を表示する */
+  imageCropBottomCaption?: boolean;
 };
 
 export const GREEN_SALAD_DRESSINGS = ["ゴマ", "シーザー", "ワサビ"] as const;
@@ -374,6 +376,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     image: IMG(51),
     category: "monjayaki",
     badge: "一番人気‼️",
+    imageCropBottomCaption: true,
   },
   {
     id: "monja_buta",
@@ -381,6 +384,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1300,
     image: IMG(47),
     category: "monjayaki",
+    imageCropBottomCaption: true,
   },
   {
     id: "monja_mix",
@@ -388,6 +392,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1650,
     image: IMG(48),
     category: "monjayaki",
+    imageCropBottomCaption: true,
   },
   {
     id: "monja_baby_star",
@@ -395,6 +400,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1050,
     image: IMG(49),
     category: "monjayaki",
+    imageCropBottomCaption: true,
   },
   {
     id: "monja_negi_shio_buta",
@@ -402,6 +408,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1350,
     image: IMG(52),
     category: "monjayaki",
+    imageCropBottomCaption: true,
   },
   {
     id: "monja_curry_cheese",
@@ -409,6 +416,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1450,
     image: IMG(53),
     category: "monjayaki",
+    imageCropBottomCaption: true,
   },
   ...OKONOMIYAKI_TOPPING_MENU_ITEMS,
   ...TEPPANYAKI_MENU_ITEMS,
@@ -569,7 +577,6 @@ const STORE_MENU_NAMED_PHOTO_FOOD_CATEGORIES = new Set<StoreMenuCategory>([
   "otsumami",
   "salad",
   "okonomiyaki",
-  "monjayaki",
   "teppanyaki",
   "fried",
   "rice",
@@ -578,6 +585,7 @@ const STORE_MENU_NAMED_PHOTO_FOOD_CATEGORIES = new Set<StoreMenuCategory>([
 /** 写真に商品名が入っている想定（おつまみ〜ご飯など） */
 export function storeMenuShouldHideCardName(item: StoreMenuItem): boolean {
   if (item.showCardName) return false;
+  if (item.imageCropBottomCaption) return false;
   if (item.hideCardName) return true;
   if (!item.image.trim()) return false;
   return STORE_MENU_NAMED_PHOTO_FOOD_CATEGORIES.has(item.category);

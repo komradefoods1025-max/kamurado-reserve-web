@@ -667,11 +667,15 @@ function MenuItemImage({
       ? `${styles.cardImage} ${styles.cardImageContain}`
       : styles.cardImage;
 
-  const mediaClass = banner
-    ? `${styles.cardMedia} ${styles.cardMediaBanner}`
-    : contain
-      ? `${styles.cardMedia} ${styles.cardMediaProduct}`
-      : styles.cardMedia;
+  const cropCaption = Boolean(item.imageCropBottomCaption);
+  const mediaClass = [
+    styles.cardMedia,
+    banner && styles.cardMediaBanner,
+    contain && styles.cardMediaProduct,
+    cropCaption && styles.cardMediaCropCaption,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className={mediaClass}>

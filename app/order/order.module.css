@@ -399,6 +399,19 @@
   position: relative;
 }
 
+/* 写真下部の商品名オーバーレイ帯を非表示にする（もんじゃ焼きなど） */
+.cardMediaCropCaption {
+  overflow: hidden;
+}
+
+.cardMediaCropCaption .cardImage,
+.cardMediaCropCaption .menuHeroImage {
+  object-fit: cover;
+  object-position: center top;
+  transform: scale(1.2);
+  transform-origin: center top;
+}
+
 .menuItemBadge {
   position: absolute;
   top: 8px;
