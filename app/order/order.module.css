@@ -870,6 +870,8 @@
   line-height: 1.4;
   text-align: center;
   word-break: keep-all;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 
 .lastOrderTelopText {
