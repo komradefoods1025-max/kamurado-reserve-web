@@ -212,8 +212,12 @@ const DRINK_HIGHBALL: StoreMenuItem[] = [
     imageWidth: 970,
     imageHeight: 408,
   }),
-  highball("ginger_highball", "ジンジャーハイボール", 620),
-  highball("coke_highball", "コークハイボール", 620),
+  highball("ginger_highball", "ジンジャーハイボール", 620, {
+    showCardName: true,
+  }),
+  highball("coke_highball", "コークハイボール", 620, {
+    showCardName: true,
+  }),
   highball("riku_highball", "陸ハイボール", 750, {
     image: "/store-menu/riku-highball.png?v=20261112",
     imageFit: "contain",
