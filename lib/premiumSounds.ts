@@ -5,6 +5,7 @@ export type PremiumSoundId =
   | "cartAdd"
   | "cartThanks"
   | "goToDatetime"
+  | "orderReceived"
   | "reservationThanks";
 
 export type PremiumSoundTrigger =
@@ -12,11 +13,13 @@ export type PremiumSoundTrigger =
   | "cart-add-button"
   | "reserve-button"
   | "reservation-submit-success"
-  | "page-flip";
+  | "page-flip"
+  | "store-display-new-order";
 
 export const SOUND_ASSET_VERSION = 3;
 export const CART_THANKS_SOUND_VERSION = 6;
 export const GO_TO_DATETIME_SOUND_VERSION = 7;
+export const ORDER_RECEIVED_SOUND_VERSION = 1;
 
 export const PREMIUM_SOUND_FADE_IN_SEC = 0.005;
 export const PREMIUM_SOUND_FADE_OUT_SEC = 0.03;
@@ -81,6 +84,15 @@ export const PREMIUM_SOUNDS: Record<
     playbackRate: VOICE_PLAYBACK_RATE,
     playbackDelaySec: VOICE_PLAYBACK_DELAY_SEC,
   },
+  orderReceived: {
+    src: versionedSoundSrc(
+      "/sounds/order-received.mp3",
+      ORDER_RECEIVED_SOUND_VERSION,
+    ),
+    volume: 0.75,
+    startOffset: 0,
+    playDuration: 1.2,
+  },
   reservationThanks: {
     src: versionedSoundSrc("/sounds/reservation-thanks.mp3"),
     volume: 0.5,
@@ -102,6 +114,7 @@ const ALLOWED_SOUND_TRIGGERS: Record<
   cartAdd: new Set(["cart-item-tap"]),
   cartThanks: new Set(["cart-item-tap"]),
   goToDatetime: new Set(["reserve-button"]),
+  orderReceived: new Set(["store-display-new-order"]),
   reservationThanks: new Set(["reservation-submit-success"]),
   bookClose: new Set(["reservation-submit-success"]),
 };
@@ -694,5 +707,26 @@ export async function playGoToDatetimeNavigationSound(
     });
   } catch {
     await waitMs(GO_TO_DATETIME_MIN_NAV_DELAY_MS);
+  }
+}
+
+/** キッチン・レジの新規注文通知（チャイム・要 unlockPremiumAudio） */
+export async function playStoreDisplayNewOrderSound(
+  _mode: "kitchen" | "counter",
+): Promise<void> {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  await unlockPremiumAudio();
+  const soundId: PremiumSoundId = "orderReceived";
+
+  try {
+    await playPremiumSound(soundId, {
+      enabled: true,
+      trigger: "store-display-new-order",
+    });
+  } catch {
+    playWithFallback(PREMIUM_SOUNDS.orderReceived);
   }
 }

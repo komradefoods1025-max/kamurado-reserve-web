@@ -14,7 +14,11 @@ import {
   STORE_ORDER_TABLE_COUNT,
   storeTableLabel,
 } from "../../lib/storeOrderTables";
-import { PREMIUM_SOUNDS } from "../../lib/premiumSounds";
+import {
+  isPremiumAudioUnlocked,
+  playStoreDisplayNewOrderSound,
+  unlockPremiumAudio,
+} from "../../lib/premiumSounds";
 import StoreDisplayOrderCard from "./StoreDisplayOrderCard";
 import styles from "./display.module.css";
 
@@ -31,7 +35,7 @@ const COUNTER_VISIBLE: StoreDisplayOrder["status"][] = [
 const KITCHEN_COMPLETE_VISIBLE_MS = 5000;
 
 /** 店舗表示 UI 世代（キャッシュ確認用・ヘッダーに表示） */
-const DISPLAY_UI_REV = "item-done-v2";
+const DISPLAY_UI_REV = "sound-v2";
 
 export default function StoreDisplayBoard({
   mode,
@@ -61,6 +65,7 @@ export default function StoreDisplayBoard({
   /** 完成カードを表示し続ける期限（reservationNo → epoch ms） */
   const completeVisibleUntilRef = useRef(new Map<string, number>());
   const [hideTick, setHideTick] = useState(0);
+  const [audioReady, setAudioReady] = useState(false);
 
   const touchCompleteHideTimer = useCallback((reservationNo: string) => {
     completeVisibleUntilRef.current.set(
@@ -119,18 +124,20 @@ export default function StoreDisplayBoard({
   }, []);
 
   const playNewOrderSound = useCallback(() => {
-    try {
-      const audio = new Audio(
-        mode === "kitchen"
-          ? PREMIUM_SOUNDS.goToDatetime.src
-          : PREMIUM_SOUNDS.cartThanks.src,
-      );
-      audio.volume = 0.85;
-      void audio.play();
-    } catch {
+    if (!audioReady) return;
+    void playStoreDisplayNewOrderSound(mode).catch(() => {
       /* ignore */
+    });
+  }, [audioReady, mode]);
+
+  const enableDisplayAudio = useCallback(async () => {
+    try {
+      await unlockPremiumAudio();
+      setAudioReady(isPremiumAudioUnlocked());
+    } catch {
+      setAudioReady(false);
     }
-  }, [mode]);
+  }, []);
 
   const filterForMode = useCallback(
     (list: StoreDisplayOrder[]) => {
@@ -210,20 +217,19 @@ export default function StoreDisplayBoard({
 
     if (mode === "kitchen") syncCompleteHideTimers(list);
 
-    if (!bootRef.current) {
-      for (const o of list) {
-        if (
-          o.status === "受付済み" &&
-          !seenRef.current.has(o.reservationNo)
-        ) {
-          seenRef.current.add(o.reservationNo);
-          playNewOrderSound();
-          break;
-        }
-      }
-    } else {
-      list.forEach((o) => seenRef.current.add(o.reservationNo));
+    if (bootRef.current) {
+      list.forEach((o) => {
+        if (o.reservationNo) seenRef.current.add(o.reservationNo);
+      });
       bootRef.current = false;
+    } else {
+      for (const o of list) {
+        const no = String(o.reservationNo || "").trim();
+        if (!no || seenRef.current.has(no)) continue;
+        seenRef.current.add(no);
+        if (o.status === "提供済み") continue;
+        playNewOrderSound();
+      }
     }
 
     const totals = data.tableTotals;
@@ -237,6 +243,12 @@ export default function StoreDisplayBoard({
 
     setFeedOrders(list);
   }, [mode, playNewOrderSound, syncCompleteHideTimers]);
+
+  useEffect(() => {
+    if (authed === true) {
+      setAudioReady(isPremiumAudioUnlocked());
+    }
+  }, [authed]);
 
   useEffect(() => {
     void refresh();
@@ -258,6 +270,7 @@ export default function StoreDisplayBoard({
       return;
     }
     setAuthed(true);
+    await enableDisplayAudio();
     void refresh();
   }
 
@@ -374,6 +387,22 @@ export default function StoreDisplayBoard({
       </header>
 
       {queueWarning ? <p className={styles.warn}>{queueWarning}</p> : null}
+
+      {!audioReady ? (
+        <div className={styles.soundEnableBar}>
+          <p className={styles.soundEnableText}>
+            新規注文の通知音を鳴らすには、下のボタンを押してください（Chrome
+            では1回必要です）
+          </p>
+          <button
+            type="button"
+            className={styles.soundEnableBtn}
+            onClick={() => void enableDisplayAudio()}
+          >
+            通知音をオン
+          </button>
+        </div>
+      ) : null}
 
       {showTableQuad ? (
         <>
