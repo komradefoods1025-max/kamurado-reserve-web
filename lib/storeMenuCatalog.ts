@@ -90,6 +90,15 @@ export type StoreMenuItem = {
   imageCropBottomCaption?: boolean;
 };
 
+/** 写真下部の商品名帯を隠し、カード見出しで表示 */
+const MENU_PHOTO_CAPTION_CARD = {
+  showCardName: true,
+  imageCropBottomCaption: true,
+} as const satisfies Pick<
+  StoreMenuItem,
+  "showCardName" | "imageCropBottomCaption"
+>;
+
 export const GREEN_SALAD_DRESSINGS = ["ゴマ", "シーザー", "ワサビ"] as const;
 
 export const ONIGIRI_KINDS = ["焼き", "梅干し", "明太"] as const;
@@ -198,7 +207,7 @@ const TEPPANYAKI_MENU_ITEMS: StoreMenuItem[] = (
   price,
   image: IMG(n),
   category: "teppanyaki" as const,
-  ...(id === "dashimaki_tamago" ? { showCardName: true as const } : {}),
+  ...MENU_PHOTO_CAPTION_CARD,
 }));
 
 export const STORE_MENU_ITEMS: StoreMenuItem[] = [
@@ -310,7 +319,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 830,
     image: IMG(44),
     category: "salad",
-    showCardName: true,
+    ...MENU_PHOTO_CAPTION_CARD,
     dressingOptions: GREEN_SALAD_DRESSINGS,
   },
   {
@@ -327,6 +336,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 830,
     image: IMG(12),
     category: "salad",
+    ...MENU_PHOTO_CAPTION_CARD,
   },
   {
     id: "choregi_salad_half",
@@ -341,6 +351,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 510,
     image: IMG(11),
     category: "salad",
+    ...MENU_PHOTO_CAPTION_CARD,
   },
   {
     id: "buta_tama",
@@ -348,7 +359,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1100,
     image: IMG(29),
     category: "okonomiyaki",
-    showCardName: true,
+    ...MENU_PHOTO_CAPTION_CARD,
     badge: "当店一番人気‼️",
   },
   {
@@ -357,6 +368,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1200,
     image: IMG(25),
     category: "okonomiyaki",
+    ...MENU_PHOTO_CAPTION_CARD,
   },
   {
     id: "mix_tama",
@@ -364,6 +376,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1550,
     image: IMG(26),
     category: "okonomiyaki",
+    ...MENU_PHOTO_CAPTION_CARD,
   },
   {
     id: "ebi_tama",
@@ -371,6 +384,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1200,
     image: IMG(27),
     category: "okonomiyaki",
+    ...MENU_PHOTO_CAPTION_CARD,
   },
   {
     id: "negi_buta_tama",
@@ -378,6 +392,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1480,
     image: IMG(28),
     category: "okonomiyaki",
+    ...MENU_PHOTO_CAPTION_CARD,
   },
   {
     id: "gyusuji_negi_yaki",
@@ -385,6 +400,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 1600,
     image: IMG(24),
     category: "okonomiyaki",
+    ...MENU_PHOTO_CAPTION_CARD,
   },
   {
     id: "monja_mentai_mochi_cheese",
@@ -457,6 +473,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
     price: 530,
     image: IMG(14),
     category: "fried",
+    ...MENU_PHOTO_CAPTION_CARD,
     optionLabel: "味",
     dressingOptions: ["塩", "塩辛バター", "チリガーリック"],
     optionPrices: {
