@@ -347,6 +347,7 @@ function StoreOrderMenuPageInner() {
     activeCategory === "drink_beer" ||
     activeCategory === "drink_highball" ||
     activeCategory === "drink_wine" ||
+    activeCategory === "drink_shochu_mugi" ||
     activeCategory === "fried" ||
     activeCategory === "rice" ||
     activeCategory === "salad" ||

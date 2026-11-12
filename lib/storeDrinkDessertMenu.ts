@@ -58,15 +58,24 @@ function item(
   };
 }
 
+const SHOCHU_BOTTLE_PHOTO = {
+  imageFit: "contain" as const,
+  imageBanner: true,
+  imageWidth: 640,
+  imageHeight: 640,
+};
+
 function shochu(
   category: "drink_shochu_mugi" | "drink_shochu_imo",
   id: string,
   name: string,
   price: number,
+  extra?: Partial<StoreMenuItem>,
 ): StoreMenuItem {
   return item(category, id, name, price, {
     optionLabel: "割り方",
     dressingOptions: SHOCHU_SPLITS,
+    ...extra,
   });
 }
 
@@ -323,9 +332,21 @@ const DRINK_SOUR: StoreMenuItem[] = [
 ];
 
 const DRINK_SHOCHU_MUGI: StoreMenuItem[] = [
-  shochu("drink_shochu_mugi", "shochu_iichiko", "いいちこ", 580),
-  shochu("drink_shochu_mugi", "shochu_nikaido", "二階堂", 650),
-  shochu("drink_shochu_mugi", "shochu_nakanaka", "中々", 780),
+  shochu("drink_shochu_mugi", "shochu_iichiko", "いいちこ", 580, {
+    image: "/store-menu/shochu-iichiko.png?v=20261112",
+    showCardName: true,
+    ...SHOCHU_BOTTLE_PHOTO,
+  }),
+  shochu("drink_shochu_mugi", "shochu_nikaido", "二階堂", 650, {
+    image: "/store-menu/shochu-nikaido.png?v=20261112",
+    showCardName: true,
+    ...SHOCHU_BOTTLE_PHOTO,
+  }),
+  shochu("drink_shochu_mugi", "shochu_nakanaka", "中々", 780, {
+    image: "/store-menu/shochu-nakanaka.png?v=20261112",
+    showCardName: true,
+    ...SHOCHU_BOTTLE_PHOTO,
+  }),
 ];
 
 const DRINK_SHOCHU_IMO: StoreMenuItem[] = [
