@@ -27,11 +27,18 @@ const WINE_COLORS = ["赤", "白"] as const;
 
 const SAKE_SIZES = ["1杯", "1合"] as const;
 
+const SAKE_ITEM_PHOTO = {
+  imageFit: "contain" as const,
+  imageBanner: true,
+  showCardName: true,
+};
+
 function sakeItem(
   id: string,
   name: string,
   cupYen: number,
   goYen: number,
+  extra?: Partial<StoreMenuItem>,
 ): StoreMenuItem {
   return item("drink_sake", id, name, cupYen, {
     optionLabel: "サイズ",
@@ -40,6 +47,7 @@ function sakeItem(
       "1杯": cupYen,
       "1合": goYen,
     },
+    ...extra,
   });
 }
 
@@ -310,16 +318,63 @@ const DRINK_HIGHBALL: StoreMenuItem[] = [
   item("drink_highball", "hakushu_highball_12", "白州ハイボール（12年）", 2200),
 ];
 
+const SAKE_IMG = (file: string) => `/store-menu/${file}?v=20261114`;
+
 const DRINK_SAKE: StoreMenuItem[] = [
-  sakeItem("sake_jun_ginjo_jun", "純米吟醸 純", 600, 1100),
-  sakeItem("sake_bishamon_nigori", "純米にごり酒 びしゃもん", 600, 1100),
-  sakeItem("sake_kubota_sparkling", "久保田スパークリング", 700, 1300),
-  sakeItem("sake_yukimanman", "純米大吟醸 雪漫々", 1750, 3000),
-  sakeItem("sake_karesansui", "特別純米 枯山水", 900, 1800),
-  sakeItem("sake_torai", "生原酒 杜来", 700, 1100),
-  sakeItem("sake_iikaze_hana", "いい風 花", 700, 1200),
-  sakeItem("sake_bo_miyamanishiki", "望 特別純米 美山錦", 600, 950),
-  sakeItem("sake_houmei_daiginjo", "豊明 純米大吟醸", 900, 1800),
+  sakeItem("sake_jun_ginjo_jun", "純米吟醸 純", 600, 1100, {
+    image: SAKE_IMG("sake-jun-ginjo-jun.png"),
+    imageWidth: 316,
+    imageHeight: 554,
+    ...SAKE_ITEM_PHOTO,
+  }),
+  sakeItem("sake_bishamon_nigori", "純米にごり酒 びしゃもん", 600, 1100, {
+    image: SAKE_IMG("sake-bishamon.png"),
+    imageWidth: 342,
+    imageHeight: 339,
+    ...SAKE_ITEM_PHOTO,
+  }),
+  sakeItem("sake_kubota_sparkling", "久保田スパークリング", 700, 1300, {
+    image: SAKE_IMG("sake-kubota-sparkling.png"),
+    imageWidth: 423,
+    imageHeight: 423,
+    ...SAKE_ITEM_PHOTO,
+  }),
+  sakeItem("sake_yukimanman", "純米大吟醸 雪漫々", 1750, 3000, {
+    image: SAKE_IMG("sake-yukimanman.png"),
+    imageWidth: 384,
+    imageHeight: 384,
+    ...SAKE_ITEM_PHOTO,
+  }),
+  sakeItem("sake_karesansui", "特別純米 枯山水", 900, 1800, {
+    image: SAKE_IMG("sake-karesansui.png"),
+    imageWidth: 361,
+    imageHeight: 339,
+    ...SAKE_ITEM_PHOTO,
+  }),
+  sakeItem("sake_torai", "生原酒 杜来", 700, 1100, {
+    image: SAKE_IMG("sake-torai.png"),
+    imageWidth: 447,
+    imageHeight: 447,
+    ...SAKE_ITEM_PHOTO,
+  }),
+  sakeItem("sake_iikaze_hana", "いい風 花", 700, 1200, {
+    image: SAKE_IMG("sake-iikaze-hana.png"),
+    imageWidth: 554,
+    imageHeight: 554,
+    ...SAKE_ITEM_PHOTO,
+  }),
+  sakeItem("sake_bo_miyamanishiki", "望 特別純米 美山錦", 600, 950, {
+    image: SAKE_IMG("sake-bo.png"),
+    imageWidth: 398,
+    imageHeight: 419,
+    ...SAKE_ITEM_PHOTO,
+  }),
+  sakeItem("sake_houmei_daiginjo", "豊明 純米大吟醸", 900, 1800, {
+    image: SAKE_IMG("sake-houmei.png"),
+    imageWidth: 189,
+    imageHeight: 267,
+    ...SAKE_ITEM_PHOTO,
+  }),
 ];
 
 const DRINK_WINE: StoreMenuItem[] = [

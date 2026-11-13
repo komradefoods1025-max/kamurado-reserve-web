@@ -347,6 +347,7 @@ function StoreOrderMenuPageInner() {
   const fullWidthImageMenu =
     activeCategory === "drink_beer" ||
     activeCategory === "drink_highball" ||
+    activeCategory === "drink_sake" ||
     activeCategory === "drink_wine" ||
     activeCategory === "drink_shochu_mugi" ||
     activeCategory === "drink_shochu_imo" ||
