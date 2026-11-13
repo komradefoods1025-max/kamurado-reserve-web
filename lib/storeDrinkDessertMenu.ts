@@ -442,6 +442,14 @@ const DRINK_COCKTAIL: StoreMenuItem[] = [
 ];
 
 const DRINK_SOUR: StoreMenuItem[] = [
+  sour("sour_ginon_lemon", "無糖レモンサワー ジノン", 520, {
+    image: "/store-menu/sour-ginon-lemon.png?v=20261114",
+    imageFit: "contain",
+    imageBanner: true,
+    imageWidth: 510,
+    imageHeight: 420,
+    showCardName: true,
+  }),
   sour("fresh_lemon_sour", "生レモンサワー", 600),
   sour("fresh_grapefruit_sour", "生グレープフルーツサワー", 650),
   sour("oolong_hai", "ウーロンハイ", 500),
@@ -449,7 +457,6 @@ const DRINK_SOUR: StoreMenuItem[] = [
   sour("jasmine_hai", "ジャスミンハイ", 520),
   sour("sugar_free_hai", "無糖ハイ", 520),
   sour("sour_plain_chuhai", "プレーン酎ハイ", 500),
-  sour("sour_ginon_lemon", "無糖レモンサワー ジノン", 520),
   sour("sour_lemon", "レモンサワー", 520),
   sour("sour_umeboshi", "梅干しサワー", 520),
   sour("sour_citric", "クエン酸サワー", 520),
