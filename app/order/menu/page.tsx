@@ -70,6 +70,7 @@ const CATEGORY_ORDER: StoreMenuCategory[] = [
   "drink_beer",
   "drink_hoppy",
   "drink_highball",
+  "drink_sake",
   "drink_wine",
   "drink_cocktail",
   "drink_sour",

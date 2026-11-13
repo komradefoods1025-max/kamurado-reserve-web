@@ -13,6 +13,15 @@ import type { StoreOrderLandingSection } from "./storeOrderLandingContent";
 export const STORE_ORDER_MENU_PROMO_BY_CATEGORY: Partial<
   Record<StoreMenuCategory, StoreOrderLandingSection[]>
 > = {
+  drink_sake: [
+    {
+      kind: "image",
+      src: "/store-menu/sake-menu-poster.png?v=20261113",
+      alt: "日本酒メニュー — 日本の美酒を巡る",
+      width: 1024,
+      height: 724,
+    },
+  ],
   okonomiyaki: [
     {
       kind: "video",

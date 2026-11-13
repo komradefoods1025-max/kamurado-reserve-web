@@ -13,6 +13,7 @@ export type StoreMenuCategory =
   | "drink_hoppy"
   | "drink_highball"
   | "drink_wine"
+  | "drink_sake"
   | "drink_cocktail"
   | "drink_sour"
   | "drink_shochu_mugi"
@@ -124,6 +125,7 @@ export const STORE_MENU_CATEGORY_LABEL: Record<StoreMenuCategory, string> = {
   drink_hoppy: "ホッピー",
   drink_highball: "ハイボール",
   drink_wine: "ワイン",
+  drink_sake: "日本酒",
   drink_cocktail: "カクテル",
   drink_sour: "サワー",
   drink_shochu_mugi: "焼酎（麦）",
@@ -148,6 +150,7 @@ export const STORE_MENU_CATEGORY_NOTE: Partial<
   drink_sour: "※メガサイズは各商品＋150円",
   drink_shochu_mugi: "※割り方を選択してください",
   drink_shochu_imo: "※割り方を選択してください",
+  drink_sake: "※サイズ（1杯・1合）を選択してください",
   drink_fruit: "※果実酒は割り方を選択してください",
   drink_mixer: "※ボトルキープのお供・ピッチャー",
 };

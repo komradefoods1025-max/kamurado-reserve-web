@@ -5,6 +5,7 @@ type DrinkCategory =
   | "drink_hoppy"
   | "drink_highball"
   | "drink_wine"
+  | "drink_sake"
   | "drink_cocktail"
   | "drink_sour"
   | "drink_shochu_mugi"
@@ -23,6 +24,24 @@ const SHOCHU_SPLITS = [
 const FRUIT_LIQUOR_SPLITS = [...SHOCHU_SPLITS] as const;
 
 const WINE_COLORS = ["赤", "白"] as const;
+
+const SAKE_SIZES = ["1杯", "1合"] as const;
+
+function sakeItem(
+  id: string,
+  name: string,
+  cupYen: number,
+  goYen: number,
+): StoreMenuItem {
+  return item("drink_sake", id, name, cupYen, {
+    optionLabel: "サイズ",
+    dressingOptions: SAKE_SIZES,
+    optionPrices: {
+      "1杯": cupYen,
+      "1合": goYen,
+    },
+  });
+}
 
 const BOTTLE_BEER_BRANDS = [
   "アサヒ マルエフ",
@@ -291,6 +310,18 @@ const DRINK_HIGHBALL: StoreMenuItem[] = [
   item("drink_highball", "hakushu_highball_12", "白州ハイボール（12年）", 2200),
 ];
 
+const DRINK_SAKE: StoreMenuItem[] = [
+  sakeItem("sake_jun_ginjo_jun", "純米吟醸 純", 600, 1100),
+  sakeItem("sake_bishamon_nigori", "純米にごり酒 びしゃもん", 600, 1100),
+  sakeItem("sake_kubota_sparkling", "久保田スパークリング", 700, 1300),
+  sakeItem("sake_yukimanman", "純米大吟醸 雪漫々", 1750, 3000),
+  sakeItem("sake_karesansui", "特別純米 枯山水", 900, 1800),
+  sakeItem("sake_torai", "生原酒 杜来", 700, 1100),
+  sakeItem("sake_iikaze_hana", "いい風 花", 700, 1200),
+  sakeItem("sake_bo_miyamanishiki", "望 特別純米 美山錦", 600, 950),
+  sakeItem("sake_houmei_daiginjo", "豊明 純米大吟醸", 900, 1800),
+];
+
 const DRINK_WINE: StoreMenuItem[] = [
   item("drink_wine", "wine_glass", "グラスワイン", 580, {
     image: "/store-menu/wine.png?v=20261112",
@@ -454,6 +485,7 @@ export const DRINK_MENU_ITEMS: StoreMenuItem[] = [
   ...DRINK_BEER,
   ...DRINK_HOPPY,
   ...DRINK_HIGHBALL,
+  ...DRINK_SAKE,
   ...DRINK_WINE,
   ...DRINK_COCKTAIL,
   ...DRINK_SOUR,
