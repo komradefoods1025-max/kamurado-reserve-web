@@ -333,7 +333,10 @@ const DRINK_SAKE: StoreMenuItem[] = [
     imageHeight: 339,
     ...SAKE_ITEM_PHOTO,
   }),
-  sakeItem("sake_kubota_sparkling", "久保田スパークリング", 700, 1300, {
+  item("drink_sake", "sake_kubota_sparkling", "久保田スパークリング", 3480, {
+    optionLabel: "サイズ",
+    dressingOptions: ["1本"],
+    optionPrices: { "1本": 3480 },
     image: SAKE_IMG("sake-kubota-sparkling.png"),
     imageWidth: 423,
     imageHeight: 423,
