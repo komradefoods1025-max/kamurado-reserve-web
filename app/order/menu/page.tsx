@@ -8,6 +8,7 @@ import {
   Suspense,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -106,6 +107,7 @@ function StoreOrderMenuPageInner() {
     Record<string, string>
   >({});
   const [seatBanner, setSeatBanner] = useState("");
+  const menuMainRef = useRef<HTMLDivElement>(null);
 
   const visibleCategories = useMemo(
     () =>
@@ -164,6 +166,10 @@ function StoreOrderMenuPageInner() {
       setActiveCategory(visibleCategories[0]);
     }
   }, [searchParams, visibleCategories]);
+
+  useEffect(() => {
+    menuMainRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, [activeCategory]);
 
   const cartTotalLabel = useMemo(
     () => formatStoreOrderCartTotal(cart),
@@ -426,7 +432,7 @@ function StoreOrderMenuPageInner() {
             ))}
         </nav>
 
-        <div className={styles.menuMain}>
+        <div ref={menuMainRef} className={styles.menuMain}>
           <h2 className={styles.menuCategoryTitle}>
             {STORE_MENU_CATEGORY_LABEL[activeCategory]}
           </h2>
