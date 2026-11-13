@@ -443,7 +443,7 @@ const DRINK_COCKTAIL: StoreMenuItem[] = [
 
 const DRINK_SOUR: StoreMenuItem[] = [
   sour("sour_ginon_lemon", "無糖レモンサワー ジノン", 520, {
-    image: "/store-menu/sour-ginon-lemon.png?v=20261116",
+    image: "/store-menu/sour-ginon-lemon.png?v=20261117",
     imageFit: "contain",
     imageBanner: true,
     imageWidth: 597,
