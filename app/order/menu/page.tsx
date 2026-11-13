@@ -32,6 +32,7 @@ import {
   hasVisibleStoreOrderMenuPromo,
 } from "../../../lib/storeOrderMenuPromo";
 import { SAKE_MENU_REGIONS } from "../../../lib/storeDrinkDessertMenu";
+import { NOMIHOUDAI_REGIONS } from "../../../lib/storeNomihoudaiMenu";
 import {
   readStoreOrderDraft,
   storeCartQuantity,
@@ -80,6 +81,7 @@ const CATEGORY_ORDER: StoreMenuCategory[] = [
   "drink_shochu_imo",
   "drink_mixer",
   "drink_fruit",
+  "drink_nomihoudai",
 ];
 
 function isValidCategory(v: string | null): v is StoreMenuCategory {
@@ -563,17 +565,46 @@ function StoreOrderMenuPageInner() {
             </div>
           ) : null}
 
-          <TextOnlyMenuSections
-            items={textOnlyItems}
-            isTopping={isTopping}
-            selectedDressing={selectedDressing}
-            selectedSecondaryDressing={selectedSecondaryDressing}
-            cartQty={cartQty}
-            onDressingChange={setDressingForItem}
-            onSecondaryDressingChange={setSecondaryDressingForItem}
-            onSecondaryStepperChange={changeSecondaryQty}
-            onChange={changeQty}
-          />
+          {activeCategory === "drink_nomihoudai" ? (
+            NOMIHOUDAI_REGIONS.map((region) => {
+              const regionItems = activeItems.filter(
+                (i) => i.menuRegion === region,
+              );
+              if (!regionItems.length) return null;
+              return (
+                <section
+                  key={region}
+                  className={styles.menuRegionSection}
+                  aria-label={region}
+                >
+                  <h3 className={styles.menuRegionTitle}>{region}</h3>
+                  <TextOnlyMenuSections
+                    items={regionItems}
+                    isTopping={false}
+                    selectedDressing={selectedDressing}
+                    selectedSecondaryDressing={selectedSecondaryDressing}
+                    cartQty={cartQty}
+                    onDressingChange={setDressingForItem}
+                    onSecondaryDressingChange={setSecondaryDressingForItem}
+                    onSecondaryStepperChange={changeSecondaryQty}
+                    onChange={changeQty}
+                  />
+                </section>
+              );
+            })
+          ) : (
+            <TextOnlyMenuSections
+              items={textOnlyItems}
+              isTopping={isTopping}
+              selectedDressing={selectedDressing}
+              selectedSecondaryDressing={selectedSecondaryDressing}
+              cartQty={cartQty}
+              onDressingChange={setDressingForItem}
+              onSecondaryDressingChange={setSecondaryDressingForItem}
+              onSecondaryStepperChange={changeSecondaryQty}
+              onChange={changeQty}
+            />
+          )}
         </div>
       </div>
 

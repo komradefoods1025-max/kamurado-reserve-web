@@ -19,13 +19,15 @@ export type StoreMenuCategory =
   | "drink_shochu_mugi"
   | "drink_shochu_imo"
   | "drink_mixer"
-  | "drink_fruit";
+  | "drink_fruit"
+  | "drink_nomihoudai";
 
 import type { StoreCartLine } from "./storeOrderDraft";
 import {
   DESSERT_MENU_ITEMS,
   DRINK_MENU_ITEMS,
 } from "./storeDrinkDessertMenu";
+import { NOMIHOUDAI_MENU_ITEMS } from "./storeNomihoudaiMenu";
 
 export type StoreMenuSecondaryStepper = {
   min: number;
@@ -134,6 +136,7 @@ export const STORE_MENU_CATEGORY_LABEL: Record<StoreMenuCategory, string> = {
   drink_shochu_imo: "焼酎（芋）",
   drink_mixer: "割りもの",
   drink_fruit: "果実酒",
+  drink_nomihoudai: "飲み放題",
 };
 
 /** カテゴリ見出し直下に表示する注記（任意） */
@@ -155,6 +158,8 @@ export const STORE_MENU_CATEGORY_NOTE: Partial<
   drink_sake: "※サイズ（1杯・1合）を選択してください",
   drink_fruit: "※果実酒は割り方を選択してください",
   drink_mixer: "※ボトルキープのお供・ピッチャー",
+  drink_nomihoudai:
+    "※飲み放題コース内の対象ドリンクです（各0円）\n※カクテルはソーダ・ウーロン・オレンジ・ミルク\n※グラスは交換制となります\n※飲み残しはご遠慮ください\n※ラストオーダーは終了30分前となります",
 };
 
 const OKONOMIYAKI_TOPPING_MENU_ITEMS: StoreMenuItem[] = (
@@ -599,6 +604,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
   },
   ...DESSERT_MENU_ITEMS,
   ...DRINK_MENU_ITEMS,
+  ...NOMIHOUDAI_MENU_ITEMS,
 ];
 
 const STORE_MENU_NAMED_PHOTO_FOOD_CATEGORIES = new Set<StoreMenuCategory>([
@@ -637,7 +643,13 @@ export function storeMenuNameSegments(name: string): StoreMenuNameSegment[] {
 }
 
 export function formatStoreItemPrice(price: number | null): string {
-  if (price === null || !Number.isFinite(price) || price <= 0) {
+  if (price === null || !Number.isFinite(price)) {
+    return "";
+  }
+  if (price === 0) {
+    return "¥0";
+  }
+  if (price < 0) {
     return "";
   }
   return `¥${price.toLocaleString("ja-JP")}`;
@@ -650,7 +662,9 @@ export function storeItemLineTotal(price: number | null, qty: number): number {
 
 /** 注文確認画面用（未設定時は ○） */
 export function formatStoreOrderUnitPrice(price: number | null): string {
-  if (price === null || !Number.isFinite(price) || price <= 0) return "○";
+  if (price === null || !Number.isFinite(price)) return "○";
+  if (price === 0) return "¥0";
+  if (price < 0) return "○";
   return `¥${price.toLocaleString("ja-JP")}`;
 }
 
@@ -658,7 +672,9 @@ export function formatStoreOrderLineTotal(
   price: number | null,
   qty: number,
 ): string {
-  if (price === null || !Number.isFinite(price) || price <= 0) return "○";
+  if (price === null || !Number.isFinite(price)) return "○";
+  if (price === 0) return "¥0";
+  if (price < 0) return "○";
   return `¥${(price * qty).toLocaleString("ja-JP")}`;
 }
 
