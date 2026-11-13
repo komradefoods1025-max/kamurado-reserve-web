@@ -33,14 +33,25 @@ const SAKE_ITEM_PHOTO = {
   showCardName: true,
 };
 
+export const SAKE_MENU_REGIONS = [
+  "新潟",
+  "山形",
+  "青森",
+  "広島",
+  "栃木",
+  "埼玉",
+] as const;
+
 function sakeItem(
   id: string,
   name: string,
   cupYen: number,
   goYen: number,
+  menuRegion: (typeof SAKE_MENU_REGIONS)[number],
   extra?: Partial<StoreMenuItem>,
 ): StoreMenuItem {
   return item("drink_sake", id, name, cupYen, {
+    menuRegion,
     optionLabel: "サイズ",
     dressingOptions: SAKE_SIZES,
     optionPrices: {
@@ -321,19 +332,20 @@ const DRINK_HIGHBALL: StoreMenuItem[] = [
 const SAKE_IMG = (file: string) => `/store-menu/${file}?v=20261114`;
 
 const DRINK_SAKE: StoreMenuItem[] = [
-  sakeItem("sake_jun_ginjo_jun", "純米吟醸 純", 600, 1100, {
+  sakeItem("sake_jun_ginjo_jun", "純米吟醸 純", 600, 1100, "新潟", {
     image: SAKE_IMG("sake-jun-ginjo-jun.png"),
     imageWidth: 316,
     imageHeight: 554,
     ...SAKE_ITEM_PHOTO,
   }),
-  sakeItem("sake_bishamon_nigori", "純米にごり酒 びしゃもん", 600, 1100, {
+  sakeItem("sake_bishamon_nigori", "純米にごり酒 びしゃもん", 600, 1100, "新潟", {
     image: SAKE_IMG("sake-bishamon.png"),
     imageWidth: 342,
     imageHeight: 339,
     ...SAKE_ITEM_PHOTO,
   }),
   item("drink_sake", "sake_kubota_sparkling", "久保田スパークリング", 3480, {
+    menuRegion: "新潟",
     optionLabel: "サイズ",
     dressingOptions: ["1本"],
     optionPrices: { "1本": 3480 },
@@ -342,37 +354,37 @@ const DRINK_SAKE: StoreMenuItem[] = [
     imageHeight: 423,
     ...SAKE_ITEM_PHOTO,
   }),
-  sakeItem("sake_yukimanman", "純米大吟醸 雪漫々", 1750, 3000, {
+  sakeItem("sake_yukimanman", "純米大吟醸 雪漫々", 1750, 3000, "山形", {
     image: SAKE_IMG("sake-yukimanman.png"),
     imageWidth: 384,
     imageHeight: 384,
     ...SAKE_ITEM_PHOTO,
   }),
-  sakeItem("sake_karesansui", "特別純米 枯山水", 900, 1800, {
+  sakeItem("sake_karesansui", "特別純米 枯山水", 900, 1800, "山形", {
     image: SAKE_IMG("sake-karesansui.png"),
     imageWidth: 361,
     imageHeight: 339,
     ...SAKE_ITEM_PHOTO,
   }),
-  sakeItem("sake_torai", "生原酒 杜来", 700, 1100, {
+  sakeItem("sake_torai", "生原酒 杜来", 700, 1100, "青森", {
     image: SAKE_IMG("sake-torai.png"),
     imageWidth: 447,
     imageHeight: 447,
     ...SAKE_ITEM_PHOTO,
   }),
-  sakeItem("sake_iikaze_hana", "いい風 花", 700, 1200, {
+  sakeItem("sake_iikaze_hana", "いい風 花", 700, 1200, "広島", {
     image: SAKE_IMG("sake-iikaze-hana.png"),
     imageWidth: 554,
     imageHeight: 554,
     ...SAKE_ITEM_PHOTO,
   }),
-  sakeItem("sake_bo_miyamanishiki", "望 特別純米 美山錦", 600, 950, {
+  sakeItem("sake_bo_miyamanishiki", "望 特別純米 美山錦", 600, 950, "栃木", {
     image: SAKE_IMG("sake-bo.png"),
     imageWidth: 398,
     imageHeight: 419,
     ...SAKE_ITEM_PHOTO,
   }),
-  sakeItem("sake_houmei_daiginjo", "豊明 純米大吟醸", 900, 1800, {
+  sakeItem("sake_houmei_daiginjo", "豊明 純米大吟醸", 900, 1800, "埼玉", {
     image: SAKE_IMG("sake-houmei.png"),
     imageWidth: 189,
     imageHeight: 267,

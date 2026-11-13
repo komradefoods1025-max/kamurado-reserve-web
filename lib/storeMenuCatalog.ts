@@ -89,6 +89,8 @@ export type StoreMenuItem = {
   showCardName?: boolean;
   /** 写真下部の商品名帯を切り抜き、カード見出しで名称を表示する */
   imageCropBottomCaption?: boolean;
+  /** カテゴリ内の産地・区分見出し（例: 日本酒の県名） */
+  menuRegion?: string;
 };
 
 /** 写真下部の商品名帯を隠し、カード見出しで表示 */

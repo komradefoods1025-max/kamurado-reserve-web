@@ -134,6 +134,26 @@
   color: var(--o-cream);
 }
 
+.menuRegionSection + .menuRegionSection {
+  margin-top: 8px;
+}
+
+.menuRegionTitle {
+  margin: 18px 4px 10px;
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--o-cream);
+  opacity: 0.92;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(245, 230, 200, 0.22);
+}
+
+.menuRegionSection:first-of-type .menuRegionTitle {
+  margin-top: 4px;
+}
+
 .menuMain .categoryNote {
   margin: 0 4px 12px;
 }

@@ -30,6 +30,7 @@ import {
   getStoreOrderMenuPromoSections,
   hasVisibleStoreOrderMenuPromo,
 } from "../../../lib/storeOrderMenuPromo";
+import { SAKE_MENU_REGIONS } from "../../../lib/storeDrinkDessertMenu";
 import {
   readStoreOrderDraft,
   storeCartQuantity,
@@ -437,27 +438,71 @@ function StoreOrderMenuPageInner() {
             <StoreOrderMenuPromo sections={promoSections} />
           ) : null}
 
-          {heroItems.map((item) => {
-            const dressing = selectedDressing(item);
-            const secondaryDressing = selectedSecondaryDressing(item);
-            return (
-              <article key={item.id} className={styles.menuHeroCard}>
-                <MenuItemImage item={item} hero />
-                <div className={styles.cardBody}>
-                  <MenuItemBody
-                    item={item}
-                    qty={cartQty(item.id, dressing, secondaryDressing)}
-                    dressing={dressing}
-                    secondaryDressing={secondaryDressing}
-                    onDressingChange={setDressingForItem}
-                    onSecondaryDressingChange={setSecondaryDressingForItem}
-                    onSecondaryStepperChange={changeSecondaryQty}
-                    onChange={changeQty}
-                  />
-                </div>
-              </article>
-            );
-          })}
+          {activeCategory === "drink_sake"
+            ? SAKE_MENU_REGIONS.map((region) => {
+                const regionItems = heroItems.filter(
+                  (i) => i.menuRegion === region,
+                );
+                if (!regionItems.length) return null;
+                return (
+                  <section
+                    key={region}
+                    className={styles.menuRegionSection}
+                    aria-label={region}
+                  >
+                    <h3 className={styles.menuRegionTitle}>{region}</h3>
+                    {regionItems.map((item) => {
+                      const dressing = selectedDressing(item);
+                      const secondaryDressing =
+                        selectedSecondaryDressing(item);
+                      return (
+                        <article key={item.id} className={styles.menuHeroCard}>
+                          <MenuItemImage item={item} hero />
+                          <div className={styles.cardBody}>
+                            <MenuItemBody
+                              item={item}
+                              qty={cartQty(
+                                item.id,
+                                dressing,
+                                secondaryDressing,
+                              )}
+                              dressing={dressing}
+                              secondaryDressing={secondaryDressing}
+                              onDressingChange={setDressingForItem}
+                              onSecondaryDressingChange={
+                                setSecondaryDressingForItem
+                              }
+                              onSecondaryStepperChange={changeSecondaryQty}
+                              onChange={changeQty}
+                            />
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </section>
+                );
+              })
+            : heroItems.map((item) => {
+                const dressing = selectedDressing(item);
+                const secondaryDressing = selectedSecondaryDressing(item);
+                return (
+                  <article key={item.id} className={styles.menuHeroCard}>
+                    <MenuItemImage item={item} hero />
+                    <div className={styles.cardBody}>
+                      <MenuItemBody
+                        item={item}
+                        qty={cartQty(item.id, dressing, secondaryDressing)}
+                        dressing={dressing}
+                        secondaryDressing={secondaryDressing}
+                        onDressingChange={setDressingForItem}
+                        onSecondaryDressingChange={setSecondaryDressingForItem}
+                        onSecondaryStepperChange={changeSecondaryQty}
+                        onChange={changeQty}
+                      />
+                    </div>
+                  </article>
+                );
+              })}
 
           {hoppyRowItems.length > 0 ? (
             <div className={styles.menuHoppyRow}>
