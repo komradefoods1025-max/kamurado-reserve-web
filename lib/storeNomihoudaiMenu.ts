@@ -1,4 +1,11 @@
 import type { StoreMenuItem } from "./storeMenuCatalog";
+import {
+  CAMPARI_MIX,
+  CASSIS_MIX,
+  KAHLUA_MIX,
+  MALIBU_MIX,
+  PEACH_MIX,
+} from "./storeDrinkDessertMenu";
 
 export const NOMIHOUDAI_REGIONS = [
   "ビール",
@@ -55,6 +62,20 @@ function nomiWithSplits(
   });
 }
 
+function nomiCocktail(
+  id: string,
+  name: string,
+  mixers: readonly string[],
+): StoreMenuItem {
+  return nomi("カクテル", id, name, {
+    optionLabel: "割り方",
+    dressingOptions: mixers,
+    optionPrices: Object.fromEntries(
+      mixers.map((m) => [m, 0]),
+    ) as Partial<Record<string, number>>,
+  });
+}
+
 export const NOMIHOUDAI_MENU_ITEMS: StoreMenuItem[] = [
   nomi("ビール", "nomi_beer_nama", "生ビール"),
   nomi("ビール", "nomi_beer_asahi_super_dry", "アサヒスーパードライ"),
@@ -87,11 +108,11 @@ export const NOMIHOUDAI_MENU_ITEMS: StoreMenuItem[] = [
   nomiWithSplits("梅酒", "nomi_ume", "梅酒"),
   nomi("日本酒", "nomi_sake_atsukan", "熱燗"),
   nomi("日本酒", "nomi_sake_reishu", "冷酒"),
-  nomi("カクテル", "nomi_cocktail_cassis", "カシス"),
-  nomi("カクテル", "nomi_cocktail_peach", "ピーチ"),
-  nomi("カクテル", "nomi_cocktail_campari", "カンパリ"),
-  nomi("カクテル", "nomi_cocktail_malibu", "マリブ"),
-  nomi("カクテル", "nomi_cocktail_kahlua", "カルーア"),
+  nomiCocktail("nomi_cocktail_cassis", "カシス", CASSIS_MIX),
+  nomiCocktail("nomi_cocktail_peach", "ピーチ", PEACH_MIX),
+  nomiCocktail("nomi_cocktail_campari", "カンパリ", CAMPARI_MIX),
+  nomiCocktail("nomi_cocktail_malibu", "マリブ", MALIBU_MIX),
+  nomiCocktail("nomi_cocktail_kahlua", "カルーア", KAHLUA_MIX),
   nomi("ソフトドリンク", "nomi_soft_oolong", "ウーロン茶"),
   nomi("ソフトドリンク", "nomi_soft_green_tea", "緑茶"),
   nomi("ソフトドリンク", "nomi_soft_jasmine", "ジャスミン茶"),

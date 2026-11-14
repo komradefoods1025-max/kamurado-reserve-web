@@ -159,7 +159,7 @@ export const STORE_MENU_CATEGORY_NOTE: Partial<
   drink_fruit: "※果実酒は割り方を選択してください",
   drink_mixer: "※ボトルキープのお供・ピッチャー",
   drink_nomihoudai:
-    "※飲み放題コース内の対象ドリンクです（各0円）\n※カクテルはソーダ・ウーロン・オレンジ・ミルク\n※グラスは交換制となります\n※飲み残しはご遠慮ください\n※ラストオーダーは終了30分前となります",
+    "※飲み放題コース内の対象ドリンクです（各0円）\n※グラスは交換制となります\n※飲み残しはご遠慮ください\n※ラストオーダーは終了30分前となります",
 };
 
 const OKONOMIYAKI_TOPPING_MENU_ITEMS: StoreMenuItem[] = (

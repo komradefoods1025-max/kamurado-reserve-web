@@ -73,11 +73,17 @@ const NAMA_BEER_SIZES = ["小ジョッキ", "中ジョッキ", "メガ"] as cons
 const HIGHBALL_SIZES = ["レギュラー", "メガ"] as const;
 const HIGHBALL_MEGA_SURCHARGE = 150;
 
-const CASSIS_MIX = ["ウーロン", "ソーダ", "オレンジ", "ミルク"] as const;
-const PEACH_MIX = ["ウーロン", "ソーダ", "オレンジ", "コーク", "ミルク"] as const;
-const CAMPARI_MIX = ["ソーダ", "オレンジ", "コーク"] as const;
-const MALIBU_MIX = [...PEACH_MIX] as const;
-const KAHLUA_MIX = [...PEACH_MIX, "ホット"] as const;
+export const CASSIS_MIX = ["ウーロン", "ソーダ", "オレンジ", "ミルク"] as const;
+export const PEACH_MIX = [
+  "ウーロン",
+  "ソーダ",
+  "オレンジ",
+  "コーク",
+  "ミルク",
+] as const;
+export const CAMPARI_MIX = ["ソーダ", "オレンジ", "コーク"] as const;
+export const MALIBU_MIX = [...PEACH_MIX] as const;
+export const KAHLUA_MIX = [...PEACH_MIX, "ホット"] as const;
 
 function item(
   category: DrinkCategory | "dessert",
