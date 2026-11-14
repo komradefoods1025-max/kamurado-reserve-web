@@ -15,6 +15,7 @@ import {
   resolveStoreOrderTableId,
   storeTableLabel,
 } from "../../../../lib/storeOrderTables";
+import { buildStoreReorderLinesFromHistory } from "../../../../lib/storeOrderReorder";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,7 +33,13 @@ function formatHistoryItem(item: StoreDisplayOrder["items"][number]) {
       : Number.isFinite(price) && qty > 0
         ? price * qty
         : 0;
-  return { label, qty, subtotal };
+  return {
+    label,
+    qty,
+    subtotal,
+    menuKey: String(item.menuKey || "").trim(),
+    dressing: dressing,
+  };
 }
 
 export async function GET(req: NextRequest) {
@@ -53,6 +60,7 @@ export async function GET(req: NextRequest) {
       history: [],
       billLines: [],
       billTotal: 0,
+      reorderItems: [],
     });
   }
 
@@ -86,6 +94,12 @@ export async function GET(req: NextRequest) {
     settlements,
   );
   const billTotal = tableTotals[tableId]?.total ?? 0;
+  const reorderItems = buildStoreReorderLinesFromHistory(
+    tableOrders.map((order) => ({
+      submittedAt: order.submittedAt,
+      items: order.items.map(formatHistoryItem),
+    })),
+  );
 
   return NextResponse.json({
     ok: true,
@@ -96,5 +110,6 @@ export async function GET(req: NextRequest) {
     history,
     billLines,
     billTotal,
+    reorderItems,
   });
 }

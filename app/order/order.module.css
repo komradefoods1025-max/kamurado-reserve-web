@@ -690,12 +690,19 @@
 }
 
 .orderHistoryItems li {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 12px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   font-size: 14px;
+}
+
+.orderHistoryItemMain {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: start;
 }
 
 .orderHistoryItems li:last-child {
@@ -826,6 +833,86 @@
   font-size: 12px;
   line-height: 1.55;
   color: #c9ae90;
+}
+
+.reorderList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reorderRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--o-line-warm);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.reorderRowBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.reorderRowName {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--o-cream);
+  line-height: 1.35;
+}
+
+.reorderRowMeta {
+  margin: 0;
+  font-size: 11px;
+  color: #c9ae90;
+  line-height: 1.4;
+}
+
+.reorderRowPrice {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--o-gold-soft);
+}
+
+.qtyStepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.qtyValue {
+  min-width: 1.4em;
+  text-align: center;
+  font-weight: 700;
+  color: var(--o-cream);
+}
+
+.reorderBtn {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 184, 64, 0.45);
+  background: rgba(255, 184, 64, 0.12);
+  color: var(--o-gold-soft);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reorderHint {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 184, 64, 0.14);
+  border: 1px solid var(--o-line-warm);
+  color: var(--o-gold-soft);
+  font-size: 13px;
 }
 
 .footerBar {

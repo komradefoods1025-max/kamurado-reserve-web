@@ -13,6 +13,7 @@ import {
   readStoreOrderTableSession,
 } from "../../../lib/storeOrderTableSession";
 import { storeOrderMenuHref } from "../../../lib/storeOrderMenuUrl";
+import { appendStoreReorderToDraft } from "../../../lib/storeOrderReorder";
 import StoreOrderLastOrderNote from "../StoreOrderLastOrderNote";
 import StoreOrderTestBanner from "../StoreOrderTestBanner";
 import styles from "../order.module.css";
@@ -21,6 +22,8 @@ type HistoryItem = {
   label: string;
   qty: number;
   subtotal: number;
+  menuKey?: string;
+  dressing?: string;
 };
 
 type HistoryOrder = {
@@ -57,6 +60,7 @@ function HistoryBody() {
   const [history, setHistory] = useState<HistoryOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [configured, setConfigured] = useState(true);
+  const [reorderHint, setReorderHint] = useState("");
 
   useEffect(() => {
     const fromUrl = normalizeStoreTableId(searchParams.get("table"));
@@ -96,6 +100,15 @@ function HistoryBody() {
     return () => window.clearInterval(id);
   }, [load]);
 
+  function reorderItem(item: HistoryItem) {
+    const key = String(item.menuKey || "").trim();
+    if (!key) return;
+    if (appendStoreReorderToDraft(key, item.dressing, 1)) {
+      setReorderHint(`「${item.label}」をカートに追加しました`);
+      window.setTimeout(() => setReorderHint(""), 2500);
+    }
+  }
+
   if (!dineIn) {
     return (
       <p className={styles.stepNote}>
@@ -121,6 +134,9 @@ function HistoryBody() {
   return (
     <>
       <StoreOrderLastOrderNote />
+      {reorderHint ? (
+        <p className={styles.reorderHint}>{reorderHint}</p>
+      ) : null}
       {!configured ? (
         <p className={styles.categoryNote}>
           注文履歴を表示できません（店舗側の設定をご確認ください）。
@@ -151,8 +167,19 @@ function HistoryBody() {
             <ul className={styles.orderHistoryItems}>
               {order.items.map((item) => (
                 <li key={`${order.reservationNo}-${item.label}`}>
-                  <span className={styles.orderHistoryItemName}>{item.label}</span>
-                  <span className={styles.orderHistoryItemQty}>{item.qty}</span>
+                  <div className={styles.orderHistoryItemMain}>
+                    <span className={styles.orderHistoryItemName}>{item.label}</span>
+                    <span className={styles.orderHistoryItemQty}>{item.qty}</span>
+                  </div>
+                  {item.menuKey ? (
+                    <button
+                      type="button"
+                      className={styles.reorderBtn}
+                      onClick={() => reorderItem(item)}
+                    >
+                      おかわり
+                    </button>
+                  ) : null}
                 </li>
               ))}
             </ul>

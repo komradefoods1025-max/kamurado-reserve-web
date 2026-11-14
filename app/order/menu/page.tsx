@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   type ReactNode,
   Suspense,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -56,8 +57,15 @@ import {
   storeOrderMenuHref,
   storeOrderTableEntryHref,
 } from "../../../lib/storeOrderMenuUrl";
+import {
+  type StoreReorderLine,
+} from "../../../lib/storeOrderReorder";
+import { StoreOrderOkawariList } from "../StoreOrderReorderControls";
 import StoreMenuItemName from "../StoreMenuItemName";
 import styles from "../order.module.css";
+
+const OKAWARI_CATEGORY = "okawari" as const;
+type MenuNavCategory = StoreMenuCategory | typeof OKAWARI_CATEGORY;
 
 const CATEGORY_ORDER: StoreMenuCategory[] = [
   "otsumami",
@@ -84,7 +92,8 @@ const CATEGORY_ORDER: StoreMenuCategory[] = [
   "drink_nomihoudai",
 ];
 
-function isValidCategory(v: string | null): v is StoreMenuCategory {
+function isValidCategory(v: string | null): v is MenuNavCategory {
+  if (v === OKAWARI_CATEGORY) return true;
   return CATEGORY_ORDER.includes(v as StoreMenuCategory);
 }
 
@@ -101,9 +110,10 @@ function StoreOrderMenuPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [cart, setCart] = useState<StoreCartLine[]>([]);
-  const [activeCategory, setActiveCategory] = useState<StoreMenuCategory>(
+  const [activeCategory, setActiveCategory] = useState<MenuNavCategory>(
     "otsumami",
   );
+  const [reorderLines, setReorderLines] = useState<StoreReorderLine[]>([]);
   const [dressingPick, setDressingPick] = useState<Record<string, string>>({});
   const [secondaryDressingPick, setSecondaryDressingPick] = useState<
     Record<string, string>
@@ -111,13 +121,18 @@ function StoreOrderMenuPageInner() {
   const [seatBanner, setSeatBanner] = useState("");
   const menuMainRef = useRef<HTMLDivElement>(null);
 
-  const visibleCategories = useMemo(
+  const catalogCategories = useMemo(
     () =>
       CATEGORY_ORDER.filter((c) =>
         STORE_MENU_ITEMS.some((m) => m.category === c),
       ),
     [],
   );
+
+  const visibleCategories = useMemo((): MenuNavCategory[] => {
+    if (!dineIn) return catalogCategories;
+    return [OKAWARI_CATEGORY, ...catalogCategories];
+  }, [catalogCategories, dineIn]);
 
   useEffect(() => {
     const tableRaw =
@@ -168,6 +183,49 @@ function StoreOrderMenuPageInner() {
       setActiveCategory(visibleCategories[0]);
     }
   }, [searchParams, visibleCategories]);
+
+  const reloadCartFromDraft = useCallback(() => {
+    const synced = syncStoreCartWithCatalog(readStoreOrderDraft().items);
+    setCart(synced);
+  }, []);
+
+  const loadReorderLines = useCallback(async () => {
+    if (!dineIn) {
+      setReorderLines([]);
+      return;
+    }
+    const tableId = resolveActiveStoreTableId();
+    if (!tableId) {
+      setReorderLines([]);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/store-orders/table-bill?table=${encodeURIComponent(tableId)}`,
+        { cache: "no-store" },
+      );
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.reorderItems)) {
+        setReorderLines(data.reorderItems as StoreReorderLine[]);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [dineIn]);
+
+  useEffect(() => {
+    void loadReorderLines();
+    const id = window.setInterval(() => void loadReorderLines(), 12_000);
+    return () => window.clearInterval(id);
+  }, [loadReorderLines]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible") void loadReorderLines();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [loadReorderLines]);
 
   useEffect(() => {
     menuMainRef.current?.scrollTo({ top: 0, behavior: "instant" });
@@ -228,17 +286,20 @@ function StoreOrderMenuPageInner() {
 
   const totalQty = storeCartQuantity(cart);
 
-  const activeItems = useMemo(
-    () => STORE_MENU_ITEMS.filter((m) => m.category === activeCategory),
-    [activeCategory],
-  );
+  const isOkawari = activeCategory === OKAWARI_CATEGORY;
+
+  const activeItems = useMemo(() => {
+    if (isOkawari) return [];
+    return STORE_MENU_ITEMS.filter((m) => m.category === activeCategory);
+  }, [activeCategory, isOkawari]);
 
   const promoSections = useMemo(
-    () => getStoreOrderMenuPromoSections(activeCategory),
-    [activeCategory],
+    () =>
+      isOkawari ? [] : getStoreOrderMenuPromoSections(activeCategory),
+    [activeCategory, isOkawari],
   );
 
-  const showPromo = hasVisibleStoreOrderMenuPromo(activeCategory);
+  const showPromo = !isOkawari && hasVisibleStoreOrderMenuPromo(activeCategory);
 
   function persist(next: StoreCartLine[]) {
     const synced = syncStoreCartWithCatalog(next);
@@ -329,7 +390,12 @@ function StoreOrderMenuPageInner() {
     setCart([]);
   }
 
-  function selectCategory(category: StoreMenuCategory) {
+  function categoryNavLabel(category: MenuNavCategory): string {
+    if (category === OKAWARI_CATEGORY) return "おかわり";
+    return STORE_MENU_CATEGORY_LABEL[category];
+  }
+
+  function selectCategory(category: MenuNavCategory) {
     setActiveCategory(category);
     const tableId = resolveActiveStoreTableId();
     const params = new URLSearchParams(searchParams.toString());
@@ -428,7 +494,7 @@ function StoreOrderMenuPageInner() {
                 onClick={() => selectCategory(category)}
               >
                 <span className={styles.menuNavLine}>
-                  {STORE_MENU_CATEGORY_LABEL[category]}
+                  {categoryNavLabel(category)}
                 </span>
               </button>
             ))}
@@ -436,17 +502,30 @@ function StoreOrderMenuPageInner() {
 
         <div ref={menuMainRef} className={styles.menuMain}>
           <h2 className={styles.menuCategoryTitle}>
-            {STORE_MENU_CATEGORY_LABEL[activeCategory]}
+            {categoryNavLabel(activeCategory)}
           </h2>
-          {STORE_MENU_CATEGORY_NOTE[activeCategory] ? (
-            <p className={styles.categoryNote}>{STORE_MENU_CATEGORY_NOTE[activeCategory]}</p>
+          {isOkawari ? (
+            <p className={styles.categoryNote}>
+              これまでにご注文いただいた商品です。数量を増やしてそのまま注文確認へ進めます。
+            </p>
+          ) : STORE_MENU_CATEGORY_NOTE[activeCategory] ? (
+            <p className={styles.categoryNote}>
+              {STORE_MENU_CATEGORY_NOTE[activeCategory]}
+            </p>
           ) : null}
 
           {showPromo ? (
             <StoreOrderMenuPromo sections={promoSections} />
           ) : null}
 
-          {activeCategory === "drink_sake"
+          {isOkawari ? (
+            <StoreOrderOkawariList
+              lines={reorderLines}
+              onCartChange={reloadCartFromDraft}
+            />
+          ) : null}
+
+          {!isOkawari && activeCategory === "drink_sake"
             ? SAKE_MENU_REGIONS.map((region) => {
                 const regionItems = heroItems.filter(
                   (i) => i.menuRegion === region,
@@ -490,7 +569,8 @@ function StoreOrderMenuPageInner() {
                   </section>
                 );
               })
-            : heroItems.map((item) => {
+            : !isOkawari
+              ? heroItems.map((item) => {
                 const dressing = selectedDressing(item);
                 const secondaryDressing = selectedSecondaryDressing(item);
                 return (
@@ -510,9 +590,10 @@ function StoreOrderMenuPageInner() {
                     </div>
                   </article>
                 );
-              })}
+              })
+              : null}
 
-          {hoppyRowItems.length > 0 ? (
+          {!isOkawari && hoppyRowItems.length > 0 ? (
             <div className={styles.menuHoppyRow}>
               {hoppyRowItems.map((item) => {
                 const dressing = selectedDressing(item);
@@ -538,7 +619,7 @@ function StoreOrderMenuPageInner() {
             </div>
           ) : null}
 
-          {gridImageItems.length > 0 ? (
+          {!isOkawari && gridImageItems.length > 0 ? (
             <div className={styles.menuProductGrid}>
               {gridImageItems.map((item) => {
                 const dressing = selectedDressing(item);
@@ -565,7 +646,7 @@ function StoreOrderMenuPageInner() {
             </div>
           ) : null}
 
-          {activeCategory === "drink_nomihoudai" ? (
+          {!isOkawari && activeCategory === "drink_nomihoudai" ? (
             NOMIHOUDAI_REGIONS.map((region) => {
               const regionItems = activeItems.filter(
                 (i) => i.menuRegion === region,
@@ -592,7 +673,7 @@ function StoreOrderMenuPageInner() {
                 </section>
               );
             })
-          ) : (
+          ) : !isOkawari ? (
             <TextOnlyMenuSections
               items={textOnlyItems}
               isTopping={isTopping}
@@ -604,7 +685,7 @@ function StoreOrderMenuPageInner() {
               onSecondaryStepperChange={changeSecondaryQty}
               onChange={changeQty}
             />
-          )}
+          ) : null}
         </div>
       </div>
 
