@@ -1,6 +1,6 @@
 import type { StoreMenuItem } from "./storeMenuCatalog";
 
-const RECOMMENDED_IMAGE_REV = "20261115";
+const RECOMMENDED_IMAGE_REV = "20261115-soba-nanban";
 const RIMG = (n: number) =>
   `/store-menu/${String(n).padStart(2, "0")}.jpg?v=${RECOMMENDED_IMAGE_REV}`;
 
@@ -15,7 +15,7 @@ export const RECOMMENDED_MENU_ITEMS: StoreMenuItem[] = [
     id: "rec_soba_meshi",
     name: "そば飯",
     price: 980,
-    image: RIMG(50),
+    image: `/store-menu/rec-soba-meshi.png?v=${RECOMMENDED_IMAGE_REV}`,
     category: "recommended",
     ...RECOMMENDED_PHOTO,
   },
@@ -39,7 +39,8 @@ export const RECOMMENDED_MENU_ITEMS: StoreMenuItem[] = [
     id: "rec_chicken_nanban_sand",
     name: "絶品！！チキン南蛮サンド",
     price: 880,
-    image: RIMG(53),
+    image: `/store-menu/rec-chicken-nanban-sand.png?v=${RECOMMENDED_IMAGE_REV}`,
+    imageFit: "contain",
     category: "recommended",
     ...RECOMMENDED_PHOTO,
   },
