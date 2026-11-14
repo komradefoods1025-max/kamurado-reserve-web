@@ -405,7 +405,31 @@ function StoreOrderMenuPageInner() {
 
   function categoryNavLabel(category: MenuNavCategory): string {
     if (category === OKAWARI_CATEGORY) return "おかわり";
+    if (category === RECOMMENDED_CATEGORY) return "おすすめ";
     return STORE_MENU_CATEGORY_LABEL[category];
+  }
+
+  function categoryNavContent(
+    category: MenuNavCategory,
+    variant: "nav" | "main",
+  ): ReactNode {
+    if (category === RECOMMENDED_CATEGORY) {
+      if (variant === "nav") {
+        return (
+          <span className={styles.menuNavLineStack}>
+            <span className={styles.menuNavLineStackLead}>期間限定‼️</span>
+            <span>おすすめ</span>
+          </span>
+        );
+      }
+      return (
+        <span className={styles.menuCategoryTitleStack}>
+          <span className={styles.menuCategoryTitleLead}>期間限定‼️</span>
+          <span>おすすめ</span>
+        </span>
+      );
+    }
+    return categoryNavLabel(category);
   }
 
   function selectCategory(category: MenuNavCategory) {
@@ -506,8 +530,14 @@ function StoreOrderMenuPageInner() {
                 }
                 onClick={() => selectCategory(category)}
               >
-                <span className={styles.menuNavLine}>
-                  {categoryNavLabel(category)}
+                <span
+                  className={
+                    category === RECOMMENDED_CATEGORY
+                      ? `${styles.menuNavLine} ${styles.menuNavLineMultiline}`
+                      : styles.menuNavLine
+                  }
+                >
+                  {categoryNavContent(category, "nav")}
                 </span>
               </button>
             ))}
@@ -515,7 +545,7 @@ function StoreOrderMenuPageInner() {
 
         <div ref={menuMainRef} className={styles.menuMain}>
           <h2 className={styles.menuCategoryTitle}>
-            {categoryNavLabel(activeCategory)}
+            {categoryNavContent(activeCategory, "main")}
           </h2>
           {isOkawari ? (
             <p className={styles.categoryNote}>

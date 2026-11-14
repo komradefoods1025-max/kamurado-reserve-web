@@ -134,6 +134,42 @@
   line-height: 1.35;
 }
 
+.menuNavLineMultiline {
+  white-space: normal;
+}
+
+.menuNavLineStack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  white-space: normal;
+  line-height: 1.25;
+  font-size: 9px;
+}
+
+.menuNavLineStackLead {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--o-gold-soft);
+}
+
+.menuCategoryTitleStack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+}
+
+.menuCategoryTitleLead {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--o-gold-soft);
+}
+
 .menuMain {
   flex: 1;
   min-width: 0;
