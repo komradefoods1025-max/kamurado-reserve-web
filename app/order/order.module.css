@@ -244,6 +244,16 @@
   line-height: 0;
 }
 
+/* 縦長写真（バナー）を正方形枠に余白なく表示 */
+.cardMediaBanner .cardImage,
+.cardMediaBanner .cardImageContain {
+  aspect-ratio: auto;
+  padding: 0;
+  object-fit: cover;
+  width: 100%;
+  height: auto;
+}
+
 .menuProductGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

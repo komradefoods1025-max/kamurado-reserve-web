@@ -1,6 +1,6 @@
 import type { StoreMenuItem } from "./storeMenuCatalog";
 
-const RECOMMENDED_IMAGE_REV = "20261115-soba-nanban";
+const RECOMMENDED_IMAGE_REV = "20261115-nanban-cover";
 const RIMG = (n: number) =>
   `/store-menu/${String(n).padStart(2, "0")}.jpg?v=${RECOMMENDED_IMAGE_REV}`;
 
@@ -40,7 +40,7 @@ export const RECOMMENDED_MENU_ITEMS: StoreMenuItem[] = [
     name: "絶品！！チキン南蛮サンド",
     price: 880,
     image: `/store-menu/rec-chicken-nanban-sand.png?v=${RECOMMENDED_IMAGE_REV}`,
-    imageFit: "contain",
+    imageBanner: true,
     category: "recommended",
     ...RECOMMENDED_PHOTO,
   },
