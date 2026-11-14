@@ -1,6 +1,6 @@
 import type { StoreMenuItem } from "./storeMenuCatalog";
 
-const RECOMMENDED_IMAGE_REV = "20261115-shiitake";
+const RECOMMENDED_IMAGE_REV = "20261115-seseri";
 const RIMG = (n: number) =>
   `/store-menu/${String(n).padStart(2, "0")}.jpg?v=${RECOMMENDED_IMAGE_REV}`;
 
@@ -32,7 +32,8 @@ export const RECOMMENDED_MENU_ITEMS: StoreMenuItem[] = [
     id: "rec_seseri_shikuwasa",
     name: "せせりのシークワーサー",
     price: 880,
-    image: RIMG(52),
+    image: `/store-menu/rec-seseri-shikuwasa.png?v=${RECOMMENDED_IMAGE_REV}`,
+    imageBanner: true,
     category: "recommended",
     ...RECOMMENDED_PHOTO,
   },
