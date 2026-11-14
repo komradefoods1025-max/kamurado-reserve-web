@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   orderHasVisibleKitchenItems,
@@ -449,8 +450,14 @@ export default function StoreDisplayBoard({
           </div>
         </div>
         <div className={styles.headerMeta}>
+          <Link href="/display/airregi" className={styles.headerLink}>
+            レジ打ち込み
+          </Link>
           {showTableQuad ? (
-            <span className={styles.headerRev}>{DISPLAY_UI_REV}</span>
+            <>
+              {" "}
+              <span className={styles.headerRev}>{DISPLAY_UI_REV}</span>
+            </>
           ) : null}{" "}
           {clock}
         </div>

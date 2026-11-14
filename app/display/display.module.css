@@ -558,3 +558,240 @@
   max-height: 28vh;
   overflow-y: auto;
 }
+
+.headerLink {
+  color: #ffd080;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 700;
+}
+
+.airRegiTabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 180, 80, 0.15);
+}
+
+.airRegiTab {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 180, 80, 0.25);
+  background: rgba(0, 0, 0, 0.25);
+  color: #e8d2b8;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.airRegiTabActive {
+  background: rgba(255, 184, 64, 0.22);
+  border-color: #ffb840;
+  color: #fff9f2;
+}
+
+.airRegiLayout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+  gap: 0;
+  min-height: 0;
+}
+
+@media (max-width: 720px) {
+  .airRegiLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.airRegiOrderList {
+  border-right: 1px solid rgba(255, 180, 80, 0.15);
+  padding: 10px 8px;
+  overflow-y: auto;
+  max-height: calc(100dvh - 140px);
+}
+
+.airRegiAsideTitle {
+  margin: 0 4px 8px;
+  font-size: 12px;
+  color: #c4b8a8;
+}
+
+.airRegiOrderBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 180, 80, 0.2);
+  background: rgba(0, 0, 0, 0.2);
+  color: #faf3e8;
+  text-align: left;
+  cursor: pointer;
+}
+
+.airRegiOrderBtnActive {
+  border-color: #ffb840;
+  background: rgba(255, 184, 64, 0.18);
+}
+
+.airRegiOrderNo {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.airRegiOrderMeta {
+  font-size: 11px;
+  color: #c4b8a8;
+}
+
+.airRegiOrderWarn {
+  font-size: 11px;
+  color: #ffb080;
+  font-weight: 700;
+}
+
+.airRegiDetail {
+  padding: 12px 14px 24px;
+  overflow: auto;
+  max-height: calc(100dvh - 140px);
+}
+
+.airRegiDetailHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.airRegiDetailTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.airRegiDetailActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.airRegiCopyBtn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(180deg, #ffb840 0%, #e89000 100%);
+  color: #1a1008;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.airRegiCopyHint {
+  font-size: 12px;
+  color: #b8e8b0;
+}
+
+.airRegiTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.airRegiTable th,
+.airRegiTable td {
+  border-bottom: 1px solid rgba(255, 180, 80, 0.15);
+  padding: 8px 6px;
+  vertical-align: top;
+  text-align: left;
+}
+
+.airRegiThCheck {
+  width: 36px;
+}
+
+.airRegiRowUnmapped {
+  background: rgba(200, 80, 40, 0.14);
+}
+
+.airRegiCodeCell {
+  font-family: ui-monospace, Menlo, monospace;
+  font-weight: 800;
+  font-size: 14px;
+  color: #ffd080;
+  white-space: nowrap;
+}
+
+.airRegiQtyCell {
+  font-weight: 800;
+  width: 48px;
+}
+
+.airRegiNoteCell {
+  font-size: 12px;
+  color: #c4b8a8;
+}
+
+.airRegiKeyCell {
+  font-size: 11px;
+  color: #a89888;
+  word-break: break-all;
+}
+
+.airRegiFootnote {
+  margin-top: 12px;
+  font-size: 11px;
+  color: #a89888;
+  line-height: 1.5;
+}
+
+.airRegiInlineCode {
+  font-size: 11px;
+  color: #e8d2b8;
+}
+
+.airRegiCatalog {
+  padding: 12px 14px 24px;
+}
+
+.airRegiCatalogToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.airRegiSearch {
+  flex: 1;
+  min-width: 180px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 200, 120, 0.35);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 14px;
+}
+
+.airRegiCheckLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #e8d2b8;
+}
+
+.airRegiCatalogStats {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #c4b8a8;
+}
+
+.airRegiCatalogScroll {
+  overflow: auto;
+  max-height: calc(100dvh - 220px);
+}

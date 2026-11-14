@@ -93,6 +93,10 @@ export type StoreMenuItem = {
   imageCropBottomCaption?: boolean;
   /** カテゴリ内の産地・区分見出し（例: 日本酒の県名） */
   menuRegion?: string;
+  /** Airレジ商品コード（バリエーションなし向け） */
+  airRegiCode?: string;
+  /** 割り方・サイズなど dressing ごとの Airレジ商品コード */
+  airRegiOptionCodes?: Partial<Record<string, string>>;
 };
 
 /** 写真下部の商品名帯を隠し、カード見出しで表示 */
