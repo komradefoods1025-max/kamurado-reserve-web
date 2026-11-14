@@ -8,6 +8,7 @@ import {
 import {
   buildUnsettledTableOrderSummary,
   computeStoreTableRunningTotals,
+  isStoreOrderInUnsettledTableTotal,
   listStoreTableSettlementState,
 } from "../../../../lib/storeTableSettlement";
 import {
@@ -80,7 +81,11 @@ export async function GET(req: NextRequest) {
         (Date.parse(b.submittedAt) || 0) - (Date.parse(a.submittedAt) || 0),
     );
 
-  const history = tableOrders.map((order) => ({
+  const unsettledTableOrders = tableOrders.filter((order) =>
+    isStoreOrderInUnsettledTableTotal(order, tableId, settlementState),
+  );
+
+  const history = unsettledTableOrders.map((order) => ({
     reservationNo: order.reservationNo,
     submittedAt: order.submittedAt,
     status: order.status,
@@ -95,7 +100,7 @@ export async function GET(req: NextRequest) {
   );
   const billTotal = tableTotals[tableId]?.total ?? 0;
   const reorderItems = buildStoreReorderLinesFromHistory(
-    tableOrders.map((order) => ({
+    unsettledTableOrders.map((order) => ({
       submittedAt: order.submittedAt,
       items: order.items.map(formatHistoryItem),
     })),
