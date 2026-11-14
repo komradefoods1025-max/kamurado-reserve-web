@@ -8,7 +8,9 @@ import {
 } from "../../lib/storeDisplayQueue";
 import {
   buildUnsettledTableOrderSummary,
+  buildStoreTableSettlementStateFromFeed,
   computeStoreTableRunningTotals,
+  type StoreTableSettlementState,
 } from "../../lib/storeTableSettlement";
 import {
   orderMatchesStoreTable,
@@ -59,7 +61,11 @@ export default function StoreDisplayBoard({
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [feedOrders, setFeedOrders] = useState<StoreDisplayOrder[]>([]);
-  const [settlements, setSettlements] = useState<Record<string, string>>({});
+  const [settlementState, setSettlementState] =
+    useState<StoreTableSettlementState>({
+      settledAt: {},
+      clearedReservationNos: {},
+    });
   const [settlingTable, setSettlingTable] = useState<string | null>(null);
   const [reviewTableId, setReviewTableId] = useState<string | null>(null);
   const [queueWarning, setQueueWarning] = useState<string | null>(null);
@@ -204,8 +210,8 @@ export default function StoreDisplayBoard({
   );
 
   const tableTotals = useMemo(
-    () => computeStoreTableRunningTotals(feedOrders, settlements),
-    [feedOrders, settlements],
+    () => computeStoreTableRunningTotals(feedOrders, settlementState),
+    [feedOrders, settlementState],
   );
 
   const reviewSummary = useMemo(() => {
@@ -213,9 +219,9 @@ export default function StoreDisplayBoard({
     return buildUnsettledTableOrderSummary(
       feedOrders,
       reviewTableId,
-      settlements,
+      settlementState,
     );
-  }, [reviewTableId, feedOrders, settlements]);
+  }, [reviewTableId, feedOrders, settlementState]);
 
   const reviewTotal = useMemo(
     () => reviewSummary.reduce((sum, line) => sum + line.subtotal, 0),
@@ -278,10 +284,12 @@ export default function StoreDisplayBoard({
       }
     }
 
-    const settled = data.settlements;
-    if (settled && typeof settled === "object") {
-      setSettlements(settled as Record<string, string>);
-    }
+    setSettlementState(
+      buildStoreTableSettlementStateFromFeed({
+        settlements: data.settlements,
+        settlementCleared: data.settlementCleared,
+      }),
+    );
 
     setFeedOrders(list);
   }, [mode, playNewOrderSound, syncCompleteHideTimers]);
@@ -367,9 +375,12 @@ export default function StoreDisplayBoard({
         window.alert(data.message || "清算に失敗しました");
         return;
       }
-      if (data.settlements && typeof data.settlements === "object") {
-        setSettlements(data.settlements as Record<string, string>);
-      }
+      setSettlementState(
+        buildStoreTableSettlementStateFromFeed({
+          settlements: data.settlements,
+          settlementCleared: data.settlementCleared,
+        }),
+      );
       if (reviewTableId === tableId) {
         setReviewTableId(null);
       }

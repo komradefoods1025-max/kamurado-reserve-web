@@ -3,7 +3,7 @@ import { getTodayYmdJst } from "../../../../lib/bookingDates";
 import {
   computeStoreTableRunningTotals,
   isStoreTableSettlementStorageAvailable,
-  listStoreTableSettlements,
+  listStoreTableSettlementState,
   recordStoreTableSettlement,
 } from "../../../../lib/storeTableSettlement";
 import {
@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const result = await recordStoreTableSettlement(tableId, date);
+  const orders = await listStoreDisplayOrders(date);
+  const result = await recordStoreTableSettlement(tableId, date, orders);
   if (!result.ok) {
     return NextResponse.json(
       { ok: false, message: "清算の記録に失敗しました" },
@@ -50,16 +51,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const settlements =
-    result.settlements ?? (await listStoreTableSettlements(date));
-  const orders = await listStoreDisplayOrders(date);
-  const tableTotals = computeStoreTableRunningTotals(orders, settlements);
+  const settlementState =
+    result.settlementState ?? (await listStoreTableSettlementState(date));
+  const tableTotals = computeStoreTableRunningTotals(orders, settlementState);
 
   return NextResponse.json({
     ok: true,
     tableId,
     settledAt: result.settledAt,
     tableTotals,
-    settlements,
+    settlements: settlementState.settledAt,
+    settlementCleared: settlementState.clearedReservationNos,
   });
 }

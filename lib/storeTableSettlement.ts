@@ -20,6 +20,17 @@ export type StoreTableRunningTotal = {
 
 export type StoreTableRunningTotals = Record<string, StoreTableRunningTotal>;
 
+/** 卓ごとの清算状態（API・画面で共有） */
+export type StoreTableSettlementState = {
+  settledAt: Record<string, string>;
+  clearedReservationNos: Record<string, string[]>;
+};
+
+const EMPTY_SETTLEMENT_STATE: StoreTableSettlementState = {
+  settledAt: {},
+  clearedReservationNos: {},
+};
+
 function redisRestBase(): { url: string; token: string } | null {
   const url = String(
     process.env.UPSTASH_REDIS_REST_URL ||
@@ -54,11 +65,19 @@ function encodeRedisValue(json: string): string {
   return encodeURIComponent(json);
 }
 
+function decodeRedisFieldValue(raw: string): string {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
 function settlementDayKey(ymd: string): string {
   return `store:table-settle:${ymd}`;
 }
 
-type MemorySettleStore = Map<string, Record<string, string>>;
+type MemorySettleStore = Map<string, StoreTableSettlementState>;
 
 function memorySettleStore(): MemorySettleStore {
   const g = globalThis as typeof globalThis & {
@@ -79,7 +98,11 @@ function blobSettlePath(ymd: string): string {
   return `store-table-settle/${ymd}.json`;
 }
 
-function normalizeSettlements(
+function uniqueReservationNos(values: Iterable<string>): string[] {
+  return [...new Set([...values].filter(Boolean))];
+}
+
+function normalizeSettledAtMap(
   raw: Record<string, unknown> | null | undefined,
 ): Record<string, string> {
   const out: Record<string, string> = {};
@@ -92,6 +115,87 @@ function normalizeSettlements(
   return out;
 }
 
+function normalizeClearedMap(
+  raw: Record<string, unknown> | null | undefined,
+): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  if (!raw) return out;
+  for (const [k, v] of Object.entries(raw)) {
+    const tid = normalizeStoreTableId(k);
+    if (!tid) continue;
+    const nos = Array.isArray(v)
+      ? uniqueReservationNos(v.map((x) => String(x ?? "").trim()))
+      : [];
+    if (nos.length) out[tid] = nos;
+  }
+  return out;
+}
+
+function mergeSettlementStates(
+  ...parts: StoreTableSettlementState[]
+): StoreTableSettlementState {
+  const settledAt: Record<string, string> = {};
+  const clearedReservationNos: Record<string, string[]> = {};
+
+  for (const part of parts) {
+    Object.assign(settledAt, part.settledAt);
+    for (const [tid, nos] of Object.entries(part.clearedReservationNos)) {
+      const prev = clearedReservationNos[tid] ?? [];
+      clearedReservationNos[tid] = uniqueReservationNos([...prev, ...nos]);
+    }
+  }
+
+  return { settledAt, clearedReservationNos };
+}
+
+function parseRedisTableSettlementField(
+  raw: string,
+): { settledAt?: string; clearedReservationNos?: string[] } {
+  const decoded = decodeRedisFieldValue(String(raw ?? "").trim());
+  if (!decoded) return {};
+  if (decoded.startsWith("{")) {
+    try {
+      const obj = JSON.parse(decoded) as {
+        settledAt?: unknown;
+        clearedReservationNos?: unknown;
+      };
+      const settledAt = String(obj.settledAt ?? "").trim() || undefined;
+      const cleared = Array.isArray(obj.clearedReservationNos)
+        ? uniqueReservationNos(
+            obj.clearedReservationNos.map((x) => String(x ?? "").trim()),
+          )
+        : undefined;
+      return { settledAt, clearedReservationNos: cleared };
+    } catch {
+      /* legacy ISO */
+    }
+  }
+  return { settledAt: decoded };
+}
+
+function parseBlobSettlementPayload(
+  raw: unknown,
+): StoreTableSettlementState {
+  if (!raw || typeof raw !== "object") return { ...EMPTY_SETTLEMENT_STATE };
+
+  const body = raw as Record<string, unknown>;
+  if (body.v === 2) {
+    return {
+      settledAt: normalizeSettledAtMap(
+        body.settledAt as Record<string, unknown>,
+      ),
+      clearedReservationNos: normalizeClearedMap(
+        body.clearedReservationNos as Record<string, unknown>,
+      ),
+    };
+  }
+
+  return {
+    settledAt: normalizeSettledAtMap(body),
+    clearedReservationNos: {},
+  };
+}
+
 export function isStoreTableSettlementStorageAvailable(): boolean {
   return (
     isStoreDisplayRedisQueueEnabled() ||
@@ -100,60 +204,98 @@ export function isStoreTableSettlementStorageAvailable(): boolean {
   );
 }
 
-export async function listStoreTableSettlements(
+export async function listStoreTableSettlementState(
   ymd = getTodayYmdJst(),
-): Promise<Record<string, string>> {
+): Promise<StoreTableSettlementState> {
   if (isStoreDisplayRedisQueueEnabled()) {
     const rows = await redisCmd<string[] | Record<string, string>>(
       `hgetall/${settlementDayKey(ymd)}`,
     );
-    if (!rows) return {};
-    if (Array.isArray(rows)) {
-      const out: Record<string, string> = {};
-      for (let i = 0; i < rows.length; i += 2) {
-        const tid = normalizeStoreTableId(rows[i]);
-        const at = String(rows[i + 1] ?? "").trim();
-        if (tid && at) out[tid] = at;
+    if (!rows) return { ...EMPTY_SETTLEMENT_STATE };
+
+    const settledAt: Record<string, string> = {};
+    const clearedReservationNos: Record<string, string[]> = {};
+
+    const pairs: [string, string][] = Array.isArray(rows)
+      ? (() => {
+          const out: [string, string][] = [];
+          for (let i = 0; i < rows.length; i += 2) {
+            out.push([String(rows[i] ?? ""), String(rows[i + 1] ?? "")]);
+          }
+          return out;
+        })()
+      : Object.entries(rows).map(([k, v]) => [k, String(v ?? "")]);
+
+    for (const [field, value] of pairs) {
+      const tid = normalizeStoreTableId(field);
+      if (!tid) continue;
+      const parsed = parseRedisTableSettlementField(value);
+      if (parsed.settledAt) settledAt[tid] = parsed.settledAt;
+      if (parsed.clearedReservationNos?.length) {
+        const prev = clearedReservationNos[tid] ?? [];
+        clearedReservationNos[tid] = uniqueReservationNos([
+          ...prev,
+          ...parsed.clearedReservationNos,
+        ]);
       }
-      return out;
     }
-    return normalizeSettlements(rows);
+
+    return { settledAt, clearedReservationNos };
   }
 
   if (isStoreDisplayBlobQueueEnabled()) {
     const token = blobToken();
-    if (!token) return {};
+    if (!token) return { ...EMPTY_SETTLEMENT_STATE };
     const pathname = blobSettlePath(ymd);
     try {
       const meta = await head(pathname, { token });
       const res = await fetch(meta.url, { cache: "no-store" });
-      if (!res.ok) return {};
-      return normalizeSettlements((await res.json()) as Record<string, unknown>);
+      if (!res.ok) return { ...EMPTY_SETTLEMENT_STATE };
+      return parseBlobSettlementPayload(await res.json());
     } catch {
-      return {};
+      return { ...EMPTY_SETTLEMENT_STATE };
     }
   }
 
   if (isStoreDisplayMemoryQueueActive()) {
-    return { ...(memorySettleStore().get(settlementDayKey(ymd)) ?? {}) };
+    return {
+      ...(memorySettleStore().get(settlementDayKey(ymd)) ??
+        EMPTY_SETTLEMENT_STATE),
+    };
   }
 
-  return {};
+  return { ...EMPTY_SETTLEMENT_STATE };
 }
 
-async function writeBlobSettlements(
+/** 後方互換: 最終清算時刻のみ */
+export async function listStoreTableSettlements(
+  ymd = getTodayYmdJst(),
+): Promise<Record<string, string>> {
+  const state = await listStoreTableSettlementState(ymd);
+  return { ...state.settledAt };
+}
+
+async function writeBlobSettlementState(
   ymd: string,
-  map: Record<string, string>,
+  state: StoreTableSettlementState,
 ): Promise<boolean> {
   const token = blobToken();
   if (!token) return false;
   try {
-    await put(blobSettlePath(ymd), JSON.stringify(map), {
-      access: "public",
-      addRandomSuffix: false,
-      token,
-      contentType: "application/json; charset=utf-8",
-    });
+    await put(
+      blobSettlePath(ymd),
+      JSON.stringify({
+        v: 2,
+        settledAt: state.settledAt,
+        clearedReservationNos: state.clearedReservationNos,
+      }),
+      {
+        access: "public",
+        addRandomSuffix: false,
+        token,
+        contentType: "application/json; charset=utf-8",
+      },
+    );
     return true;
   } catch (err) {
     console.error("[storeTableSettlement] blob write", err);
@@ -161,45 +303,92 @@ async function writeBlobSettlements(
   }
 }
 
+function reservationNosForTableUnsettledSnapshot(
+  orders: StoreDisplayOrder[],
+  tableId: string,
+): string[] {
+  const want = normalizeStoreTableId(tableId);
+  if (!want) return [];
+  return uniqueReservationNos(
+    orders
+      .filter(
+        (o) =>
+          orderCountsForTableTotal(o) && orderMatchesStoreTable(o, want),
+      )
+      .map((o) => String(o.reservationNo || "").trim()),
+  );
+}
+
 export async function recordStoreTableSettlement(
   tableId: string,
   ymd = getTodayYmdJst(),
+  orders: StoreDisplayOrder[] = [],
 ): Promise<{
   ok: boolean;
   settledAt?: string;
   settlements?: Record<string, string>;
+  settlementCleared?: Record<string, string[]>;
+  settlementState?: StoreTableSettlementState;
 }> {
   const tid = normalizeStoreTableId(tableId);
   if (!tid) return { ok: false };
   const settledAt = new Date().toISOString();
+  const snapshotNos = reservationNosForTableUnsettledSnapshot(orders, tid);
+
+  const current = await listStoreTableSettlementState(ymd);
+  const prevCleared = current.clearedReservationNos[tid] ?? [];
+  const nextCleared = uniqueReservationNos([...prevCleared, ...snapshotNos]);
+  const nextState: StoreTableSettlementState = {
+    settledAt: { ...current.settledAt, [tid]: settledAt },
+    clearedReservationNos: {
+      ...current.clearedReservationNos,
+      [tid]: nextCleared,
+    },
+  };
 
   if (isStoreDisplayRedisQueueEnabled()) {
     const key = settlementDayKey(ymd);
+    const payload = JSON.stringify({
+      settledAt,
+      clearedReservationNos: nextCleared,
+    });
     const pushed = await redisCmd<number>(
-      `hset/${key}/${tid}/${encodeRedisValue(settledAt)}`,
+      `hset/${key}/${tid}/${encodeRedisValue(payload)}`,
     );
     if (pushed === null) return { ok: false };
-    const settlements = await listStoreTableSettlements(ymd);
-    return { ok: true, settledAt, settlements };
+    return {
+      ok: true,
+      settledAt,
+      settlements: { ...nextState.settledAt },
+      settlementCleared: { ...nextState.clearedReservationNos },
+      settlementState: nextState,
+    };
   }
 
   if (isStoreDisplayBlobQueueEnabled()) {
-    const current = await listStoreTableSettlements(ymd);
-    const next = { ...current, [tid]: settledAt };
-    const ok = await writeBlobSettlements(ymd, next);
+    const ok = await writeBlobSettlementState(ymd, nextState);
     return {
       ok,
       settledAt: ok ? settledAt : undefined,
-      settlements: ok ? next : current,
+      settlements: ok ? { ...nextState.settledAt } : { ...current.settledAt },
+      settlementCleared: ok
+        ? { ...nextState.clearedReservationNos }
+        : { ...current.clearedReservationNos },
+      settlementState: ok ? nextState : current,
     };
   }
 
   if (isStoreDisplayMemoryQueueActive()) {
     const store = memorySettleStore();
     const key = settlementDayKey(ymd);
-    const next = { ...(store.get(key) ?? {}), [tid]: settledAt };
-    store.set(key, next);
-    return { ok: true, settledAt, settlements: next };
+    store.set(key, nextState);
+    return {
+      ok: true,
+      settledAt,
+      settlements: { ...nextState.settledAt },
+      settlementCleared: { ...nextState.clearedReservationNos },
+      settlementState: nextState,
+    };
   }
 
   return { ok: false };
@@ -228,34 +417,57 @@ function resolveOrderSubmittedMs(order: StoreDisplayOrder): number | null {
   return null;
 }
 
+function parseSettledAtMs(settledAt: string | undefined): number | null {
+  if (!settledAt) return null;
+  const decoded = decodeRedisFieldValue(settledAt);
+  const ms = Date.parse(decoded);
+  return Number.isFinite(ms) ? ms : null;
+}
+
 function orderSubmittedBeforeSettlement(
   order: StoreDisplayOrder,
   settledAt: string | undefined,
 ): boolean {
-  if (!settledAt) return false;
-  const settledMs = Date.parse(settledAt);
-  if (!Number.isFinite(settledMs)) return false;
+  const settledMs = parseSettledAtMs(settledAt);
+  if (settledMs === null) return false;
 
   const submittedMs = resolveOrderSubmittedMs(order);
   if (submittedMs === null) {
-    // 比較できない行は未清算扱い（完成操作後に合計が0円にならない）
     return false;
   }
   return submittedMs < settledMs;
+}
+
+function isReservationClearedForTable(
+  reservationNo: string,
+  tableId: string,
+  state: StoreTableSettlementState,
+): boolean {
+  const want = normalizeStoreTableId(tableId);
+  if (!want) return false;
+  const no = String(reservationNo || "").trim();
+  if (!no) return false;
+  const list = state.clearedReservationNos[want];
+  return Boolean(list?.includes(no));
 }
 
 /** 清算後を除き、卓合計に含まれる店内注文か */
 export function isStoreOrderInUnsettledTableTotal(
   order: StoreDisplayOrder,
   tableId: string,
-  settlements: Record<string, string>,
+  state: StoreTableSettlementState,
 ): boolean {
   const want = normalizeStoreTableId(tableId);
   if (!want) return false;
   if (!orderCountsForTableTotal(order)) return false;
   if (!orderMatchesStoreTable(order, want)) return false;
 
-  const settledAt = settlements[want];
+  const cleared = state.clearedReservationNos[want];
+  if (cleared?.length) {
+    return !isReservationClearedForTable(order.reservationNo, want, state);
+  }
+
+  const settledAt = state.settledAt[want];
   if (orderSubmittedBeforeSettlement(order, settledAt)) {
     return false;
   }
@@ -289,7 +501,7 @@ function itemLineSubtotal(item: StoreDisplayItem): number {
 export function buildUnsettledTableOrderSummary(
   orders: StoreDisplayOrder[],
   tableId: string,
-  settlements: Record<string, string>,
+  state: StoreTableSettlementState,
 ): StoreTableOrderSummaryLine[] {
   const want = normalizeStoreTableId(tableId);
   if (!want) return [];
@@ -297,7 +509,7 @@ export function buildUnsettledTableOrderSummary(
   const map = new Map<string, StoreTableOrderSummaryLine>();
 
   for (const order of orders) {
-    if (!isStoreOrderInUnsettledTableTotal(order, want, settlements)) {
+    if (!isStoreOrderInUnsettledTableTotal(order, want, state)) {
       continue;
     }
     for (const item of order.items) {
@@ -324,7 +536,7 @@ export function buildUnsettledTableOrderSummary(
 
 export function computeStoreTableRunningTotals(
   orders: StoreDisplayOrder[],
-  settlements: Record<string, string>,
+  state: StoreTableSettlementState,
 ): StoreTableRunningTotals {
   const out: StoreTableRunningTotals = {};
   for (let i = 1; i <= STORE_ORDER_TABLE_COUNT; i++) {
@@ -334,10 +546,23 @@ export function computeStoreTableRunningTotals(
   for (const order of orders) {
     const tid = resolveStoreOrderTableId(order);
     if (!tid || !out[tid]) continue;
-    if (!isStoreOrderInUnsettledTableTotal(order, tid, settlements)) continue;
+    if (!isStoreOrderInUnsettledTableTotal(order, tid, state)) continue;
     out[tid].total += Number(order.total) || 0;
     out[tid].orderCount += 1;
   }
 
   return out;
+}
+
+export function buildStoreTableSettlementStateFromFeed(data: {
+  settlements?: unknown;
+  settlementCleared?: unknown;
+}): StoreTableSettlementState {
+  const settledAt = normalizeSettledAtMap(
+    data.settlements as Record<string, unknown> | undefined,
+  );
+  const clearedReservationNos = normalizeClearedMap(
+    data.settlementCleared as Record<string, unknown> | undefined,
+  );
+  return mergeSettlementStates({ settledAt, clearedReservationNos });
 }

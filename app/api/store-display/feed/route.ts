@@ -8,7 +8,7 @@ import {
 import { isStoreDisplayRequestAuthorized } from "../../../../lib/storeDisplaySession";
 import {
   computeStoreTableRunningTotals,
-  listStoreTableSettlements,
+  listStoreTableSettlementState,
 } from "../../../../lib/storeTableSettlement";
 
 export const runtime = "nodejs";
@@ -21,8 +21,8 @@ export async function GET(req: NextRequest) {
 
   const ymd = req.nextUrl.searchParams.get("date")?.trim() || getTodayYmdJst();
   const orders = await listStoreDisplayOrders(ymd);
-  const settlements = await listStoreTableSettlements(ymd);
-  const tableTotals = computeStoreTableRunningTotals(orders, settlements);
+  const settlementState = await listStoreTableSettlementState(ymd);
+  const tableTotals = computeStoreTableRunningTotals(orders, settlementState);
   const available = isStoreDisplayQueueAvailable();
   const hint = storeDisplayQueueHintMessage();
 
@@ -31,7 +31,8 @@ export async function GET(req: NextRequest) {
     configured: available,
     date: ymd,
     orders,
-    settlements,
+    settlements: settlementState.settledAt,
+    settlementCleared: settlementState.clearedReservationNos,
     tableTotals,
     message: available ? hint || null : hint,
   });

@@ -8,7 +8,7 @@ import {
 import {
   buildUnsettledTableOrderSummary,
   computeStoreTableRunningTotals,
-  listStoreTableSettlements,
+  listStoreTableSettlementState,
 } from "../../../../lib/storeTableSettlement";
 import {
   normalizeStoreTableId,
@@ -66,8 +66,8 @@ export async function GET(req: NextRequest) {
 
   const ymd = getTodayYmdJst();
   const orders = await listStoreDisplayOrders(ymd);
-  const settlements = await listStoreTableSettlements(ymd);
-  const tableTotals = computeStoreTableRunningTotals(orders, settlements);
+  const settlementState = await listStoreTableSettlementState(ymd);
+  const tableTotals = computeStoreTableRunningTotals(orders, settlementState);
 
   const tableOrders = orders
     .filter(
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
   const billLines = buildUnsettledTableOrderSummary(
     orders,
     tableId,
-    settlements,
+    settlementState,
   );
   const billTotal = tableTotals[tableId]?.total ?? 0;
   const reorderItems = buildStoreReorderLinesFromHistory(
