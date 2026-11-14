@@ -41,12 +41,16 @@ export async function blobListStoreDisplayOrders(
   const token = blobToken();
   if (!token) return [];
   try {
-    const { blobs } = await list({
-      prefix: `store-display/${ymd}/`,
-      token,
-    });
     const orders: StoreDisplayOrder[] = [];
-    for (const entry of blobs) {
+    let cursor: string | undefined;
+    let hasMore = true;
+    while (hasMore) {
+      const page = await list({
+        prefix: `store-display/${ymd}/`,
+        token,
+        cursor,
+      });
+      for (const entry of page.blobs) {
       try {
         const res = await fetch(entry.url, { cache: "no-store" });
         if (!res.ok) continue;
@@ -54,6 +58,9 @@ export async function blobListStoreDisplayOrders(
       } catch {
         /* skip */
       }
+      }
+      cursor = page.cursor;
+      hasMore = Boolean(page.hasMore && page.cursor);
     }
     return orders;
   } catch (err) {

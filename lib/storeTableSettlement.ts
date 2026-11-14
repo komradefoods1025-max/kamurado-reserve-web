@@ -306,15 +306,13 @@ async function writeBlobSettlementState(
 function reservationNosForTableUnsettledSnapshot(
   orders: StoreDisplayOrder[],
   tableId: string,
+  state: StoreTableSettlementState,
 ): string[] {
   const want = normalizeStoreTableId(tableId);
   if (!want) return [];
   return uniqueReservationNos(
     orders
-      .filter(
-        (o) =>
-          orderCountsForTableTotal(o) && orderMatchesStoreTable(o, want),
-      )
+      .filter((o) => isStoreOrderInUnsettledTableTotal(o, want, state))
       .map((o) => String(o.reservationNo || "").trim()),
   );
 }
@@ -333,9 +331,13 @@ export async function recordStoreTableSettlement(
   const tid = normalizeStoreTableId(tableId);
   if (!tid) return { ok: false };
   const settledAt = new Date().toISOString();
-  const snapshotNos = reservationNosForTableUnsettledSnapshot(orders, tid);
 
   const current = await listStoreTableSettlementState(ymd);
+  const snapshotNos = reservationNosForTableUnsettledSnapshot(
+    orders,
+    tid,
+    current,
+  );
   const prevCleared = current.clearedReservationNos[tid] ?? [];
   const nextCleared = uniqueReservationNos([...prevCleared, ...snapshotNos]);
   const nextState: StoreTableSettlementState = {
@@ -401,43 +403,6 @@ function orderCountsForTableTotal(order: StoreDisplayOrder): boolean {
   return Boolean(resolveStoreOrderTableId(order));
 }
 
-function resolveOrderSubmittedMs(order: StoreDisplayOrder): number | null {
-  const direct = Date.parse(order.submittedAt || "");
-  if (Number.isFinite(direct)) return direct;
-
-  const ymd = String(order.pickupDate || "").trim();
-  const timeRaw = String(order.pickupTime || "").trim();
-  const timeMatch = timeRaw.match(/^(\d{1,2}):(\d{2})/);
-  if (ymd && timeMatch) {
-    const hh = timeMatch[1].padStart(2, "0");
-    const mm = timeMatch[2];
-    const jst = Date.parse(`${ymd}T${hh}:${mm}:00+09:00`);
-    if (Number.isFinite(jst)) return jst;
-  }
-  return null;
-}
-
-function parseSettledAtMs(settledAt: string | undefined): number | null {
-  if (!settledAt) return null;
-  const decoded = decodeRedisFieldValue(settledAt);
-  const ms = Date.parse(decoded);
-  return Number.isFinite(ms) ? ms : null;
-}
-
-function orderSubmittedBeforeSettlement(
-  order: StoreDisplayOrder,
-  settledAt: string | undefined,
-): boolean {
-  const settledMs = parseSettledAtMs(settledAt);
-  if (settledMs === null) return false;
-
-  const submittedMs = resolveOrderSubmittedMs(order);
-  if (submittedMs === null) {
-    return false;
-  }
-  return submittedMs < settledMs;
-}
-
 function isReservationClearedForTable(
   reservationNo: string,
   tableId: string,
@@ -462,16 +427,7 @@ export function isStoreOrderInUnsettledTableTotal(
   if (!orderCountsForTableTotal(order)) return false;
   if (!orderMatchesStoreTable(order, want)) return false;
 
-  const cleared = state.clearedReservationNos[want];
-  if (cleared?.length) {
-    return !isReservationClearedForTable(order.reservationNo, want, state);
-  }
-
-  const settledAt = state.settledAt[want];
-  if (orderSubmittedBeforeSettlement(order, settledAt)) {
-    return false;
-  }
-  return true;
+  return !isReservationClearedForTable(order.reservationNo, want, state);
 }
 
 export type StoreTableOrderSummaryLine = {
@@ -554,15 +510,32 @@ export function computeStoreTableRunningTotals(
   return out;
 }
 
-export function buildStoreTableSettlementStateFromFeed(data: {
-  settlements?: unknown;
-  settlementCleared?: unknown;
-}): StoreTableSettlementState {
+export function buildStoreTableSettlementStateFromFeed(
+  data: {
+    settlements?: unknown;
+    settlementCleared?: unknown;
+  },
+  previous?: StoreTableSettlementState,
+): StoreTableSettlementState {
   const settledAt = normalizeSettledAtMap(
     data.settlements as Record<string, unknown> | undefined,
   );
-  const clearedReservationNos = normalizeClearedMap(
-    data.settlementCleared as Record<string, unknown> | undefined,
-  );
-  return mergeSettlementStates({ settledAt, clearedReservationNos });
+  const hasClearedPayload =
+    data.settlementCleared !== undefined && data.settlementCleared !== null;
+  const clearedReservationNos = hasClearedPayload
+    ? normalizeClearedMap(
+        data.settlementCleared as Record<string, unknown> | undefined,
+      )
+    : { ...(previous?.clearedReservationNos ?? {}) };
+
+  const hasSettledPayload =
+    data.settlements !== undefined && data.settlements !== null;
+  const mergedSettled = hasSettledPayload
+    ? settledAt
+    : { ...(previous?.settledAt ?? {}), ...settledAt };
+
+  return mergeSettlementStates({
+    settledAt: mergedSettled,
+    clearedReservationNos,
+  });
 }

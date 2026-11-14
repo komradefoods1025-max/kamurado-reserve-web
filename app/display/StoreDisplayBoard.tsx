@@ -284,11 +284,14 @@ export default function StoreDisplayBoard({
       }
     }
 
-    setSettlementState(
-      buildStoreTableSettlementStateFromFeed({
-        settlements: data.settlements,
-        settlementCleared: data.settlementCleared,
-      }),
+    setSettlementState((prev) =>
+      buildStoreTableSettlementStateFromFeed(
+        {
+          settlements: data.settlements,
+          settlementCleared: data.settlementCleared,
+        },
+        prev,
+      ),
     );
 
     setFeedOrders(list);
@@ -375,11 +378,14 @@ export default function StoreDisplayBoard({
         window.alert(data.message || "清算に失敗しました");
         return;
       }
-      setSettlementState(
-        buildStoreTableSettlementStateFromFeed({
-          settlements: data.settlements,
-          settlementCleared: data.settlementCleared,
-        }),
+      setSettlementState((prev) =>
+        buildStoreTableSettlementStateFromFeed(
+          {
+            settlements: data.settlements,
+            settlementCleared: data.settlementCleared,
+          },
+          prev,
+        ),
       );
       if (reviewTableId === tableId) {
         setReviewTableId(null);
