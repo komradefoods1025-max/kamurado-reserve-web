@@ -8,7 +8,7 @@ import {
 } from "../../lib/storeDisplayQueue";
 import {
   buildUnsettledTableOrderSummary,
-  type StoreTableRunningTotals,
+  computeStoreTableRunningTotals,
 } from "../../lib/storeTableSettlement";
 import {
   orderMatchesStoreTable,
@@ -59,7 +59,6 @@ export default function StoreDisplayBoard({
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [feedOrders, setFeedOrders] = useState<StoreDisplayOrder[]>([]);
-  const [tableTotals, setTableTotals] = useState<StoreTableRunningTotals>({});
   const [settlements, setSettlements] = useState<Record<string, string>>({});
   const [settlingTable, setSettlingTable] = useState<string | null>(null);
   const [reviewTableId, setReviewTableId] = useState<string | null>(null);
@@ -204,6 +203,11 @@ export default function StoreDisplayBoard({
     [feedOrders, filterForMode, hideTick, nowMs],
   );
 
+  const tableTotals = useMemo(
+    () => computeStoreTableRunningTotals(feedOrders, settlements),
+    [feedOrders, settlements],
+  );
+
   const reviewSummary = useMemo(() => {
     if (!reviewTableId) return [];
     return buildUnsettledTableOrderSummary(
@@ -274,10 +278,6 @@ export default function StoreDisplayBoard({
       }
     }
 
-    const totals = data.tableTotals;
-    if (totals && typeof totals === "object") {
-      setTableTotals(totals as StoreTableRunningTotals);
-    }
     const settled = data.settlements;
     if (settled && typeof settled === "object") {
       setSettlements(settled as Record<string, string>);
@@ -367,8 +367,11 @@ export default function StoreDisplayBoard({
         window.alert(data.message || "清算に失敗しました");
         return;
       }
-      if (data.tableTotals) {
-        setTableTotals(data.tableTotals as StoreTableRunningTotals);
+      if (data.settlements && typeof data.settlements === "object") {
+        setSettlements(data.settlements as Record<string, string>);
+      }
+      if (reviewTableId === tableId) {
+        setReviewTableId(null);
       }
       void refresh();
     } finally {
@@ -615,7 +618,7 @@ export default function StoreDisplayBoard({
               ) : (
                 <ul className={styles.reviewList}>
                   {reviewSummary.map((line) => (
-                    <li key={line.label} className={styles.reviewRow}>
+                    <li key={line.id} className={styles.reviewRow}>
                       <span className={styles.reviewRowName}>{line.label}</span>
                       <span className={styles.reviewRowQty}>×{line.qty}</span>
                       <span className={styles.reviewRowSub}>

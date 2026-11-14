@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const settlements = await listStoreTableSettlements(date);
+  const settlements =
+    result.settlements ?? (await listStoreTableSettlements(date));
   const orders = await listStoreDisplayOrders(date);
   const tableTotals = computeStoreTableRunningTotals(orders, settlements);
 

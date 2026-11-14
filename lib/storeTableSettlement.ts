@@ -8,6 +8,7 @@ import {
 import type { StoreDisplayItem, StoreDisplayOrder } from "./storeDisplayQueue";
 import {
   normalizeStoreTableId,
+  orderMatchesStoreTable,
   resolveStoreOrderTableId,
   STORE_ORDER_TABLE_COUNT,
 } from "./storeOrderTables";
@@ -163,7 +164,11 @@ async function writeBlobSettlements(
 export async function recordStoreTableSettlement(
   tableId: string,
   ymd = getTodayYmdJst(),
-): Promise<{ ok: boolean; settledAt?: string }> {
+): Promise<{
+  ok: boolean;
+  settledAt?: string;
+  settlements?: Record<string, string>;
+}> {
   const tid = normalizeStoreTableId(tableId);
   if (!tid) return { ok: false };
   const settledAt = new Date().toISOString();
@@ -173,14 +178,20 @@ export async function recordStoreTableSettlement(
     const pushed = await redisCmd<number>(
       `hset/${key}/${tid}/${encodeRedisValue(settledAt)}`,
     );
-    return { ok: pushed !== null, settledAt };
+    if (pushed === null) return { ok: false };
+    const settlements = await listStoreTableSettlements(ymd);
+    return { ok: true, settledAt, settlements };
   }
 
   if (isStoreDisplayBlobQueueEnabled()) {
     const current = await listStoreTableSettlements(ymd);
     const next = { ...current, [tid]: settledAt };
     const ok = await writeBlobSettlements(ymd, next);
-    return { ok, settledAt: ok ? settledAt : undefined };
+    return {
+      ok,
+      settledAt: ok ? settledAt : undefined,
+      settlements: ok ? next : current,
+    };
   }
 
   if (isStoreDisplayMemoryQueueActive()) {
@@ -188,7 +199,7 @@ export async function recordStoreTableSettlement(
     const key = settlementDayKey(ymd);
     const next = { ...(store.get(key) ?? {}), [tid]: settledAt };
     store.set(key, next);
-    return { ok: true, settledAt };
+    return { ok: true, settledAt, settlements: next };
   }
 
   return { ok: false };
@@ -201,6 +212,22 @@ function orderCountsForTableTotal(order: StoreDisplayOrder): boolean {
   return Boolean(resolveStoreOrderTableId(order));
 }
 
+function orderSubmittedBeforeSettlement(
+  order: StoreDisplayOrder,
+  settledAt: string | undefined,
+): boolean {
+  if (!settledAt) return false;
+  const settledMs = Date.parse(settledAt);
+  if (!Number.isFinite(settledMs)) return false;
+
+  const submittedMs = Date.parse(order.submittedAt || "");
+  if (!Number.isFinite(submittedMs)) {
+    // 清算後は時刻不明の古い行を会計に含めない
+    return true;
+  }
+  return submittedMs < settledMs;
+}
+
 /** 清算後を除き、卓合計に含まれる店内注文か */
 export function isStoreOrderInUnsettledTableTotal(
   order: StoreDisplayOrder,
@@ -210,22 +237,17 @@ export function isStoreOrderInUnsettledTableTotal(
   const want = normalizeStoreTableId(tableId);
   if (!want) return false;
   if (!orderCountsForTableTotal(order)) return false;
-  const tid = resolveStoreOrderTableId(order);
-  if (tid !== want) return false;
+  if (!orderMatchesStoreTable(order, want)) return false;
 
   const settledAt = settlements[want];
-  const submitted = Date.parse(order.submittedAt || "");
-  if (
-    settledAt &&
-    Number.isFinite(submitted) &&
-    submitted <= Date.parse(settledAt)
-  ) {
+  if (orderSubmittedBeforeSettlement(order, settledAt)) {
     return false;
   }
   return true;
 }
 
 export type StoreTableOrderSummaryLine = {
+  id: string;
   label: string;
   qty: number;
   subtotal: number;
@@ -253,23 +275,28 @@ export function buildUnsettledTableOrderSummary(
   tableId: string,
   settlements: Record<string, string>,
 ): StoreTableOrderSummaryLine[] {
+  const want = normalizeStoreTableId(tableId);
+  if (!want) return [];
+
   const map = new Map<string, StoreTableOrderSummaryLine>();
 
   for (const order of orders) {
-    if (!isStoreOrderInUnsettledTableTotal(order, tableId, settlements)) {
+    if (!isStoreOrderInUnsettledTableTotal(order, want, settlements)) {
       continue;
     }
     for (const item of order.items) {
       const label = displayItemLabel(item);
       if (!label) continue;
       const qty = Math.max(0, Number(item.qty ?? item.quantity ?? 0));
+      if (qty <= 0) continue;
       const subtotal = itemLineSubtotal(item);
-      const prev = map.get(label);
+      const lineKey = `${want}\0${label}`;
+      const prev = map.get(lineKey);
       if (prev) {
         prev.qty += qty;
         prev.subtotal += subtotal;
       } else {
-        map.set(label, { label, qty, subtotal });
+        map.set(lineKey, { id: lineKey, label, qty, subtotal });
       }
     }
   }
