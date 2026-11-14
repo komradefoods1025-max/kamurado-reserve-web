@@ -65,7 +65,13 @@ import StoreMenuItemName from "../StoreMenuItemName";
 import styles from "../order.module.css";
 
 const OKAWARI_CATEGORY = "okawari" as const;
+const RECOMMENDED_CATEGORY = "recommended" as const;
 type MenuNavCategory = StoreMenuCategory | typeof OKAWARI_CATEGORY;
+
+/** 店内のみ・通常カテゴリ順には含めない */
+const DINE_IN_ONLY_NAV_CATEGORIES = new Set<StoreMenuCategory>([
+  RECOMMENDED_CATEGORY,
+]);
 
 const CATEGORY_ORDER: StoreMenuCategory[] = [
   "otsumami",
@@ -94,6 +100,7 @@ const CATEGORY_ORDER: StoreMenuCategory[] = [
 
 function isValidCategory(v: string | null): v is MenuNavCategory {
   if (v === OKAWARI_CATEGORY) return true;
+  if (v === RECOMMENDED_CATEGORY) return true;
   return CATEGORY_ORDER.includes(v as StoreMenuCategory);
 }
 
@@ -123,15 +130,21 @@ function StoreOrderMenuPageInner() {
 
   const catalogCategories = useMemo(
     () =>
-      CATEGORY_ORDER.filter((c) =>
-        STORE_MENU_ITEMS.some((m) => m.category === c),
+      CATEGORY_ORDER.filter(
+        (c) =>
+          !DINE_IN_ONLY_NAV_CATEGORIES.has(c) &&
+          STORE_MENU_ITEMS.some((m) => m.category === c),
       ),
     [],
   );
 
   const visibleCategories = useMemo((): MenuNavCategory[] => {
     if (!dineIn) return catalogCategories;
-    return [OKAWARI_CATEGORY, ...catalogCategories];
+    const hasRecommended = STORE_MENU_ITEMS.some(
+      (m) => m.category === RECOMMENDED_CATEGORY,
+    );
+    const recommendedNav = hasRecommended ? [RECOMMENDED_CATEGORY] : [];
+    return [OKAWARI_CATEGORY, ...recommendedNav, ...catalogCategories];
   }, [catalogCategories, dineIn]);
 
   useEffect(() => {

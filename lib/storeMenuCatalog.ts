@@ -1,4 +1,5 @@
 export type StoreMenuCategory =
+  | "recommended"
   | "otsumami"
   | "salad"
   | "okonomiyaki"
@@ -28,6 +29,7 @@ import {
   DRINK_MENU_ITEMS,
 } from "./storeDrinkDessertMenu";
 import { NOMIHOUDAI_MENU_ITEMS } from "./storeNomihoudaiMenu";
+import { RECOMMENDED_MENU_ITEMS } from "./storeRecommendedMenu";
 
 export type StoreMenuSecondaryStepper = {
   min: number;
@@ -119,6 +121,7 @@ const IMG = (n: number) =>
   `/store-menu/${String(n).padStart(2, "0")}.jpg?v=${STORE_MENU_IMAGE_REV}`;
 
 export const STORE_MENU_CATEGORY_LABEL: Record<StoreMenuCategory, string> = {
+  recommended: "おすすめ",
   otsumami: "おつまみ",
   salad: "サラダ",
   okonomiyaki: "お好み焼き",
@@ -225,6 +228,7 @@ const TEPPANYAKI_MENU_ITEMS: StoreMenuItem[] = (
 }));
 
 export const STORE_MENU_ITEMS: StoreMenuItem[] = [
+  ...RECOMMENDED_MENU_ITEMS,
   {
     id: "celery_asazuke",
     name: "セロリの浅漬け",
@@ -612,6 +616,7 @@ export const STORE_MENU_ITEMS: StoreMenuItem[] = [
 ];
 
 const STORE_MENU_NAMED_PHOTO_FOOD_CATEGORIES = new Set<StoreMenuCategory>([
+  "recommended",
   "otsumami",
   "salad",
   "okonomiyaki",
