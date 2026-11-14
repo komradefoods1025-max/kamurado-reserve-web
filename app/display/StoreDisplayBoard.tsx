@@ -17,8 +17,13 @@ import {
 import {
   isPremiumAudioUnlocked,
   playStoreDisplayNewOrderSound,
+  resumePremiumAudioForDisplay,
   unlockPremiumAudio,
 } from "../../lib/premiumSounds";
+import {
+  requestStoreDisplayNotificationPermission,
+  showStoreDisplayNewOrderNotification,
+} from "../../lib/storeDisplayNotifications";
 import StoreDisplayOrderCard from "./StoreDisplayOrderCard";
 import styles from "./display.module.css";
 
@@ -35,7 +40,7 @@ const COUNTER_VISIBLE: StoreDisplayOrder["status"][] = [
 const KITCHEN_COMPLETE_VISIBLE_MS = 5000;
 
 /** 店舗表示 UI 世代（キャッシュ確認用・ヘッダーに表示） */
-const DISPLAY_UI_REV = "sound-v3";
+const DISPLAY_UI_REV = "sound-v4";
 
 export default function StoreDisplayBoard({
   mode,
@@ -61,6 +66,7 @@ export default function StoreDisplayBoard({
   const [clock, setClock] = useState("");
   const [nowMs, setNowMs] = useState(() => Date.now());
   const seenRef = useRef<Set<string>>(new Set());
+  const pendingChimeRef = useRef(false);
   const bootRef = useRef(true);
   /** 完成カードを表示し続ける期限（reservationNo → epoch ms） */
   const completeVisibleUntilRef = useRef(new Map<string, number>());
@@ -131,6 +137,12 @@ export default function StoreDisplayBoard({
     });
   }, [audioReady, mode]);
 
+  const playCatchUpChimeIfNeeded = useCallback(() => {
+    if (!audioReady || !pendingChimeRef.current) return;
+    pendingChimeRef.current = false;
+    playNewOrderSound();
+  }, [audioReady, playNewOrderSound]);
+
   const requestDisplayWakeLock = useCallback(async () => {
     if (typeof navigator === "undefined" || !("wakeLock" in navigator)) {
       return;
@@ -149,6 +161,7 @@ export default function StoreDisplayBoard({
   const enableDisplayAudio = useCallback(async () => {
     try {
       await unlockPremiumAudio();
+      await requestStoreDisplayNotificationPermission();
       const ready = isPremiumAudioUnlocked();
       setAudioReady(ready);
       if (ready) await requestDisplayWakeLock();
@@ -241,12 +254,22 @@ export default function StoreDisplayBoard({
       });
       bootRef.current = false;
     } else {
+      const pageHidden =
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden";
+
       for (const o of list) {
         const no = String(o.reservationNo || "").trim();
         if (!no || seenRef.current.has(no)) continue;
         seenRef.current.add(no);
         if (o.status === "提供済み") continue;
-        playNewOrderSound();
+
+        if (pageHidden) {
+          pendingChimeRef.current = true;
+          showStoreDisplayNewOrderNotification(o, mode);
+        } else {
+          playNewOrderSound();
+        }
       }
     }
 
@@ -278,12 +301,23 @@ export default function StoreDisplayBoard({
   useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState !== "visible") return;
-      void refresh();
-      if (audioReady) void requestDisplayWakeLock();
+      void (async () => {
+        if (audioReady) {
+          await resumePremiumAudioForDisplay();
+          await requestDisplayWakeLock();
+        }
+        await refresh();
+        playCatchUpChimeIfNeeded();
+      })();
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [audioReady, refresh, requestDisplayWakeLock]);
+  }, [
+    audioReady,
+    refresh,
+    requestDisplayWakeLock,
+    playCatchUpChimeIfNeeded,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -427,8 +461,8 @@ export default function StoreDisplayBoard({
       {!audioReady ? (
         <div className={styles.soundEnableBar}>
           <p className={styles.soundEnableText}>
-            新規注文の通知音を鳴らすには、下のボタンを押してください（Chrome
-            では1回必要です）。ブラウザのタブは閉じずに開いたままにしてください（他アプリへ切り替えは可）。
+            新規注文の通知には、下のボタンで通知音とブラウザ通知の許可が必要です（Chrome
+            では1回）。タブは閉じずに開いたままにしてください。他アプリ表示中は通知パネルでお知らせし、画面に戻ると取りこぼし分のチャイムを鳴らします。画面OFFのままでは音は保証できません。
           </p>
           <button
             type="button"

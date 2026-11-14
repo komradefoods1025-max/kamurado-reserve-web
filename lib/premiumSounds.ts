@@ -417,6 +417,28 @@ export function isPremiumAudioUnlocked(): boolean {
   return unlocked;
 }
 
+/** バックグラウンド復帰後に AudioContext を再開 */
+export async function resumePremiumAudioForDisplay(): Promise<boolean> {
+  if (typeof window === "undefined" || !unlocked) {
+    return false;
+  }
+
+  const context = getOrCreateContext();
+  if (!context) {
+    return false;
+  }
+
+  if (context.state === "suspended") {
+    try {
+      await context.resume();
+    } catch {
+      return false;
+    }
+  }
+
+  return context.state === "running";
+}
+
 export async function unlockPremiumAudio(): Promise<void> {
   if (typeof window === "undefined" || unlocked) {
     return;
@@ -718,6 +740,7 @@ export async function playStoreDisplayNewOrderSound(
   }
 
   await unlockPremiumAudio();
+  await resumePremiumAudioForDisplay();
   const soundId: PremiumSoundId = "orderReceived";
 
   try {
