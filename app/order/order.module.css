@@ -13,6 +13,9 @@
   --o-line-warm: rgba(255, 190, 110, 0.32);
   --o-glow: rgba(255, 184, 64, 0.38);
   --o-btn: linear-gradient(135deg, #ffaa42 0%, #e87828 55%, #d45c18 100%);
+  --o-font-gothic:
+    "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP",
+    "Yu Gothic UI", "Yu Gothic", sans-serif;
   min-height: 100dvh;
   background: linear-gradient(
     165deg,
@@ -111,7 +114,8 @@
   border-left: 3px solid transparent;
   background: transparent;
   color: var(--o-muted-dim);
-  font-weight: 600;
+  font-family: var(--o-font-gothic);
+  font-weight: 700;
   line-height: 1.25;
   text-align: center;
   cursor: pointer;
@@ -145,9 +149,9 @@
 
 .menuCategoryTitle {
   margin: 14px 4px 8px;
-  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+  font-family: var(--o-font-gothic);
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.12em;
   color: var(--o-cream);
 }
@@ -158,7 +162,7 @@
 
 .menuRegionTitle {
   margin: 18px 4px 10px;
-  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+  font-family: var(--o-font-gothic);
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -344,9 +348,9 @@
 .categoryHeadingText {
   position: relative;
   z-index: 1;
-  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+  font-family: var(--o-font-gothic);
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.14em;
   color: #faf3e8;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
@@ -624,9 +628,7 @@
   border-radius: 12px;
   border: 1px solid rgba(180, 150, 110, 0.28);
   background: rgba(255, 255, 255, 0.72);
-  font-family:
-    "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP",
-    "Yu Gothic UI", "Yu Gothic", sans-serif;
+  font-family: var(--o-font-gothic);
   text-decoration: none;
   color: #1a1a1a;
   font-size: 11px;
