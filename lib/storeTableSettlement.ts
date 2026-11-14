@@ -212,6 +212,22 @@ function orderCountsForTableTotal(order: StoreDisplayOrder): boolean {
   return Boolean(resolveStoreOrderTableId(order));
 }
 
+function resolveOrderSubmittedMs(order: StoreDisplayOrder): number | null {
+  const direct = Date.parse(order.submittedAt || "");
+  if (Number.isFinite(direct)) return direct;
+
+  const ymd = String(order.pickupDate || "").trim();
+  const timeRaw = String(order.pickupTime || "").trim();
+  const timeMatch = timeRaw.match(/^(\d{1,2}):(\d{2})/);
+  if (ymd && timeMatch) {
+    const hh = timeMatch[1].padStart(2, "0");
+    const mm = timeMatch[2];
+    const jst = Date.parse(`${ymd}T${hh}:${mm}:00+09:00`);
+    if (Number.isFinite(jst)) return jst;
+  }
+  return null;
+}
+
 function orderSubmittedBeforeSettlement(
   order: StoreDisplayOrder,
   settledAt: string | undefined,
@@ -220,10 +236,10 @@ function orderSubmittedBeforeSettlement(
   const settledMs = Date.parse(settledAt);
   if (!Number.isFinite(settledMs)) return false;
 
-  const submittedMs = Date.parse(order.submittedAt || "");
-  if (!Number.isFinite(submittedMs)) {
-    // 清算後は時刻不明の古い行を会計に含めない
-    return true;
+  const submittedMs = resolveOrderSubmittedMs(order);
+  if (submittedMs === null) {
+    // 比較できない行は未清算扱い（完成操作後に合計が0円にならない）
+    return false;
   }
   return submittedMs < settledMs;
 }
