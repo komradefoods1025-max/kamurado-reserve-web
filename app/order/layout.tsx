@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import StoreOrderTabBar from "./StoreOrderTabBar";
 import styles from "./order.module.css";
 
 export const metadata: Metadata = {
@@ -19,5 +20,10 @@ export default function StoreOrderLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className={styles.orderRoot}>{children}</div>;
+  return (
+    <div className={styles.orderRoot}>
+      {children}
+      <StoreOrderTabBar />
+    </div>
+  );
 }
